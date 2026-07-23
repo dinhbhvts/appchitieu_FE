@@ -444,7 +444,7 @@ async function renderChungKhoan(c){
     </div>
     <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
       ${miniStat("Vốn đầu tư (nạp−rút)", s.invested_capital, "var(--accent)")}
-      ${miniStat("Lãi/lỗ đã chốt", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
+      ${miniStat("Lãi/lỗ (giữ+rút−nạp)", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
     </div></div>`;
 
   // Danh muc dang giu - NHAP TAY (co so luong). Tab Tong: gop theo ma CK.
