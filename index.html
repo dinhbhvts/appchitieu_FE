@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VibeApp — Xem trước giao diện</title>
+<!--
+  BAN XEM TRUOC GIAO DIEN (chay trong trinh duyet).
+  File nay KHONG phai app that (app that la Flutter), no chi giup ban NHIN va
+  DUNG THU giao dien ngay tren Chrome, dung chung backend dang chay o
+  http://127.0.0.1:8000. Mo file bang cach nhay doi chuot.
+-->
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --line:#e3e7eb; --text:#1f2933;
+    --muted:#6b7280; --accent:#185FA5; --accent-bg:#E6F1FB;
+    --green:#0F6E56; --green-bg:#E1F5EE; --red:#A32D2D; --red-bg:#FCEBEB;
+  }
+  *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  body{margin:0;background:var(--bg);color:var(--text);}
+  /* Khung dien thoai o giua man hinh */
+  /* App shell: trang cuon binh thuong (body), thanh tab + nut hanh dong duoc
+     ghim CO DINH (position:fixed) o day man hinh - cach on dinh nhat tren
+     trinh duyet dien thoai. padding-bottom chua cho khong bi che. */
+  .phone{max-width:460px;margin:0 auto;background:var(--bg);min-height:100dvh;
+    box-shadow:0 0 24px rgba(0,0,0,.06);padding-bottom:calc(132px + env(safe-area-inset-bottom));}
+  header{background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px;}
+  .apptitle{font-size:18px;font-weight:600;}
+  .server{font-size:11px;color:var(--muted);margin-top:2px;}
+  .server input{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;width:200px;}
+  .monthbar{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px;background:var(--card);border-bottom:1px solid var(--line);}
+  .monthbar button{border:none;background:none;font-size:20px;cursor:pointer;color:var(--accent);}
+  .content{padding:14px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;}
+  .bignum{font-size:26px;font-weight:600;}
+  .sub{font-size:12px;color:var(--muted);}
+  .stat{border-radius:10px;padding:10px;flex:1;}
+  .row{display:flex;justify-content:space-between;align-items:center;}
+  .tx{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);}
+  .tx:last-child{border-bottom:none;}
+  .tx .desc{font-size:14px;} .tx .meta{font-size:11px;color:var(--muted);}
+  .inc{color:var(--green);font-weight:600;} .exp{color:var(--red);font-weight:600;}
+  .editbtn{color:var(--accent);cursor:pointer;font-size:15px;padding:2px 4px;}
+  /* Thanh tab GHIM CO DINH o day man hinh (canh giua tren desktop). */
+  .tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:460px;
+    display:flex;background:var(--card);border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);z-index:20;}
+  .tabs button{flex:1;border:none;background:none;padding:10px 0;font-size:12px;color:var(--muted);cursor:pointer;}
+  .tabs button.active{color:var(--accent);font-weight:600;}
+  .tabs .ico{font-size:20px;display:block;}
+  /* Thanh nut hanh dong, ghim ngay tren thanh tab, luon trong tam voi. */
+  .actionbar{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:460px;
+    bottom:calc(56px + env(safe-area-inset-bottom));display:flex;gap:8px;padding:8px 14px;z-index:19;
+    background:linear-gradient(to top, var(--bg) 70%, rgba(244,246,248,0));box-sizing:border-box;}
+  .actionbar:empty{display:none;}
+  .abtn{flex:1;background:var(--accent);color:#fff;border:none;border-radius:24px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;}
+  .abtn.alt{background:var(--green);}
+  .seg{display:flex;gap:8px;margin-bottom:12px;}
+  .seg button{flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:14px;}
+  .seg button.exp-on{background:var(--red-bg);color:var(--red);border-color:var(--red-bg);font-weight:600;}
+  .seg button.inc-on{background:var(--green-bg);color:var(--green);border-color:var(--green-bg);font-weight:600;}
+  input,select{font-size:15px;padding:9px;border:1px solid var(--line);border-radius:8px;width:100%;margin-bottom:10px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .chip{font-size:12px;padding:6px 12px;border:1px solid var(--line);border-radius:20px;background:#fff;cursor:pointer;}
+  .chip.on{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-bg);}
+  .primary{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;width:100%;font-size:15px;font-weight:600;cursor:pointer;}
+  .ghost{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:10;}
+  .modal.on{display:flex;}
+  .sheet{background:#fff;width:100%;max-width:460px;border-radius:16px 16px 0 0;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto;-webkit-overflow-scrolling:touch;}
+  .err{color:var(--red);font-size:13px;padding:10px;background:var(--red-bg);border-radius:8px;}
+  .login-overlay{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .login-overlay.on{display:flex;}
+  .login-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;width:100%;max-width:340px;}
+  .logout{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;}
+  h3{font-size:15px;margin:6px 0 10px;}
+  .sectitle{font-size:12px;color:var(--muted);margin:14px 0 6px;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="apptitle">VibeApp — quản lý thu chi</div>
+      <div style="text-align:right"><span class="sub" id="whoami"></span><br><span class="logout" onclick="logout()">Đăng xuất</span></div>
+    </div>
+    <div class="server">Máy chủ: <input id="server" value="https://appchitieu.onrender.com" /></div>
+  </header>
+
+  <div class="monthbar">
+    <button onclick="changeMonth(-1)">‹</button>
+    <select id="monthSel" onchange="jumpYM()" style="margin:0;width:auto;display:inline-block"></select>
+    <select id="yearSel" onchange="jumpYM()" style="margin:0;width:auto;display:inline-block"></select>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+
+  <div class="content" id="content">Đang tải…</div>
+
+  <div class="actionbar" id="actionbar"></div>
+
+  <div class="tabs">
+    <button id="tab-thuchi" class="active" onclick="go('thuchi')"><span class="ico">☰</span>Thu chi</button>
+    <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico">↗</span>Chứng khoán</button>
+    <button id="tab-taisan" onclick="go('taisan')"><span class="ico">◆</span>Tài sản</button>
+    <button id="tab-baocao" onclick="go('baocao')"><span class="ico">▤</span>Báo cáo</button>
+  </div>
+</div>
+
+<!-- Form nhap giao dich -->
+<div class="modal" id="txModal">
+  <div class="sheet">
+    <h3>Thêm giao dịch</h3>
+    <div class="seg">
+      <button id="btnChi" class="exp-on" onclick="setType('expense')">Chi</button>
+      <button id="btnThu" onclick="setType('income')">Thu</button>
+      <button id="btnChuyen" onclick="setType('transfer')">Chuyển</button>
+    </div>
+    <div id="txTransferHint" class="sub" style="display:none;margin-bottom:10px">Chồng chuyển cho vợ (không tính vào tổng thu/chi, chỉ dịch chuyển trong quỹ).</div>
+    <input id="txAmount" type="number" placeholder="Số tiền" />
+    <input id="txContent" placeholder="Nội dung (vd: đi chợ)" />
+    <div class="chips" id="txChips"></div>
+    <select id="txUser"></select>
+    <input id="txDate" type="date" />
+    <input id="txNote" placeholder="Ghi chú (không bắt buộc)" />
+    <div id="txErr"></div>
+    <button id="txDelBtn" onclick="deleteTx()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa giao dịch này</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeTx()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveTx()">Lưu giao dịch</button>
+    </div>
+  </div>
+</div>
+
+<!-- Man dang nhap -->
+<div class="login-overlay" id="login">
+  <div class="login-card">
+    <div class="apptitle" style="text-align:center">VibeApp</div>
+    <div class="sub" style="text-align:center;margin-bottom:16px">Đăng nhập để tiếp tục</div>
+    <label class="sub">Người dùng</label>
+    <select id="loginUser"></select>
+    <label class="sub">Mật khẩu</label>
+    <input id="loginPass" type="password" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')doLogin()" />
+    <div id="loginErr"></div>
+    <button class="abtn" style="width:100%" onclick="doLogin()">Đăng nhập</button>
+    <div class="server" style="margin-top:14px">Máy chủ: <input id="loginServer" oninput="document.getElementById('server').value=this.value" /></div>
+  </div>
+</div>
+
+<!-- Form nap/rut chung khoan -->
+<div class="modal" id="cfModal">
+  <div class="sheet">
+    <h3>Nạp / Rút tài khoản chứng khoán</h3>
+    <div class="seg">
+      <button id="btnNap" class="inc-on" onclick="setCf('deposit')">Nạp</button>
+      <button id="btnRut" onclick="setCf('withdraw')">Rút</button>
+    </div>
+    <input id="cfAmount" type="number" placeholder="Số tiền" />
+    <input id="cfDate" type="date" />
+    <select id="cfUser"></select>
+    <input id="cfNote" placeholder="Ghi chú (không bắt buộc)" />
+    <div id="cfErr"></div>
+    <button id="cfDelBtn" onclick="deleteCf()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeCf()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveCf()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Form mua/ban chung khoan -->
+<div class="modal" id="trModal">
+  <div class="sheet">
+    <h3>Lệnh mua / bán chứng khoán</h3>
+    <div class="seg">
+      <button id="btnMua" class="inc-on" onclick="setTr('buy')">Mua</button>
+      <button id="btnBan" onclick="setTr('sell')">Bán</button>
+    </div>
+    <input id="trSymbol" placeholder="Mã CK (vd: NKG)" />
+    <input id="trQty" type="number" placeholder="Khối lượng" />
+    <input id="trPrice" type="number" placeholder="Giá" />
+    <input id="trFee" type="number" placeholder="Phí giao dịch (không bắt buộc)" />
+    <input id="trDate" type="date" />
+    <select id="trUser"></select>
+    <div id="trErr"></div>
+    <button id="trDelBtn" onclick="deleteTr()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa lệnh này</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeTr()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveTr()">Lưu lệnh</button>
+    </div>
+  </div>
+</div>
+
+<!-- Form them tai san -->
+<div class="modal" id="asModal">
+  <div class="sheet">
+    <h3>Thêm tài sản</h3>
+    <input id="asName" placeholder="Tên (vd: TK vợ)" />
+    <input id="asValue" type="number" placeholder="Giá trị" />
+    <input id="asNote" placeholder="Ghi chú (vd: 1 cây)" />
+    <div id="asErr"></div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeAs()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveAs()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Trang thai chung ----
+let tab = "thuchi";
+let now = new Date();
+let year = now.getFullYear(), month = now.getMonth() + 1; // 1..12
+let users = [], categories = [], txType = "expense", chosenCat = null;
+// Bao cao: khoang thoi gian tuy chon. null = dung thang dang chon.
+let reportStart = null, reportEnd = null;
+
+// ---- Dang nhap ----
+let token = localStorage.getItem("vibeapp_token") || "";
+let currentUser = null;
+try { currentUser = JSON.parse(localStorage.getItem("vibeapp_user") || "null"); } catch(e){}
+
+const api = () => document.getElementById("server").value.replace(/\/$/, "");
+const vnd = n => Math.round(n).toLocaleString("vi-VN");
+const pad = n => String(n).padStart(2, "0");
+const startDate = () => `${year}-${pad(month)}-01`;
+const endDate = () => { const d = new Date(year, month, 0); return `${year}-${pad(month)}-${pad(d.getDate())}`; };
+
+// Gan token vao moi yeu cau; neu server tra 401 (het han) thi bat dang nhap lai.
+function authHeaders(extra){ const h = Object.assign({}, extra||{}); if(token) h["Authorization"]="Bearer "+token; return h; }
+async function handleResp(r){
+  if(r.status===401){ logout(); throw new Error("Phiên đăng nhập đã hết hạn, mời đăng nhập lại."); }
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function jget(path){ return handleResp(await fetch(api()+path, {headers: authHeaders()})); }
+async function jpost(path, body){ return handleResp(await fetch(api()+path,{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),body:body?JSON.stringify(body):null})); }
+async function jput(path, body){ return handleResp(await fetch(api()+path,{method:"PUT",headers:authHeaders({"Content-Type":"application/json"}),body:JSON.stringify(body)})); }
+async function jdelete(path){ return handleResp(await fetch(api()+path,{method:"DELETE",headers:authHeaders()})); }
+
+// ---- Dang nhap / dang xuat ----
+function showLogin(){
+  document.getElementById("login").classList.add("on");
+  document.getElementById("loginServer").value = document.getElementById("server").value;
+  loadLoginUsers();
+}
+function hideLogin(){ document.getElementById("login").classList.remove("on"); }
+async function loadLoginUsers(){
+  try{
+    const us = await (await fetch(api()+"/users")).json();
+    document.getElementById("loginUser").innerHTML = us.map(u=>`<option value="${u.name}">${u.name}</option>`).join("");
+  }catch(e){ document.getElementById("loginErr").innerHTML=`<div class="err">Không kết nối được máy chủ. Kiểm tra địa chỉ.</div>`; }
+}
+async function doLogin(){
+  const username = document.getElementById("loginUser").value;
+  const password = document.getElementById("loginPass").value;
+  document.getElementById("loginErr").innerHTML = "";
+  try{
+    const r = await fetch(api()+"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+    if(!r.ok){ document.getElementById("loginErr").innerHTML=`<div class="err">Sai tên đăng nhập hoặc mật khẩu.</div>`; return; }
+    const data = await r.json();
+    token = data.access_token; currentUser = data.user;
+    localStorage.setItem("vibeapp_token", token);
+    localStorage.setItem("vibeapp_user", JSON.stringify(currentUser));
+    document.getElementById("loginPass").value = "";
+    hideLogin(); startApp();
+  }catch(e){ document.getElementById("loginErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+function logout(){
+  token=""; currentUser=null;
+  localStorage.removeItem("vibeapp_token"); localStorage.removeItem("vibeapp_user");
+  users=[]; categories=[];
+  showLogin();
+}
+
+function go(t){ tab=t; for(const x of ["thuchi","chungkhoan","taisan","baocao"]) document.getElementById("tab-"+x).classList.toggle("active", x===t); render(); }
+function changeMonth(delta){ month+=delta; if(month<1){month=12;year--;} if(month>12){month=1;year++;} reportStart=reportEnd=null; render(); }
+
+async function ensureRef(){
+  if(users.length===0){ try{ users = await jget("/users"); }catch(e){} }
+  if(categories.length===0){ try{ categories = await jget("/categories"); }catch(e){} }
+}
+
+function syncYM(){
+  const ys = document.getElementById("yearSel");
+  const ms = document.getElementById("monthSel");
+  const nowY = new Date().getFullYear();
+  if(ys.options.length===0){
+    // Nam tu 2022 den nam hien tai + 1
+    let opts = "";
+    for(let y=2022; y<=nowY+1; y++) opts += `<option value="${y}">${y}</option>`;
+    ys.innerHTML = opts;
+    ms.innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">Tháng ${i+1}</option>`).join("");
+  }
+  ys.value = year; ms.value = month;
+}
+function jumpYM(){ year=parseInt(document.getElementById("yearSel").value); month=parseInt(document.getElementById("monthSel").value); reportStart=reportEnd=null; render(); }
+
+function setActionBar(){
+  const ab = document.getElementById("actionbar");
+  if(tab==="thuchi") ab.innerHTML = `<button class="abtn" onclick="openTx()">+ Thêm giao dịch</button>`;
+  else if(tab==="taisan") ab.innerHTML = `<button class="abtn" onclick="openAs()">+ Thêm tài sản</button>`;
+  else if(tab==="chungkhoan") ab.innerHTML = `<button class="abtn alt" onclick="openCf()">+ Nạp/Rút</button><button class="abtn" onclick="openTr()">+ Mua/Bán</button>`;
+  else ab.innerHTML = "";
+}
+
+async function render(){
+  syncYM();
+  setActionBar();
+  document.getElementById("whoami").textContent = currentUser ? currentUser.name : "";
+  const c = document.getElementById("content");
+  c.innerHTML = "Đang tải…";
+  await ensureRef();
+  try{
+    if(tab==="thuchi") await renderThuChi(c);
+    else if(tab==="chungkhoan") await renderChungKhoan(c);
+    else if(tab==="taisan") await renderTaiSan(c);
+    else await renderBaoCao(c);
+  }catch(e){
+    c.innerHTML = `<div class="err">Không kết nối được máy chủ.<br>Hãy chắc chắn backend đang chạy (uvicorn) tại địa chỉ ở trên.<br><br>${e.message}</div>`;
+  }
+}
+
+// ---- Tab Thu chi ----
+let monthTxs = [];   // luu giao dich thang hien tai de bam sua
+async function renderThuChi(c){
+  const s = await jget(`/reports/summary?start=${startDate()}&end=${endDate()}`);
+  const txs = await jget(`/transactions?start=${startDate()}&end=${endDate()}`);
+  monthTxs = txs;
+  let html = `<div class="card">
+    <div class="bignum">${vnd(s.balance)} đ</div>
+    <div class="sub">Số dư tháng này</div>
+    <div class="row" style="gap:10px;margin-top:12px;">
+      <div class="stat" style="background:var(--green-bg)"><div class="sub" style="color:var(--green)">Thu</div><div style="color:var(--green);font-weight:600">${vnd(s.total_income)}</div></div>
+      <div class="stat" style="background:var(--red-bg)"><div class="sub" style="color:var(--red)">Chi</div><div style="color:var(--red);font-weight:600">${vnd(s.total_expense)}</div></div>
+    </div></div>`;
+  html += `<div class="card">`;
+  if(txs.length===0){ html += `<div class="sub">Chưa có giao dịch trong tháng</div>`; }
+  else{
+    for(const t of txs.slice().reverse()){
+      // Bam vao dong de sua giao dich (khi nhap nham).
+      const edit = `<span class="editbtn" onclick="editTx(${t.id})" title="Sửa">✎</span>`;
+      if(t.type==="transfer"){
+        html += `<div class="tx"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)} · chuyển nội bộ</div></div>
+          <div style="display:flex;align-items:center;gap:10px"><span style="color:var(--muted)">→ ${vnd(t.amount)}</span>${edit}</div></div>`;
+      }else{
+        const inc = t.type==="income";
+        html += `<div class="tx"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)}</div></div>
+          <div style="display:flex;align-items:center;gap:10px"><span class="${inc?'inc':'exp'}">${inc?'+':'-'}${vnd(t.amount)}</span>${edit}</div></div>`;
+      }
+    }
+  }
+  html += `</div>`;
+  c.innerHTML = html;
+}
+function editTx(id){ const t = monthTxs.find(x=>x.id===id); if(t) openTx(t); }
+
+// ---- Tab Tai san ----
+async function renderTaiSan(c){
+  const m = await jget(`/assets/month?year=${year}&month=${month}`);
+  // So sanh % voi thang truoc.
+  let cmp = "";
+  if(m.change_pct !== null && m.change_pct !== undefined){
+    const up = m.change_amount >= 0;
+    const col = up ? "var(--green)" : "var(--red)";
+    cmp = `<div class="sub" style="color:${col};margin-top:2px">${up?"▲":"▼"} ${up?"+":""}${vnd(m.change_amount)} (${up?"+":""}${m.change_pct}%) so với tháng trước</div>`;
+  } else {
+    cmp = `<div class="sub" style="margin-top:2px">Chưa có dữ liệu tháng trước để so sánh</div>`;
+  }
+  let html = `<div class="card" style="text-align:center">
+    <div class="bignum">${vnd(m.total)} đ</div><div class="sub">Tổng tài sản</div>${cmp}</div>`;
+  html += `<div class="card">`;
+  if(m.items.length===0){
+    html += `<div class="sub" style="margin-bottom:10px">Chưa có tài sản trong tháng</div>
+      <button class="ghost" onclick="copyPrev()">⧉ Chép từ tháng trước</button>`;
+  }else{
+    for(const a of m.items){
+      html += `<div class="tx"><div><div class="desc">${a.name}</div>${a.note?`<div class="meta">${a.note}</div>`:''}</div>
+        <div style="font-weight:600">${vnd(a.value)}</div></div>`;
+    }
+  }
+  html += `</div>`;
+  c.innerHTML = html;
+}
+
+// ---- Tab Chung khoan ----
+let cfType = "deposit", trSide = "buy";
+let stockUser = null;           // null = Tong; hoac id Chong/Vo
+let stockCashflows = [], stockTrades = [];
+function setStockUser(v){ stockUser = v; renderChungKhoan(document.getElementById("content")); }
+async function renderChungKhoan(c){
+  const q = stockUser ? `?user_id=${stockUser}` : "";
+  const s = await jget(`/stocks/summary${q}`);
+  try{ stockTrades = await jget(`/stocks/trades${q}`); }catch(e){ stockTrades=[]; }
+  try{ stockCashflows = await jget(`/stocks/cashflows${q}`); }catch(e){ stockCashflows=[]; }
+  const chId = chongUserId();
+  const voId = (users.find(u=>u.name==="Vợ")||{}).id;
+
+  // Sub-tabs Tong / Chong / Vo
+  const tabBtn = (label,val)=>`<button class="chip ${stockUser===val?'on':''}" onclick="setStockUser(${val===null?'null':val})">${label}</button>`;
+  let html = `<div class="chips" style="margin-bottom:12px">
+    ${tabBtn("Tổng", null)}${tabBtn("Chồng", chId)}${tabBtn("Vợ", voId)}</div>`;
+
+  html += `<div class="card">
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      ${miniStat("Tổng đã nạp", s.total_deposit, "var(--muted)")}
+      ${miniStat("Tổng đã rút", s.total_withdraw, "var(--muted)")}
+    </div>
+    <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
+      ${miniStat("Vốn đang đầu tư", s.invested_capital, "var(--accent)")}
+      ${miniStat("Lãi/lỗ đã chốt", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
+    </div></div>`;
+
+  html += `<div class="sectitle">Danh mục theo mã (đang giữ)</div><div class="card">`;
+  const held = s.positions.filter(p=>p.quantity_held>0);
+  if(held.length===0){ html += `<div class="sub">Không còn mã nào đang giữ</div>`; }
+  else{
+    for(const p of held){
+      const pl = p.realised_pl;
+      html += `<div class="tx"><div><div class="desc">${p.symbol}</div>
+        <div class="meta">Đang giữ: ${p.quantity_held} · Giá vốn TB: ${vnd(p.average_cost)}</div></div>
+        <div class="${pl>=0?'inc':'exp'}">${pl>=0?'+':''}${vnd(pl)}</div></div>`;
+    }
+  }
+  html += `</div>`;
+
+  // Nap/rut gan day (co sua)
+  if(stockCashflows.length){
+    html += `<div class="sectitle">Nạp / rút gần đây</div><div class="card">`;
+    for(const cf of stockCashflows.slice(-10).reverse()){
+      const dep = cf.type==="deposit";
+      html += `<div class="tx"><div><div class="desc">${dep?'Nạp':'Rút'}${cf.note?' · '+cf.note:''}</div><div class="meta">${fmtDate(cf.date)}</div></div>
+        <div style="display:flex;align-items:center;gap:10px"><span class="${dep?'inc':'exp'}">${dep?'+':'-'}${vnd(cf.amount)}</span><span class="editbtn" onclick="editCf(${cf.id})" title="Sửa">✎</span></div></div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Lenh mua/ban gan day (co sua)
+  if(stockTrades.length){
+    html += `<div class="sectitle">Lệnh mua / bán gần đây</div><div class="card">`;
+    for(const t of stockTrades.slice(-12).reverse()){
+      const buy = t.side==="buy";
+      html += `<div class="tx"><div><div class="desc">${t.symbol} · ${buy?'Mua':'Bán'} ${t.quantity} @ ${vnd(t.price)}</div>
+        <div class="meta">${fmtDate(t.date)}${t.fee?` · phí ${vnd(t.fee)}`:''}</div></div>
+        <span class="editbtn" onclick="editTr(${t.id})" title="Sửa">✎</span></div>`;
+    }
+    html += `</div>`;
+  }
+
+  c.innerHTML = html;
+}
+function editCf(id){ const cf = stockCashflows.find(x=>x.id===id); if(cf) openCf(cf); }
+function editTr(id){ const t = stockTrades.find(x=>x.id===id); if(t) openTr(t); }
+function miniStat(label, val, color){
+  return `<div class="stat" style="background:#f4f6f8;min-width:45%"><div class="sub">${label}</div>
+    <div style="color:${color};font-weight:600">${vnd(val)}</div></div>`;
+}
+
+// Form nap/rut (them hoac sua)
+let editingCfId = null;
+function openCf(cf){
+  editingCfId = (cf && cf.id) ? cf.id : null;
+  document.querySelector("#cfModal h3").textContent = editingCfId ? "Sửa nạp/rút" : "Nạp / Rút tài khoản chứng khoán";
+  document.getElementById("cfDelBtn").style.display = editingCfId ? "block" : "none";
+  document.getElementById("cfAmount").value = cf ? cf.amount : "";
+  document.getElementById("cfNote").value = (cf && cf.note) ? cf.note : "";
+  document.getElementById("cfErr").innerHTML="";
+  document.getElementById("cfDate").value = cf ? cf.date : `${year}-${pad(month)}-${pad(new Date().getDate())}`;
+  document.getElementById("cfUser").innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
+  if(cf) document.getElementById("cfUser").value = cf.user_id; else if(currentUser) document.getElementById("cfUser").value = currentUser.id;
+  setCf(cf ? cf.type : "deposit");
+  document.getElementById("cfModal").classList.add("on"); }
+function closeCf(){ document.getElementById("cfModal").classList.remove("on"); }
+function setCf(t){ cfType=t; document.getElementById("btnNap").className=t==="deposit"?"inc-on":""; document.getElementById("btnRut").className=t==="withdraw"?"exp-on":""; }
+async function saveCf(){
+  const amount=parseFloat((document.getElementById("cfAmount").value||"").replace(/\./g,""));
+  if(!amount||amount<=0){ document.getElementById("cfErr").innerHTML=`<div class="err">Nhập số tiền</div>`; return; }
+  const payload={date:document.getElementById("cfDate").value,type:cfType,amount:amount,user_id:parseInt(document.getElementById("cfUser").value),note:document.getElementById("cfNote").value.trim()||null};
+  try{
+    if(editingCfId){ await jput("/stocks/cashflows/"+editingCfId, payload); }
+    else { await jpost("/stocks/cashflows", payload); }
+    closeCf(); render();
+  }catch(e){ document.getElementById("cfErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+async function deleteCf(){ if(!editingCfId) return; if(!confirm("Xóa khoản này?")) return;
+  try{ await jdelete("/stocks/cashflows/"+editingCfId); closeCf(); render(); }catch(e){ document.getElementById("cfErr").innerHTML=`<div class="err">${e.message}</div>`; } }
+
+// Form mua/ban (them hoac sua)
+let editingTrId = null;
+function openTr(t){
+  editingTrId = (t && t.id) ? t.id : null;
+  document.querySelector("#trModal h3").textContent = editingTrId ? "Sửa lệnh" : "Lệnh mua / bán chứng khoán";
+  document.getElementById("trDelBtn").style.display = editingTrId ? "block" : "none";
+  document.getElementById("trSymbol").value = t ? t.symbol : "";
+  document.getElementById("trQty").value = t ? t.quantity : "";
+  document.getElementById("trPrice").value = t ? t.price : "";
+  document.getElementById("trFee").value = (t && t.fee) ? t.fee : "";
+  document.getElementById("trErr").innerHTML="";
+  document.getElementById("trDate").value = t ? t.date : `${year}-${pad(month)}-${pad(new Date().getDate())}`;
+  document.getElementById("trUser").innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
+  if(t) document.getElementById("trUser").value = t.user_id; else if(currentUser) document.getElementById("trUser").value = currentUser.id;
+  setTr(t ? t.side : "buy");
+  document.getElementById("trModal").classList.add("on"); }
+function closeTr(){ document.getElementById("trModal").classList.remove("on"); }
+function setTr(t){ trSide=t; document.getElementById("btnMua").className=t==="buy"?"inc-on":""; document.getElementById("btnBan").className=t==="sell"?"exp-on":""; }
+async function saveTr(){
+  const symbol=document.getElementById("trSymbol").value.trim();
+  const qty=parseInt(document.getElementById("trQty").value);
+  const price=parseFloat((document.getElementById("trPrice").value||"").replace(/\./g,""));
+  const fee=parseFloat((document.getElementById("trFee").value||"").replace(/\./g,""))||0;
+  if(!symbol||!qty||qty<=0||!price||price<=0){ document.getElementById("trErr").innerHTML=`<div class="err">Nhập mã, khối lượng và giá</div>`; return; }
+  const payload={date:document.getElementById("trDate").value,symbol:symbol,side:trSide,quantity:qty,price:price,fee:fee,user_id:parseInt(document.getElementById("trUser").value)};
+  try{
+    if(editingTrId){ await jput("/stocks/trades/"+editingTrId, payload); }
+    else { await jpost("/stocks/trades", payload); }
+    closeTr(); render();
+  }catch(e){ document.getElementById("trErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+async function deleteTr(){ if(!editingTrId) return; if(!confirm("Xóa lệnh này?")) return;
+  try{ await jdelete("/stocks/trades/"+editingTrId); closeTr(); render(); }catch(e){ document.getElementById("trErr").innerHTML=`<div class="err">${e.message}</div>`; } }
+
+// ---- Tab Bao cao ----
+function applyReportRange(){
+  reportStart = document.getElementById("rpStart").value || null;
+  reportEnd = document.getElementById("rpEnd").value || null;
+  renderBaoCao(document.getElementById("content"));
+}
+function resetReportRange(){ reportStart=reportEnd=null; renderBaoCao(document.getElementById("content")); }
+
+async function renderBaoCao(c){
+  // Khoang thoi gian hieu luc: tuy chon hoac thang dang chon.
+  const s0 = reportStart || startDate();
+  const e0 = reportEnd || endDate();
+  const rng = `start=${s0}&end=${e0}`;
+  const custom = !!(reportStart || reportEnd);
+
+  let html = `<div class="card"><div class="sectitle" style="margin-top:0">Khoảng thời gian</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="date" id="rpStart" value="${s0}" style="margin:0">
+      <span class="sub">→</span>
+      <input type="date" id="rpEnd" value="${e0}" style="margin:0">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="primary" style="flex:1" onclick="applyReportRange()">Xem</button>
+      ${custom ? `<button class="ghost" onclick="resetReportRange()">Về tháng ${month}/${year}</button>` : ``}
+    </div></div>`;
+
+  const combined = await jget(`/reports/summary?${rng}`);
+  html += `<div class="card"><div class="sectitle" style="margin-top:0">Tổng hợp</div>
+    ${rowLine("Thu", combined.total_income, "var(--green)")}
+    ${rowLine("Chi", combined.total_expense, "var(--red)")}
+    ${rowLine("Số dư", combined.balance, "var(--accent)")}</div>`;
+  html += `<div class="card"><div class="sectitle" style="margin-top:0">Theo từng người</div>`;
+  for(const u of users){
+    const su = await jget(`/reports/summary?${rng}&user_id=${u.id}`);
+    let block = `<div style="margin-bottom:10px"><div style="font-weight:600">${u.name}</div>`;
+    block += rowLine("Thu", su.total_income, "var(--green)");
+    block += rowLine("Chi", su.total_expense, "var(--red)");
+    if(su.transferred_out>0) block += rowLine("Chuyển cho vợ", su.transferred_out, "var(--muted)");
+    if(su.transferred_in>0) block += rowLine("Chồng chuyển", su.transferred_in, "var(--green)");
+    block += rowLine("Còn giữ (sau chuyển)", su.net_held, "var(--accent)");
+    block += `</div>`;
+    html += block;
+  }
+  html += `</div>`;
+  const cats = await jget(`/reports/by-category?${rng}`);
+  html += `<div class="card"><div class="sectitle" style="margin-top:0">Chi tiêu theo danh mục</div>`;
+  if(cats.length===0) html += `<div class="sub">Chưa có chi tiêu</div>`;
+  for(const c2 of cats) html += `<div class="row" style="padding:6px 0"><span>${c2.category_name}</span><span style="font-weight:600">${vnd(c2.total)}</span></div>`;
+  html += `</div>`;
+  c.innerHTML = html;
+}
+
+function rowLine(label, val, color){ return `<div class="row" style="padding:4px 0"><span>${label}</span><span style="color:${color};font-weight:600">${vnd(val)} đ</span></div>`; }
+function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`; }
+
+// ---- Form giao dich ----
+let editingTxId = null;
+function openTx(tx){
+  editingTxId = (tx && tx.id) ? tx.id : null;
+  document.querySelector("#txModal h3").textContent = editingTxId ? "Sửa giao dịch" : "Thêm giao dịch";
+  document.getElementById("txDelBtn").style.display = editingTxId ? "block" : "none";
+  document.getElementById("txAmount").value = tx ? tx.amount : "";
+  document.getElementById("txContent").value = tx ? tx.content : "";
+  document.getElementById("txNote").value = (tx && tx.note) ? tx.note : "";
+  document.getElementById("txErr").innerHTML="";
+  document.getElementById("txDate").value = tx ? tx.date : `${year}-${pad(month)}-${pad(new Date().getDate())}`;
+  const us = document.getElementById("txUser");
+  us.innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
+  // Mac dinh nguoi = nguoi dang giao dich (khi sua) hoac nguoi dang nhap (khi them).
+  if(tx) us.value = tx.user_id; else if(currentUser) us.value = currentUser.id;
+  setType(tx ? tx.type : "expense");
+  // Khi sua: khoi phuc danh muc da chon.
+  if(tx && tx.category_id){ chosenCat = tx.category_id; const el=document.getElementById("cat"+tx.category_id); if(el) el.classList.add("on"); }
+  document.getElementById("txModal").classList.add("on");
+}
+function closeTx(){ document.getElementById("txModal").classList.remove("on"); }
+async function deleteTx(){
+  if(!editingTxId) return;
+  if(!confirm("Xóa giao dịch này?")) return;
+  try{ await jdelete("/transactions/"+editingTxId); closeTx(); render(); }
+  catch(e){ document.getElementById("txErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+function setType(t){
+  txType=t; chosenCat=null;
+  document.getElementById("btnChi").className = t==="expense"?"exp-on":"";
+  document.getElementById("btnThu").className = t==="income"?"inc-on":"";
+  document.getElementById("btnChuyen").className = t==="transfer"?"inc-on":"";
+  const box = document.getElementById("txChips");
+  const hint = document.getElementById("txTransferHint");
+  const userSel = document.getElementById("txUser");
+  if(t==="transfer"){
+    // Chuyen noi bo: chong -> vo. Nguoi gui mac dinh la Chong, an chon nguoi.
+    box.innerHTML = ""; hint.style.display="block"; userSel.style.display="none";
+    if(!document.getElementById("txContent").value) document.getElementById("txContent").value="Chuyển cho vợ";
+  }else{
+    hint.style.display="none"; userSel.style.display="";
+    const kind = t==="income" ? "income" : "expense";
+    const cs = categories.filter(c=>c.kind===kind||c.kind==="both");
+    box.innerHTML = cs.map(c=>`<span class="chip" id="cat${c.id}" onclick="pickCat(${c.id})">${c.name}</span>`).join("");
+  }
+}
+function pickCat(id){
+  // Chi chon danh muc (phuc vu bao cao). KHONG dien vao noi dung -
+  // noi dung la text nguoi dung tu nhap.
+  chosenCat = (chosenCat===id?null:id);
+  for(const c of categories){ const el=document.getElementById("cat"+c.id); if(el) el.classList.toggle("on", c.id===chosenCat); }
+}
+function chongUserId(){ const u = users.find(x=>x.name==="Chồng"); return u ? u.id : (users[0] && users[0].id); }
+async function saveTx(){
+  const amount = parseFloat((document.getElementById("txAmount").value||"").replace(/\./g,""));
+  const content = document.getElementById("txContent").value.trim();
+  // Khoan chuyen luon do chong gui; cac loai khac lay nguoi tu dropdown.
+  const userId = txType==="transfer" ? chongUserId() : parseInt(document.getElementById("txUser").value);
+  if(!amount||amount<=0||!content){ document.getElementById("txErr").innerHTML=`<div class="err">Nhập số tiền và nội dung</div>`; return; }
+  const payload = {date:document.getElementById("txDate").value,type:txType,amount:amount,content:content,user_id:userId,category_id:txType==="transfer"?null:chosenCat,note:document.getElementById("txNote").value.trim()||null};
+  try{
+    if(editingTxId){ await jput("/transactions/"+editingTxId, payload); }
+    else { await jpost("/transactions", payload); }
+    closeTx(); render();
+  }catch(e){ document.getElementById("txErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+
+// ---- Form tai san ----
+function openAs(){ for(const id of ["asName","asValue","asNote"]) document.getElementById(id).value=""; document.getElementById("asErr").innerHTML=""; document.getElementById("asModal").classList.add("on"); }
+function closeAs(){ document.getElementById("asModal").classList.remove("on"); }
+async function saveAs(){
+  const name=document.getElementById("asName").value.trim();
+  const value=parseFloat((document.getElementById("asValue").value||"").replace(/\./g,""));
+  if(!name||!value){ document.getElementById("asErr").innerHTML=`<div class="err">Nhập tên và giá trị</div>`; return; }
+  try{ await jpost("/assets",{year:year,month:month,name:name,value:value,note:document.getElementById("asNote").value.trim()||null}); closeAs(); render(); }
+  catch(e){ document.getElementById("asErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+async function copyPrev(){ try{ await jpost(`/assets/copy-previous?year=${year}&month=${month}`); render(); }catch(e){ alert(e.message); } }
+
+// ---- Khoi dong ----
+function startApp(){ render(); }
+
+async function boot(){
+  // Chua co token -> bat dang nhap.
+  if(!token){ showLogin(); return; }
+  // Co token -> kiem tra con han khong bang /auth/me.
+  try{
+    const r = await fetch(api()+"/auth/me", {headers: authHeaders()});
+    if(r.status===200){ currentUser = await r.json(); startApp(); }
+    else { logout(); }
+  }catch(e){
+    // Khong goi duoc may chu: van cho vao man dang nhap de doi dia chi.
+    showLogin();
+  }
+}
+boot();
+</script>
+</body>
+</html>
