@@ -176,8 +176,9 @@
       <button id="btnBan" onclick="setTr('sell')">Bán</button>
     </div>
     <input id="trSymbol" placeholder="Mã CK (vd: NKG)" />
-    <input id="trQty" type="number" placeholder="Khối lượng" />
-    <input id="trPrice" type="number" placeholder="Giá" />
+    <input id="trQty" type="number" placeholder="Khối lượng (số cổ phiếu)" oninput="calcTrPrice()" />
+    <input id="trTotal" type="number" placeholder="Tổng số tiền" oninput="calcTrPrice()" />
+    <div class="sub" id="trUnit" style="margin:-4px 0 10px"></div>
     <input id="trFee" type="number" placeholder="Phí giao dịch (không bắt buộc)" />
     <input id="trDate" type="date" />
     <select id="trUser"></select>
@@ -190,6 +191,22 @@
   </div>
 </div>
 
+<!-- Form danh muc dang giu (nhap tay) -->
+<div class="modal" id="hdModal">
+  <div class="sheet">
+    <h3>Khoản đang giữ</h3>
+    <input id="hdSymbol" placeholder="Mã CK / tên (vd: NKG)" />
+    <input id="hdValue" type="number" placeholder="Giá trị hiện tại (số tiền)" />
+    <input id="hdNote" placeholder="Ghi chú (không bắt buộc)" />
+    <div id="hdErr"></div>
+    <button id="hdDelBtn" onclick="deleteHd()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeHd()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveHd()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <!-- Form them tai san -->
 <div class="modal" id="asModal">
   <div class="sheet">
@@ -198,6 +215,7 @@
     <input id="asValue" type="number" placeholder="Giá trị" />
     <input id="asNote" placeholder="Ghi chú (vd: 1 cây)" />
     <div id="asErr"></div>
+    <button id="asDelBtn" onclick="deleteAs()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <button class="ghost" style="flex:1" onclick="closeAs()">Hủy</button>
       <button class="primary" style="flex:2" onclick="saveAs()">Lưu</button>
@@ -299,7 +317,11 @@ function setActionBar(){
   const ab = document.getElementById("actionbar");
   if(tab==="thuchi") ab.innerHTML = `<button class="abtn" onclick="openTx()">+ Thêm giao dịch</button>`;
   else if(tab==="taisan") ab.innerHTML = `<button class="abtn" onclick="openAs()">+ Thêm tài sản</button>`;
-  else if(tab==="chungkhoan") ab.innerHTML = `<button class="abtn alt" onclick="openCf()">+ Nạp/Rút</button><button class="abtn" onclick="openTr()">+ Mua/Bán</button>`;
+  else if(tab==="chungkhoan"){
+    // Tab Tổng chỉ xem; tab Chồng/Vợ mới cho thêm/sửa.
+    if(stockUser===null) ab.innerHTML = "";
+    else ab.innerHTML = `<button class="abtn alt" onclick="openCf()">Nạp/Rút</button><button class="abtn" onclick="openTr()">Mua/Bán</button><button class="abtn" style="background:var(--muted)" onclick="openHd()">Đang giữ</button>`;
+  }
   else ab.innerHTML = "";
 }
 
@@ -355,8 +377,10 @@ async function renderThuChi(c){
 function editTx(id){ const t = monthTxs.find(x=>x.id===id); if(t) openTx(t); }
 
 // ---- Tab Tai san ----
+let monthAssets = [];
 async function renderTaiSan(c){
   const m = await jget(`/assets/month?year=${year}&month=${month}`);
+  monthAssets = m.items;
   // So sanh % voi thang truoc.
   let cmp = "";
   if(m.change_pct !== null && m.change_pct !== undefined){
@@ -375,7 +399,7 @@ async function renderTaiSan(c){
   }else{
     for(const a of m.items){
       html += `<div class="tx"><div><div class="desc">${a.name}</div>${a.note?`<div class="meta">${a.note}</div>`:''}</div>
-        <div style="font-weight:600">${vnd(a.value)}</div></div>`;
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(a.value)}</span><span class="editbtn" onclick="editAs(${a.id})" title="Sửa">✎</span></div></div>`;
     }
   }
   html += `</div>`;
@@ -385,13 +409,15 @@ async function renderTaiSan(c){
 // ---- Tab Chung khoan ----
 let cfType = "deposit", trSide = "buy";
 let stockUser = null;           // null = Tong; hoac id Chong/Vo
-let stockCashflows = [], stockTrades = [];
-function setStockUser(v){ stockUser = v; renderChungKhoan(document.getElementById("content")); }
+let stockCashflows = [], stockTrades = [], stockHoldings = [];
+function setStockUser(v){ stockUser = v; setActionBar(); renderChungKhoan(document.getElementById("content")); }
 async function renderChungKhoan(c){
   const q = stockUser ? `?user_id=${stockUser}` : "";
+  const canEdit = stockUser !== null;   // Tab Tổng chỉ xem
   const s = await jget(`/stocks/summary${q}`);
   try{ stockTrades = await jget(`/stocks/trades${q}`); }catch(e){ stockTrades=[]; }
   try{ stockCashflows = await jget(`/stocks/cashflows${q}`); }catch(e){ stockCashflows=[]; }
+  try{ stockHoldings = await jget(`/stocks/holdings${q}`); }catch(e){ stockHoldings=[]; }
   const chId = chongUserId();
   const voId = (users.find(u=>u.name==="Vợ")||{}).id;
 
@@ -410,44 +436,50 @@ async function renderChungKhoan(c){
       ${miniStat("Lãi/lỗ đã chốt", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
     </div></div>`;
 
-  html += `<div class="sectitle">Danh mục theo mã (đang giữ)</div><div class="card">`;
-  const held = s.positions.filter(p=>p.quantity_held>0);
-  if(held.length===0){ html += `<div class="sub">Không còn mã nào đang giữ</div>`; }
-  else{
-    for(const p of held){
-      const pl = p.realised_pl;
-      html += `<div class="tx"><div><div class="desc">${p.symbol}</div>
-        <div class="meta">Đang giữ: ${p.quantity_held} · Giá vốn TB: ${vnd(p.average_cost)}</div></div>
-        <div class="${pl>=0?'inc':'exp'}">${pl>=0?'+':''}${vnd(pl)}</div></div>`;
+  // Danh muc dang giu - NHAP TAY (khong tinh tu giao dich), uu tien so tien.
+  html += `<div class="sectitle">Danh mục đang giữ</div><div class="card">`;
+  if(stockHoldings.length===0){
+    html += `<div class="sub">Chưa nhập khoản đang giữ nào${canEdit?'. Bấm nút "Đang giữ" ở dưới để thêm.':''}</div>`;
+  }else{
+    let tot=0;
+    for(const hd of stockHoldings){ tot+=Number(hd.value);
+      const edit = canEdit ? `<span class="editbtn" onclick="editHd(${hd.id})" title="Sửa">✎</span>` : '';
+      html += `<div class="tx"><div><div class="desc">${hd.symbol}</div>${hd.note?`<div class="meta">${hd.note}</div>`:''}</div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(hd.value)}</span>${edit}</div></div>`;
     }
+    html += `<div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><span class="sub">Tổng đang giữ</span><span style="font-weight:600">${vnd(tot)} đ</span></div>`;
   }
   html += `</div>`;
 
-  // Nap/rut gan day (co sua)
+  // Nap/rut gan day
   if(stockCashflows.length){
     html += `<div class="sectitle">Nạp / rút gần đây</div><div class="card">`;
     for(const cf of stockCashflows.slice(-10).reverse()){
       const dep = cf.type==="deposit";
+      const edit = canEdit ? `<span class="editbtn" onclick="editCf(${cf.id})" title="Sửa">✎</span>` : '';
       html += `<div class="tx"><div><div class="desc">${dep?'Nạp':'Rút'}${cf.note?' · '+cf.note:''}</div><div class="meta">${fmtDate(cf.date)}</div></div>
-        <div style="display:flex;align-items:center;gap:10px"><span class="${dep?'inc':'exp'}">${dep?'+':'-'}${vnd(cf.amount)}</span><span class="editbtn" onclick="editCf(${cf.id})" title="Sửa">✎</span></div></div>`;
+        <div style="display:flex;align-items:center;gap:10px"><span class="${dep?'inc':'exp'}">${dep?'+':'-'}${vnd(cf.amount)}</span>${edit}</div></div>`;
     }
     html += `</div>`;
   }
 
-  // Lenh mua/ban gan day (co sua)
+  // Lenh mua/ban gan day - uu tien hien so tien (tong = KL * don gia).
   if(stockTrades.length){
     html += `<div class="sectitle">Lệnh mua / bán gần đây</div><div class="card">`;
     for(const t of stockTrades.slice(-12).reverse()){
       const buy = t.side==="buy";
-      html += `<div class="tx"><div><div class="desc">${t.symbol} · ${buy?'Mua':'Bán'} ${t.quantity} @ ${vnd(t.price)}</div>
-        <div class="meta">${fmtDate(t.date)}${t.fee?` · phí ${vnd(t.fee)}`:''}</div></div>
-        <span class="editbtn" onclick="editTr(${t.id})" title="Sửa">✎</span></div>`;
+      const total = t.quantity * t.price;
+      const edit = canEdit ? `<span class="editbtn" onclick="editTr(${t.id})" title="Sửa">✎</span>` : '';
+      html += `<div class="tx"><div><div class="desc">${t.symbol} · ${buy?'Mua':'Bán'} ${t.quantity} cp</div>
+        <div class="meta">${fmtDate(t.date)} · đơn giá ${vnd(t.price)}${t.fee?` · phí ${vnd(t.fee)}`:''}</div></div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600;color:${buy?'var(--red)':'var(--green)'}">${vnd(total)}</span>${edit}</div></div>`;
     }
     html += `</div>`;
   }
 
   c.innerHTML = html;
 }
+function editHd(id){ const hd = stockHoldings.find(x=>x.id===id); if(hd) openHd(hd); }
 function editCf(id){ const cf = stockCashflows.find(x=>x.id===id); if(cf) openCf(cf); }
 function editTr(id){ const t = stockTrades.find(x=>x.id===id); if(t) openTr(t); }
 function miniStat(label, val, color){
@@ -492,22 +524,31 @@ function openTr(t){
   document.getElementById("trDelBtn").style.display = editingTrId ? "block" : "none";
   document.getElementById("trSymbol").value = t ? t.symbol : "";
   document.getElementById("trQty").value = t ? t.quantity : "";
-  document.getElementById("trPrice").value = t ? t.price : "";
+  // Nhap theo TONG SO TIEN (= khoi luong * don gia). Khi sua: dung lai tong.
+  document.getElementById("trTotal").value = t ? Math.round(t.quantity*t.price) : "";
   document.getElementById("trFee").value = (t && t.fee) ? t.fee : "";
   document.getElementById("trErr").innerHTML="";
   document.getElementById("trDate").value = t ? t.date : `${year}-${pad(month)}-${pad(new Date().getDate())}`;
   document.getElementById("trUser").innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
   if(t) document.getElementById("trUser").value = t.user_id; else if(currentUser) document.getElementById("trUser").value = currentUser.id;
   setTr(t ? t.side : "buy");
+  calcTrPrice();
   document.getElementById("trModal").classList.add("on"); }
 function closeTr(){ document.getElementById("trModal").classList.remove("on"); }
 function setTr(t){ trSide=t; document.getElementById("btnMua").className=t==="buy"?"inc-on":""; document.getElementById("btnBan").className=t==="sell"?"exp-on":""; }
+function calcTrPrice(){
+  const qty=parseInt(document.getElementById("trQty").value)||0;
+  const total=parseFloat((document.getElementById("trTotal").value||"").replace(/\./g,""))||0;
+  const el=document.getElementById("trUnit");
+  el.textContent = (qty>0 && total>0) ? `Đơn giá tự tính: ${vnd(total/qty)} đ/cp` : "";
+}
 async function saveTr(){
   const symbol=document.getElementById("trSymbol").value.trim();
   const qty=parseInt(document.getElementById("trQty").value);
-  const price=parseFloat((document.getElementById("trPrice").value||"").replace(/\./g,""));
+  const total=parseFloat((document.getElementById("trTotal").value||"").replace(/\./g,""));
   const fee=parseFloat((document.getElementById("trFee").value||"").replace(/\./g,""))||0;
-  if(!symbol||!qty||qty<=0||!price||price<=0){ document.getElementById("trErr").innerHTML=`<div class="err">Nhập mã, khối lượng và giá</div>`; return; }
+  if(!symbol||!qty||qty<=0||!total||total<=0){ document.getElementById("trErr").innerHTML=`<div class="err">Nhập mã, khối lượng và tổng số tiền</div>`; return; }
+  const price = total/qty;   // app tu tinh don gia
   const payload={date:document.getElementById("trDate").value,symbol:symbol,side:trSide,quantity:qty,price:price,fee:fee,user_id:parseInt(document.getElementById("trUser").value)};
   try{
     if(editingTrId){ await jput("/stocks/trades/"+editingTrId, payload); }
@@ -517,6 +558,32 @@ async function saveTr(){
 }
 async function deleteTr(){ if(!editingTrId) return; if(!confirm("Xóa lệnh này?")) return;
   try{ await jdelete("/stocks/trades/"+editingTrId); closeTr(); render(); }catch(e){ document.getElementById("trErr").innerHTML=`<div class="err">${e.message}</div>`; } }
+
+// Form danh muc dang giu (nhap tay)
+let editingHdId = null;
+function openHd(hd){
+  editingHdId = (hd && hd.id) ? hd.id : null;
+  document.querySelector("#hdModal h3").textContent = editingHdId ? "Sửa khoản đang giữ" : "Khoản đang giữ";
+  document.getElementById("hdDelBtn").style.display = editingHdId ? "block" : "none";
+  document.getElementById("hdSymbol").value = hd ? hd.symbol : "";
+  document.getElementById("hdValue").value = hd ? hd.value : "";
+  document.getElementById("hdNote").value = (hd && hd.note) ? hd.note : "";
+  document.getElementById("hdErr").innerHTML="";
+  document.getElementById("hdModal").classList.add("on"); }
+function closeHd(){ document.getElementById("hdModal").classList.remove("on"); }
+async function saveHd(){
+  const symbol=document.getElementById("hdSymbol").value.trim();
+  const value=parseFloat((document.getElementById("hdValue").value||"").replace(/\./g,""));
+  const notev=document.getElementById("hdNote").value.trim()||null;
+  if(!symbol||!value){ document.getElementById("hdErr").innerHTML=`<div class="err">Nhập mã và giá trị</div>`; return; }
+  try{
+    if(editingHdId){ await jput("/stocks/holdings/"+editingHdId,{symbol:symbol,value:value,note:notev}); }
+    else { await jpost("/stocks/holdings",{user_id:stockUser,symbol:symbol,value:value,note:notev}); }
+    closeHd(); render();
+  }catch(e){ document.getElementById("hdErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+async function deleteHd(){ if(!editingHdId) return; if(!confirm("Xóa khoản đang giữ này?")) return;
+  try{ await jdelete("/stocks/holdings/"+editingHdId); closeHd(); render(); }catch(e){ document.getElementById("hdErr").innerHTML=`<div class="err">${e.message}</div>`; } }
 
 // ---- Tab Bao cao ----
 function applyReportRange(){
@@ -640,16 +707,33 @@ async function saveTx(){
   }catch(e){ document.getElementById("txErr").innerHTML=`<div class="err">${e.message}</div>`; }
 }
 
-// ---- Form tai san ----
-function openAs(){ for(const id of ["asName","asValue","asNote"]) document.getElementById(id).value=""; document.getElementById("asErr").innerHTML=""; document.getElementById("asModal").classList.add("on"); }
+// ---- Form tai san (them hoac sua) ----
+let editingAsId = null;
+function openAs(a){
+  editingAsId = (a && a.id) ? a.id : null;
+  document.querySelector("#asModal h3").textContent = editingAsId ? "Sửa tài sản" : "Thêm tài sản";
+  document.getElementById("asDelBtn").style.display = editingAsId ? "block" : "none";
+  document.getElementById("asName").value = a ? a.name : "";
+  document.getElementById("asValue").value = a ? a.value : "";
+  document.getElementById("asNote").value = (a && a.note) ? a.note : "";
+  document.getElementById("asErr").innerHTML="";
+  document.getElementById("asModal").classList.add("on");
+}
+function editAs(id){ const a = monthAssets.find(x=>x.id===id); if(a) openAs(a); }
 function closeAs(){ document.getElementById("asModal").classList.remove("on"); }
 async function saveAs(){
   const name=document.getElementById("asName").value.trim();
   const value=parseFloat((document.getElementById("asValue").value||"").replace(/\./g,""));
+  const note=document.getElementById("asNote").value.trim()||null;
   if(!name||!value){ document.getElementById("asErr").innerHTML=`<div class="err">Nhập tên và giá trị</div>`; return; }
-  try{ await jpost("/assets",{year:year,month:month,name:name,value:value,note:document.getElementById("asNote").value.trim()||null}); closeAs(); render(); }
-  catch(e){ document.getElementById("asErr").innerHTML=`<div class="err">${e.message}</div>`; }
+  try{
+    if(editingAsId){ await jput("/assets/"+editingAsId,{name:name,value:value,note:note}); }
+    else { await jpost("/assets",{year:year,month:month,name:name,value:value,note:note}); }
+    closeAs(); render();
+  }catch(e){ document.getElementById("asErr").innerHTML=`<div class="err">${e.message}</div>`; }
 }
+async function deleteAs(){ if(!editingAsId) return; if(!confirm("Xóa khoản tài sản này?")) return;
+  try{ await jdelete("/assets/"+editingAsId); closeAs(); render(); }catch(e){ document.getElementById("asErr").innerHTML=`<div class="err">${e.message}</div>`; } }
 async function copyPrev(){ try{ await jpost(`/assets/copy-previous?year=${year}&month=${month}`); render(); }catch(e){ alert(e.message); } }
 
 // ---- Khoi dong ----
