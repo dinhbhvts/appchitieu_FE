@@ -65,7 +65,8 @@
   .chip.on{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-bg);}
   .primary{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;width:100%;font-size:15px;font-weight:600;cursor:pointer;}
   .ghost{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:10;}
+  /* z-index cao hon thanh tab (20) va actionbar (19) de nut Huy/Luu khong bi che. */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:100;}
   .modal.on{display:flex;}
   .sheet{background:#fff;width:100%;max-width:460px;border-radius:16px 16px 0 0;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto;-webkit-overflow-scrolling:touch;}
   .err{color:var(--red);font-size:13px;padding:10px;background:var(--red-bg);border-radius:8px;}
@@ -196,6 +197,7 @@
   <div class="sheet">
     <h3>Khoản đang giữ</h3>
     <input id="hdSymbol" placeholder="Mã CK / tên (vd: NKG)" />
+    <input id="hdQty" type="number" placeholder="Số lượng (số cổ phiếu)" />
     <input id="hdValue" type="number" placeholder="Giá trị hiện tại (số tiền)" />
     <input id="hdNote" placeholder="Ghi chú (không bắt buộc)" />
     <div id="hdErr"></div>
@@ -412,12 +414,15 @@ let stockUser = null;           // null = Tong; hoac id Chong/Vo
 let stockCashflows = [], stockTrades = [], stockHoldings = [];
 function setStockUser(v){ stockUser = v; setActionBar(); renderChungKhoan(document.getElementById("content")); }
 async function renderChungKhoan(c){
-  const q = stockUser ? `?user_id=${stockUser}` : "";
   const canEdit = stockUser !== null;   // Tab Tổng chỉ xem
+  // Loc theo thang dang chon cho nap/rut; von & lai/lo la luy ke den cuoi thang.
+  const rng = `start=${startDate()}&end=${endDate()}`;
+  const q = stockUser ? `?user_id=${stockUser}&${rng}` : `?${rng}`;
+  const qUser = stockUser ? `?user_id=${stockUser}` : "";
   const s = await jget(`/stocks/summary${q}`);
-  try{ stockTrades = await jget(`/stocks/trades${q}`); }catch(e){ stockTrades=[]; }
-  try{ stockCashflows = await jget(`/stocks/cashflows${q}`); }catch(e){ stockCashflows=[]; }
-  try{ stockHoldings = await jget(`/stocks/holdings${q}`); }catch(e){ stockHoldings=[]; }
+  try{ stockTrades = await jget(`/stocks/trades${qUser}`); }catch(e){ stockTrades=[]; }
+  try{ stockCashflows = await jget(`/stocks/cashflows${qUser}`); }catch(e){ stockCashflows=[]; }
+  try{ stockHoldings = await jget(`/stocks/holdings${qUser}`); }catch(e){ stockHoldings=[]; }
   const chId = chongUserId();
   const voId = (users.find(u=>u.name==="Vợ")||{}).id;
 
@@ -427,24 +432,38 @@ async function renderChungKhoan(c){
     ${tabBtn("Tổng", null)}${tabBtn("Chồng", chId)}${tabBtn("Vợ", voId)}</div>`;
 
   html += `<div class="card">
+    <div class="sub" style="margin-bottom:6px">Nạp/rút theo Tháng ${month}/${year}</div>
     <div class="row" style="gap:10px;flex-wrap:wrap">
-      ${miniStat("Tổng đã nạp", s.total_deposit, "var(--muted)")}
-      ${miniStat("Tổng đã rút", s.total_withdraw, "var(--muted)")}
+      ${miniStat("Nạp trong tháng", s.total_deposit, "var(--green)")}
+      ${miniStat("Rút trong tháng", s.total_withdraw, "var(--red)")}
     </div>
     <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
-      ${miniStat("Vốn đang đầu tư", s.invested_capital, "var(--accent)")}
-      ${miniStat("Lãi/lỗ đã chốt", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
+      ${miniStat("Vốn đầu tư (lũy kế)", s.invested_capital, "var(--accent)")}
+      ${miniStat("Lãi/lỗ đã chốt (lũy kế)", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
     </div></div>`;
 
-  // Danh muc dang giu - NHAP TAY (khong tinh tu giao dich), uu tien so tien.
-  html += `<div class="sectitle">Danh mục đang giữ</div><div class="card">`;
-  if(stockHoldings.length===0){
-    html += `<div class="sub">Chưa nhập khoản đang giữ nào${canEdit?'. Bấm nút "Đang giữ" ở dưới để thêm.':''}</div>`;
+  // Danh muc dang giu - NHAP TAY (co so luong). Tab Tong: gop theo ma CK.
+  let items = stockHoldings;
+  if(!canEdit){
+    // Gop theo ma: cong so luong + gia tri cua ca chong va vo.
+    const map = {};
+    for(const hd of stockHoldings){
+      if(!map[hd.symbol]) map[hd.symbol] = {symbol:hd.symbol, quantity:0, value:0};
+      map[hd.symbol].quantity += Number(hd.quantity||0);
+      map[hd.symbol].value += Number(hd.value||0);
+    }
+    items = Object.values(map).sort((a,b)=>a.symbol.localeCompare(b.symbol));
+  }
+  html += `<div class="sectitle">Danh mục đang giữ${canEdit?'':' (gộp Chồng+Vợ theo mã)'}</div><div class="card">`;
+  if(items.length===0){
+    html += `<div class="sub">Chưa có khoản đang giữ nào${canEdit?'. Bấm nút "Đang giữ" ở dưới để thêm.':''}</div>`;
   }else{
     let tot=0;
-    for(const hd of stockHoldings){ tot+=Number(hd.value);
+    for(const hd of items){ tot+=Number(hd.value);
       const edit = canEdit ? `<span class="editbtn" onclick="editHd(${hd.id})" title="Sửa">✎</span>` : '';
-      html += `<div class="tx"><div><div class="desc">${hd.symbol}</div>${hd.note?`<div class="meta">${hd.note}</div>`:''}</div>
+      const qtyMeta = hd.quantity ? `${vnd(hd.quantity)} cp` : '';
+      const meta = [qtyMeta, hd.note].filter(Boolean).join(' · ');
+      html += `<div class="tx"><div><div class="desc">${hd.symbol}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>
         <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(hd.value)}</span>${edit}</div></div>`;
     }
     html += `<div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><span class="sub">Tổng đang giữ</span><span style="font-weight:600">${vnd(tot)} đ</span></div>`;
@@ -566,6 +585,7 @@ function openHd(hd){
   document.querySelector("#hdModal h3").textContent = editingHdId ? "Sửa khoản đang giữ" : "Khoản đang giữ";
   document.getElementById("hdDelBtn").style.display = editingHdId ? "block" : "none";
   document.getElementById("hdSymbol").value = hd ? hd.symbol : "";
+  document.getElementById("hdQty").value = hd ? hd.quantity : "";
   document.getElementById("hdValue").value = hd ? hd.value : "";
   document.getElementById("hdNote").value = (hd && hd.note) ? hd.note : "";
   document.getElementById("hdErr").innerHTML="";
@@ -573,12 +593,13 @@ function openHd(hd){
 function closeHd(){ document.getElementById("hdModal").classList.remove("on"); }
 async function saveHd(){
   const symbol=document.getElementById("hdSymbol").value.trim();
+  const qty=parseInt(document.getElementById("hdQty").value)||0;
   const value=parseFloat((document.getElementById("hdValue").value||"").replace(/\./g,""));
   const notev=document.getElementById("hdNote").value.trim()||null;
   if(!symbol||!value){ document.getElementById("hdErr").innerHTML=`<div class="err">Nhập mã và giá trị</div>`; return; }
   try{
-    if(editingHdId){ await jput("/stocks/holdings/"+editingHdId,{symbol:symbol,value:value,note:notev}); }
-    else { await jpost("/stocks/holdings",{user_id:stockUser,symbol:symbol,value:value,note:notev}); }
+    if(editingHdId){ await jput("/stocks/holdings/"+editingHdId,{symbol:symbol,quantity:qty,value:value,note:notev}); }
+    else { await jpost("/stocks/holdings",{user_id:stockUser,symbol:symbol,quantity:qty,value:value,note:notev}); }
     closeHd(); render();
   }catch(e){ document.getElementById("hdErr").innerHTML=`<div class="err">${e.message}</div>`; }
 }
@@ -738,6 +759,11 @@ async function copyPrev(){ try{ await jpost(`/assets/copy-previous?year=${year}&
 
 // ---- Khoi dong ----
 function startApp(){ render(); }
+
+// Bam ra vung nen toi (ngoai form) de dong form.
+document.querySelectorAll(".modal").forEach(m=>{
+  m.addEventListener("click", e=>{ if(e.target===m) m.classList.remove("on"); });
+});
 
 async function boot(){
   // Chua co token -> bat dang nhap.
