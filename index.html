@@ -15,6 +15,8 @@
     --bg:#f4f6f8; --card:#ffffff; --line:#e3e7eb; --text:#1f2933;
     --muted:#6b7280; --accent:#185FA5; --accent-bg:#E6F1FB;
     --green:#0F6E56; --green-bg:#E1F5EE; --red:#A32D2D; --red-bg:#FCEBEB;
+    /* Mau nen phan biet giao dich theo nguoi (Chong/Vo) trong danh sach. */
+    --chong-bg:#EAF2FE; --vo-bg:#FCEAF4;
   }
   *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
   body{margin:0;background:var(--bg);color:var(--text);}
@@ -233,6 +235,26 @@ let year = now.getFullYear(), month = now.getMonth() + 1; // 1..12
 let users = [], categories = [], txType = "expense", chosenCat = null;
 // Bao cao: khoang thoi gian tuy chon. null = dung thang dang chon.
 let reportStart = null, reportEnd = null;
+// Danh muc dang mo chi tiet trong bieu do "Chi tieu theo danh muc" (null = dong het).
+let catDetailId = null;
+
+// Icon goi y theo ten danh muc (thuan UI, khong luu DB). Danh muc tu tao
+// (khong co trong danh sach) dung icon mac dinh.
+const CATEGORY_ICONS = {
+  "Lương chồng": "💼", "Lương vợ": "👛", "Thưởng": "🎁", "Thu khác": "💰",
+  "Ăn uống": "🍜", "Đi lại": "🚗", "Mua sắm": "🛍️", "Sức khỏe": "💊",
+  "Gia đình": "👨‍👩‍👧", "Giáo dục": "🎓", "Giải trí": "🎬", "Tài chính": "💳",
+  "Quà tặng": "🎀", "Dịch vụ": "🧾", "Sửa chữa": "🔧", "Khác": "📦",
+};
+function catIcon(name){ return CATEGORY_ICONS[name] || "🏷️"; }
+// Mau nen theo nguoi thuc hien giao dich, de phan biet nhanh Chong/Vo trong danh sach.
+function userTint(userId){
+  const u = users.find(x=>x.id===userId);
+  if(!u) return "transparent";
+  if(u.name==="Chồng") return "var(--chong-bg)";
+  if(u.name==="Vợ") return "var(--vo-bg)";
+  return "transparent";
+}
 
 // ---- Dang nhap ----
 let token = localStorage.getItem("vibeapp_token") || "";
@@ -376,12 +398,13 @@ async function renderThuChi(c){
   else{
     for(const t of list.slice().reverse()){
       const edit = `<span class="editbtn" onclick="editTx(${t.id})" title="Sửa">✎</span>`;
+      const tint = `background:${userTint(t.user_id)};border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`;
       if(t.type==="transfer"){
-        html += `<div class="tx"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)} · chuyển nội bộ</div></div>
+        html += `<div class="tx" style="${tint}"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)} · chuyển nội bộ</div></div>
           <div style="display:flex;align-items:center;gap:10px"><span style="color:var(--muted)">→ ${vnd(t.amount)}</span>${edit}</div></div>`;
       }else{
         const inc = t.type==="income";
-        html += `<div class="tx"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)}</div></div>
+        html += `<div class="tx" style="${tint}"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)}</div></div>
           <div style="display:flex;align-items:center;gap:10px"><span class="${inc?'inc':'exp'}">${inc?'+':'-'}${vnd(t.amount)}</span>${edit}</div></div>`;
       }
     }
@@ -488,22 +511,30 @@ async function renderChungKhoan(c){
   }
   html += `</div>`;
 
-  // Nap/rut gan day
-  if(stockCashflows.length){
-    html += `<div class="sectitle">Nạp / rút gần đây</div><div class="card">`;
-    for(const cf of stockCashflows.slice(-10).reverse()){
+  // Nap/rut trong thang dang xem (API tra ve toan bo lich su, loc lai theo
+  // start/end o phia client vi endpoint chua ho tro loc theo ngay).
+  const rgS = startDate(), rgE = endDate();
+  const cfInRange = stockCashflows.filter(cf => cf.date >= rgS && cf.date <= rgE);
+  html += `<div class="sectitle">Nạp / rút trong Tháng ${month}/${year}</div><div class="card">`;
+  if(cfInRange.length===0){
+    html += `<div class="sub">Chưa có khoản nạp/rút nào trong tháng</div>`;
+  }else{
+    for(const cf of cfInRange.slice().reverse()){
       const dep = cf.type==="deposit";
       const edit = canEdit ? `<span class="editbtn" onclick="editCf(${cf.id})" title="Sửa">✎</span>` : '';
       html += `<div class="tx"><div><div class="desc">${dep?'Nạp':'Rút'}${cf.note?' · '+cf.note:''}</div><div class="meta">${fmtDate(cf.date)}</div></div>
         <div style="display:flex;align-items:center;gap:10px"><span class="${dep?'inc':'exp'}">${dep?'+':'-'}${vnd(cf.amount)}</span>${edit}</div></div>`;
     }
-    html += `</div>`;
   }
+  html += `</div>`;
 
-  // Lenh mua/ban gan day - uu tien hien so tien (tong = KL * don gia).
-  if(stockTrades.length){
-    html += `<div class="sectitle">Lệnh mua / bán gần đây</div><div class="card">`;
-    for(const t of stockTrades.slice(-12).reverse()){
+  // Lenh mua/ban trong thang dang xem - uu tien hien so tien (tong = KL * don gia).
+  const trInRange = stockTrades.filter(t => t.date >= rgS && t.date <= rgE);
+  html += `<div class="sectitle">Lệnh mua / bán trong Tháng ${month}/${year}</div><div class="card">`;
+  if(trInRange.length===0){
+    html += `<div class="sub">Chưa có lệnh mua/bán nào trong tháng</div>`;
+  }else{
+    for(const t of trInRange.slice().reverse()){
       const buy = t.side==="buy";
       const total = t.quantity * t.price;
       const edit = canEdit ? `<span class="editbtn" onclick="editTr(${t.id})" title="Sửa">✎</span>` : '';
@@ -511,8 +542,8 @@ async function renderChungKhoan(c){
         <div class="meta">${fmtDate(t.date)} · đơn giá ${vnd(t.price)}${t.fee?` · phí ${vnd(t.fee)}`:''}</div></div>
         <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600;color:${buy?'var(--red)':'var(--green)'}">${vnd(total)}</span>${edit}</div></div>`;
     }
-    html += `</div>`;
   }
+  html += `</div>`;
 
   c.innerHTML = html;
 }
@@ -679,30 +710,54 @@ async function renderBaoCao(c){
   }
   html += `</div>`;
   const cats = await jget(`/reports/by-category?${rng}`);
+  // Neu dang mo chi tiet 1 danh muc, lay danh sach giao dich chi thuoc danh
+  // muc do trong cung khoang thoi gian (API /transactions chua co filter
+  // theo category nen loc lai o client).
+  let catDetailTxs = [];
+  if(catDetailId !== null){
+    const allTxs = await jget(`/transactions?${rng}`);
+    catDetailTxs = allTxs.filter(t => t.type==="expense" && t.category_id===catDetailId)
+      .sort((a,b)=> a.date < b.date ? 1 : -1);
+  }
   html += `<div class="card"><div class="sectitle" style="margin-top:0">Chi tiêu theo danh mục</div>`;
   if(cats.length===0){
     html += `<div class="sub">Chưa có chi tiêu</div>`;
   } else {
-    // Bieu do thanh ngang: do dai ti le voi ty trong tren tong chi.
+    // Bieu do thanh ngang: do dai ti le voi ty trong tren tong chi. Bam vao
+    // 1 danh muc de xem danh sach giao dich chi tiet cua danh muc do.
     const palette = ["#4f7cff","#22c08a","#ff8a3d","#ff5c7c","#a06cf5","#00b8c4","#e0b400","#7d8fa3"];
     const total = cats.reduce((sum,c2)=>sum+c2.total, 0) || 1;
     cats.forEach((c2,i)=>{
       const pct = Math.round((c2.total/total)*100);
       const color = palette[i % palette.length];
-      html += `<div style="margin:8px 0">
+      const open = catDetailId === c2.category_id;
+      html += `<div style="margin:8px 0;cursor:pointer" onclick="toggleCatDetail(${c2.category_id})">
         <div class="row" style="padding:0 0 3px 0">
-          <span>${c2.category_name}</span>
+          <span>${catIcon(c2.category_name)} ${c2.category_name} ${open?'▲':''}</span>
           <span style="font-weight:600">${vnd(c2.total)} đ · ${pct}%</span>
         </div>
         <div style="background:var(--border,#eee);border-radius:6px;height:8px;overflow:hidden">
           <div style="width:${pct}%;height:100%;background:${color};border-radius:6px"></div>
         </div>
       </div>`;
+      if(open){
+        if(catDetailTxs.length===0){
+          html += `<div class="sub" style="margin:4px 0 10px 4px">Không có giao dịch</div>`;
+        } else {
+          html += `<div style="margin:4px 0 10px;background:var(--bg);border-radius:8px;padding:2px 8px">`;
+          for(const t of catDetailTxs){
+            html += `<div class="tx"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)}</div></div>
+              <span class="exp">-${vnd(t.amount)}</span></div>`;
+          }
+          html += `</div>`;
+        }
+      }
     });
   }
   html += `</div>`;
   c.innerHTML = html;
 }
+function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); renderBaoCao(document.getElementById("content")); }
 
 function rowLine(label, val, color){ return `<div class="row" style="padding:4px 0"><span>${label}</span><span style="color:${color};font-weight:600">${vnd(val)} đ</span></div>`; }
 function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`; }
@@ -742,15 +797,17 @@ function setType(t){
   const box = document.getElementById("txChips");
   const hint = document.getElementById("txTransferHint");
   const userSel = document.getElementById("txUser");
+  const contentEl = document.getElementById("txContent");
   if(t==="transfer"){
     // Chuyen noi bo: chong -> vo. Nguoi gui mac dinh la Chong, an chon nguoi.
     box.innerHTML = ""; hint.style.display="block"; userSel.style.display="none";
-    if(!document.getElementById("txContent").value) document.getElementById("txContent").value="Chuyển cho vợ";
+    if(!contentEl.value) contentEl.value="Chuyển cho vợ";
   }else{
     hint.style.display="none"; userSel.style.display="";
     const kind = t==="income" ? "income" : "expense";
     const cs = categories.filter(c=>c.kind===kind||c.kind==="both");
-    box.innerHTML = cs.map(c=>`<span class="chip" id="cat${c.id}" onclick="pickCat(${c.id})">${c.name}</span>`).join("");
+    box.innerHTML = cs.map(c=>`<span class="chip" id="cat${c.id}" onclick="pickCat(${c.id})">${catIcon(c.name)} ${c.name}</span>`).join("");
+    contentEl.placeholder = t==="income" ? "Nội dung (vd: Lương kỳ 1 chồng)" : "Nội dung (vd: đi chợ)";
   }
 }
 function pickCat(id){
@@ -766,6 +823,7 @@ async function saveTx(){
   // Khoan chuyen luon do chong gui; cac loai khac lay nguoi tu dropdown.
   const userId = txType==="transfer" ? chongUserId() : parseInt(document.getElementById("txUser").value);
   if(!amount||amount<=0||!content){ document.getElementById("txErr").innerHTML=`<div class="err">Nhập số tiền và nội dung</div>`; return; }
+  if(txType==="expense" && !chosenCat){ document.getElementById("txErr").innerHTML=`<div class="err">Chọn danh mục cho khoản chi</div>`; return; }
   const payload = {date:document.getElementById("txDate").value,type:txType,amount:amount,content:content,user_id:userId,category_id:txType==="transfer"?null:chosenCat,note:document.getElementById("txNote").value.trim()||null};
   try{
     if(editingTxId){ await jput("/transactions/"+editingTxId, payload); }
