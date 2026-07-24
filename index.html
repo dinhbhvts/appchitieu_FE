@@ -449,16 +449,27 @@ let cfType = "deposit", trSide = "buy";
 let stockUser = null;           // null = Tong; hoac id Chong/Vo
 let stockCashflows = [], stockTrades = [], stockHoldings = [];
 function setStockUser(v){ stockUser = v; setActionBar(); renderChungKhoan(document.getElementById("content")); }
+// So thu tu lan goi renderChungKhoan gan nhat - de tranh race condition: neu
+// chuyen tab (Tong/Chong/Vo) nhanh, ket qua cua lan goi cu (thang truoc) co
+// the ve SAU lan goi moi va ghi de nham du lieu (vd tab Vo lai hien du lieu
+// cua Tong). Lan goi nao khong con la "moi nhat" khi fetch xong se tu bo qua.
+let stockLoadSeq = 0;
 async function renderChungKhoan(c){
+  const mySeq = ++stockLoadSeq;
   const canEdit = stockUser !== null;   // Tab Tổng chỉ xem
   // Loc theo thang dang chon cho nap/rut; von & lai/lo la luy ke den cuoi thang.
   const rng = `start=${startDate()}&end=${endDate()}`;
   const q = stockUser ? `?user_id=${stockUser}&${rng}` : `?${rng}`;
   const qUser = stockUser ? `?user_id=${stockUser}` : "";
   const s = await jget(`/stocks/summary${q}`);
-  try{ stockTrades = await jget(`/stocks/trades${qUser}`); }catch(e){ stockTrades=[]; }
-  try{ stockCashflows = await jget(`/stocks/cashflows${qUser}`); }catch(e){ stockCashflows=[]; }
-  try{ stockHoldings = await jget(`/stocks/holdings${qUser}`); }catch(e){ stockHoldings=[]; }
+  let trades=[], cashflows=[], holdings=[];
+  try{ trades = await jget(`/stocks/trades${qUser}`); }catch(e){}
+  try{ cashflows = await jget(`/stocks/cashflows${qUser}`); }catch(e){}
+  try{ holdings = await jget(`/stocks/holdings${qUser}`); }catch(e){}
+  // Da co lan goi moi hon bat dau sau lan nay (vd nguoi dung da bam sang tab
+  // khac) -> ket qua nay da lac hau, bo qua, khong ghi de state/DOM.
+  if(mySeq !== stockLoadSeq) return;
+  stockTrades = trades; stockCashflows = cashflows; stockHoldings = holdings;
   const chId = chongUserId();
   const voId = (users.find(u=>u.name==="Vợ")||{}).id;
 
@@ -746,7 +757,8 @@ async function renderBaoCao(c){
         } else {
           html += `<div style="margin:4px 0 10px;background:var(--bg);border-radius:8px;padding:2px 8px">`;
           for(const t of catDetailTxs){
-            html += `<div class="tx"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)}</div></div>
+            const tint = `background:${userTint(t.user_id)};border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`;
+            html += `<div class="tx" style="${tint}"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)}</div></div>
               <span class="exp">-${vnd(t.amount)}</span></div>`;
           }
           html += `</div>`;
@@ -804,6 +816,9 @@ function setType(t){
     if(!contentEl.value) contentEl.value="Chuyển cho vợ";
   }else{
     hint.style.display="none"; userSel.style.display="";
+    // Roi tab Chuyen: neu noi dung van la text tu dong dien "Chuyển cho vợ"
+    // (chua bi nguoi dung sua), xoa di de khong dinh sang Thu/Chi.
+    if(contentEl.value === "Chuyển cho vợ") contentEl.value = "";
     const kind = t==="income" ? "income" : "expense";
     const cs = categories.filter(c=>c.kind===kind||c.kind==="both");
     box.innerHTML = cs.map(c=>`<span class="chip" id="cat${c.id}" onclick="pickCat(${c.id})">${catIcon(c.name)} ${c.name}</span>`).join("");
