@@ -680,8 +680,26 @@ async function renderBaoCao(c){
   html += `</div>`;
   const cats = await jget(`/reports/by-category?${rng}`);
   html += `<div class="card"><div class="sectitle" style="margin-top:0">Chi tiêu theo danh mục</div>`;
-  if(cats.length===0) html += `<div class="sub">Chưa có chi tiêu</div>`;
-  for(const c2 of cats) html += `<div class="row" style="padding:6px 0"><span>${c2.category_name}</span><span style="font-weight:600">${vnd(c2.total)}</span></div>`;
+  if(cats.length===0){
+    html += `<div class="sub">Chưa có chi tiêu</div>`;
+  } else {
+    // Bieu do thanh ngang: do dai ti le voi ty trong tren tong chi.
+    const palette = ["#4f7cff","#22c08a","#ff8a3d","#ff5c7c","#a06cf5","#00b8c4","#e0b400","#7d8fa3"];
+    const total = cats.reduce((sum,c2)=>sum+c2.total, 0) || 1;
+    cats.forEach((c2,i)=>{
+      const pct = Math.round((c2.total/total)*100);
+      const color = palette[i % palette.length];
+      html += `<div style="margin:8px 0">
+        <div class="row" style="padding:0 0 3px 0">
+          <span>${c2.category_name}</span>
+          <span style="font-weight:600">${vnd(c2.total)} đ · ${pct}%</span>
+        </div>
+        <div style="background:var(--border,#eee);border-radius:6px;height:8px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:6px"></div>
+        </div>
+      </div>`;
+    });
+  }
   html += `</div>`;
   c.innerHTML = html;
 }
