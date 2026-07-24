@@ -344,24 +344,33 @@ async function render(){
   }
 }
 
-// ---- Tab Thu chi ----
+// ---- Tab Thu chi (2 tab con: Thu / Chi) ----
 let monthTxs = [];   // luu giao dich thang hien tai de bam sua
+let tcView = "thu";  // "thu" | "chi"
+function setTcView(v){ tcView=v; renderThuChi(document.getElementById("content")); }
 async function renderThuChi(c){
   const s = await jget(`/reports/summary?start=${startDate()}&end=${endDate()}`);
   const txs = await jget(`/transactions?start=${startDate()}&end=${endDate()}`);
   monthTxs = txs;
-  let html = `<div class="card">
-    <div class="bignum">${vnd(s.balance)} đ</div>
-    <div class="sub">Số dư tháng này</div>
-    <div class="row" style="gap:10px;margin-top:12px;">
-      <div class="stat" style="background:var(--green-bg)"><div class="sub" style="color:var(--green)">Thu</div><div style="color:var(--green);font-weight:600">${vnd(s.total_income)}</div></div>
-      <div class="stat" style="background:var(--red-bg)"><div class="sub" style="color:var(--red)">Chi</div><div style="color:var(--red);font-weight:600">${vnd(s.total_expense)}</div></div>
+
+  // Sub-tabs Thu / Chi
+  const tb = (label,v)=>`<button class="chip ${tcView===v?'on':''}" onclick="setTcView('${v}')">${label}</button>`;
+  let html = `<div class="chips" style="margin-bottom:12px">${tb("Thu","thu")}${tb("Chi","chi")}</div>`;
+
+  if(tcView==="thu"){
+    // Card tong quan gon: so du + tien vao cung 1 dong.
+    html += `<div class="card"><div class="row">
+      <div><div class="sub">Số dư tháng này</div><div style="font-size:20px;font-weight:600">${vnd(s.balance)} đ</div></div>
+      <div style="text-align:right"><div class="sub" style="color:var(--green)">Tiền vào (thu)</div><div style="font-size:18px;font-weight:600;color:var(--green)">${vnd(s.total_income)}</div></div>
     </div></div>`;
+  }
+
+  // Loc giao dich theo tab: Thu = income + chuyển nội bộ; Chi = expense.
+  const list = txs.filter(t => tcView==="thu" ? (t.type==="income"||t.type==="transfer") : t.type==="expense");
   html += `<div class="card">`;
-  if(txs.length===0){ html += `<div class="sub">Chưa có giao dịch trong tháng</div>`; }
+  if(list.length===0){ html += `<div class="sub">Chưa có giao dịch ${tcView==="thu"?"thu":"chi"} trong tháng</div>`; }
   else{
-    for(const t of txs.slice().reverse()){
-      // Bam vao dong de sua giao dich (khi nhap nham).
+    for(const t of list.slice().reverse()){
       const edit = `<span class="editbtn" onclick="editTx(${t.id})" title="Sửa">✎</span>`;
       if(t.type==="transfer"){
         html += `<div class="tx"><div><div class="desc">${t.content}</div><div class="meta">${fmtDate(t.date)} · chuyển nội bộ</div></div>
@@ -618,6 +627,8 @@ function applyReportRange(){
   renderBaoCao(document.getElementById("content"));
 }
 function resetReportRange(){ reportStart=reportEnd=null; renderBaoCao(document.getElementById("content")); }
+let reportRangeOpen = false;
+function toggleReportRange(){ reportRangeOpen=!reportRangeOpen; renderBaoCao(document.getElementById("content")); }
 
 async function renderBaoCao(c){
   // Khoang thoi gian hieu luc: tuy chon hoac thang dang chon.
@@ -626,8 +637,14 @@ async function renderBaoCao(c){
   const rng = `start=${s0}&end=${e0}`;
   const custom = !!(reportStart || reportEnd);
 
-  let html = `<div class="card"><div class="sectitle" style="margin-top:0">Khoảng thời gian</div>
-    <div style="display:flex;gap:8px;align-items:center">
+  // Card loc thoi gian: mac dinh AN, bam icon de mo.
+  let html = `<div class="card" style="padding:10px 14px">
+    <div class="row" style="cursor:pointer" onclick="toggleReportRange()">
+      <span class="sub">🔍 Lọc theo khoảng ngày${custom?` · ${fmtDate(s0)} → ${fmtDate(e0)}`:` (mặc định: tháng ${month}/${year})`}</span>
+      <span class="sub">${reportRangeOpen?"▲":"▼"}</span>
+    </div>`;
+  if(reportRangeOpen){
+    html += `<div style="display:flex;gap:8px;align-items:center;margin-top:10px">
       <input type="date" id="rpStart" value="${s0}" style="margin:0">
       <span class="sub">→</span>
       <input type="date" id="rpEnd" value="${e0}" style="margin:0">
@@ -635,7 +652,9 @@ async function renderBaoCao(c){
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="primary" style="flex:1" onclick="applyReportRange()">Xem</button>
       ${custom ? `<button class="ghost" onclick="resetReportRange()">Về tháng ${month}/${year}</button>` : ``}
-    </div></div>`;
+    </div>`;
+  }
+  html += `</div>`;
 
   const combined = await jget(`/reports/summary?${rng}`);
   html += `<div class="card"><div class="sectitle" style="margin-top:0">Tổng hợp</div>
@@ -681,7 +700,7 @@ function openTx(tx){
   us.innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
   // Mac dinh nguoi = nguoi dang giao dich (khi sua) hoac nguoi dang nhap (khi them).
   if(tx) us.value = tx.user_id; else if(currentUser) us.value = currentUser.id;
-  setType(tx ? tx.type : "expense");
+  setType(tx ? tx.type : (tcView==="thu" ? "income" : "expense"));
   // Khi sua: khoi phuc danh muc da chon.
   if(tx && tx.category_id){ chosenCat = tx.category_id; const el=document.getElementById("cat"+tx.category_id); if(el) el.classList.add("on"); }
   document.getElementById("txModal").classList.add("on");
