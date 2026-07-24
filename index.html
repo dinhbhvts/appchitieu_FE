@@ -358,10 +358,14 @@ async function renderThuChi(c){
   let html = `<div class="chips" style="margin-bottom:12px">${tb("Thu","thu")}${tb("Chi","chi")}</div>`;
 
   if(tcView==="thu"){
-    // Card tong quan gon: so du + tien vao cung 1 dong.
-    html += `<div class="card"><div class="row">
-      <div><div class="sub">Số dư tháng này</div><div style="font-size:20px;font-weight:600">${vnd(s.balance)} đ</div></div>
-      <div style="text-align:right"><div class="sub" style="color:var(--green)">Tiền vào (thu)</div><div style="font-size:18px;font-weight:600;color:var(--green)">${vnd(s.total_income)}</div></div>
+    // Card tong quan gon: du 3 so lieu Thu / Chi / So du.
+    const stat = (label,val,color)=>`<div style="text-align:center;flex:1">
+      <div class="sub" style="color:${color}">${label}</div>
+      <div style="font-size:17px;font-weight:600;color:${color}">${vnd(val)}</div></div>`;
+    html += `<div class="card"><div class="row" style="gap:8px">
+      ${stat("Tổng thu", s.total_income, "var(--green)")}
+      ${stat("Tổng chi", s.total_expense, "var(--red)")}
+      ${stat("Số dư", s.balance, "var(--accent)")}
     </div></div>`;
   }
 
