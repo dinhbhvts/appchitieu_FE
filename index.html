@@ -106,6 +106,7 @@
     <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico">↗</span>Chứng khoán</button>
     <button id="tab-taisan" onclick="go('taisan')"><span class="ico">◆</span>Tài sản</button>
     <button id="tab-baocao" onclick="go('baocao')"><span class="ico">▤</span>Báo cáo</button>
+    <button id="tab-cauhinh" onclick="go('cauhinh')"><span class="ico">⚙</span>Cấu hình</button>
   </div>
 </div>
 
@@ -227,6 +228,59 @@
   </div>
 </div>
 
+<!-- Form danh muc (Cau hinh) -->
+<div class="modal" id="catModal">
+  <div class="sheet">
+    <h3 id="catModalTitle">Thêm danh mục</h3>
+    <div class="seg">
+      <button id="catBtnChi" class="exp-on" onclick="setCatKind('expense')">Chi</button>
+      <button id="catBtnThu" onclick="setCatKind('income')">Thu</button>
+    </div>
+    <input id="catName" placeholder="Tên danh mục (vd: Xăng xe)" />
+    <input id="catIcon" placeholder="Icon (vd: ⛽) - không bắt buộc" maxlength="4" />
+    <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px">
+      <input type="checkbox" id="catActive" style="width:auto" checked /> Hiển thị khi chọn danh mục
+    </label>
+    <div class="sub" style="margin-bottom:6px">Không thể xóa danh mục (để không làm sai lệch báo cáo cũ) - bỏ tick ở trên để ẩn thay vì xóa.</div>
+    <div id="catErr"></div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeCat()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveCat()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Form So tay / Tien ich (Cau hinh) -->
+<div class="modal" id="niModal">
+  <div class="sheet" style="max-height:85vh;overflow-y:auto">
+    <h3 id="niModalTitle">Thêm mục sổ tay</h3>
+    <div class="chips" id="niTypeChips" style="margin-bottom:10px"></div>
+    <input id="niTitle" placeholder="Tiêu đề" />
+    <input id="niRelation" placeholder="Quan hệ (vd: Bố, Mẹ...)" />
+    <input id="niPhone" type="tel" placeholder="Điện thoại" />
+    <input id="niAddress" placeholder="Địa chỉ" />
+    <div class="sub" id="niDate1Label" style="margin:6px 0 2px">Ngày</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <input id="niDate1" type="date" style="flex:1;margin:0" />
+      <label id="niLunarLabel" style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
+        <input type="checkbox" id="niLunar" style="width:auto" /> Âm lịch
+      </label>
+    </div>
+    <div class="sub" id="niDate2Label" style="margin:6px 0 2px">Ngày hết hạn / đến hạn kế tiếp</div>
+    <input id="niDate2" type="date" />
+    <input id="niRecurrence" type="number" placeholder="Chu kỳ lặp lại (số ngày, không bắt buộc)" />
+    <input id="niAmount" type="number" placeholder="Số tiền (không bắt buộc)" />
+    <input id="niTags" placeholder="Tag (vd: #xe #gia_dinh)" />
+    <textarea id="niNote" placeholder="Ghi chú" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;margin-top:8px;box-sizing:border-box"></textarea>
+    <div id="niErr"></div>
+    <button id="niDelBtn" onclick="deleteNi()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-top:8px;cursor:pointer;font-size:14px">Xóa mục này</button>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="ghost" style="flex:1" onclick="closeNi()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveNi()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---- Trang thai chung ----
 let tab = "thuchi";
@@ -237,6 +291,22 @@ let users = [], categories = [], txType = "expense", chosenCat = null;
 let reportStart = null, reportEnd = null;
 // Danh muc dang mo chi tiet trong bieu do "Chi tieu theo danh muc" (null = dong het).
 let catDetailId = null;
+
+// ---- Cau hinh: Danh muc + So tay/Tien ich ----
+let chView = "danhmuc";   // sub-tab trong Cau hinh: "danhmuc" | "tienich"
+let chCatKindFilter = "expense";  // dang xem danh muc Chi hay Thu
+let niTypeFilter = "";    // "" = tat ca
+let niSearchQ = "";
+const NI_TYPES = [
+  {v:"address",         label:"Địa chỉ",       icon:"📍"},
+  {v:"birthday",        label:"Sinh nhật",      icon:"🎂"},
+  {v:"anniversary",     label:"Ngày giỗ",       icon:"🕯️"},
+  {v:"service",         label:"Dịch vụ",        icon:"🌐"},
+  {v:"maintenance",     label:"Bảo trì",        icon:"🔧"},
+  {v:"note",            label:"Ghi chú",        icon:"📝"},
+  {v:"child_milestone", label:"Mốc của con",    icon:"👶"},
+];
+function niTypeInfo(v){ return NI_TYPES.find(t=>t.v===v) || {label:v, icon:"🏷️"}; }
 
 // Icon goi y theo ten danh muc (thuan UI, khong luu DB). Danh muc tu tao
 // (khong co trong danh sach) dung icon mac dinh.
@@ -314,7 +384,7 @@ function logout(){
   showLogin();
 }
 
-function go(t){ tab=t; for(const x of ["thuchi","chungkhoan","taisan","baocao"]) document.getElementById("tab-"+x).classList.toggle("active", x===t); render(); }
+function go(t){ tab=t; for(const x of ["thuchi","chungkhoan","taisan","baocao","cauhinh"]) document.getElementById("tab-"+x).classList.toggle("active", x===t); render(); }
 function changeMonth(delta){ month+=delta; if(month<1){month=12;year--;} if(month>12){month=1;year++;} reportStart=reportEnd=null; render(); }
 
 async function ensureRef(){
@@ -360,7 +430,8 @@ async function render(){
     if(tab==="thuchi") await renderThuChi(c);
     else if(tab==="chungkhoan") await renderChungKhoan(c);
     else if(tab==="taisan") await renderTaiSan(c);
-    else await renderBaoCao(c);
+    else if(tab==="baocao") await renderBaoCao(c);
+    else await renderCauHinh(c);
   }catch(e){
     c.innerHTML = `<div class="err">Không kết nối được máy chủ.<br>Hãy chắc chắn backend đang chạy (uvicorn) tại địa chỉ ở trên.<br><br>${e.message}</div>`;
   }
@@ -773,6 +844,201 @@ function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); rend
 
 function rowLine(label, val, color){ return `<div class="row" style="padding:4px 0"><span>${label}</span><span style="color:${color};font-weight:600">${vnd(val)} đ</span></div>`; }
 function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`; }
+
+// ==== Tab Cau hinh: Danh muc + So tay/Tien ich ====
+function setChView(v){ chView=v; renderCauHinh(document.getElementById("content")); }
+async function renderCauHinh(c){
+  const tb = (label,v)=>`<button class="chip ${chView===v?'on':''}" onclick="setChView('${v}')">${label}</button>`;
+  let html = `<div class="chips" style="margin-bottom:12px">${tb("Danh mục","danhmuc")}${tb("Tiện ích","tienich")}</div>`;
+  c.innerHTML = html;
+  const body = document.createElement("div");
+  c.appendChild(body);
+  if(chView==="danhmuc") await renderDanhMuc(body);
+  else await renderTienIch(body);
+}
+
+// ---- Nhom A: Danh muc ----
+function setCatKindFilter(k){ chCatKindFilter=k; renderCauHinh(document.getElementById("content")); }
+async function renderDanhMuc(body){
+  const cats = await jget("/categories?include_inactive=true");
+  const list = cats.filter(x => x.kind===chCatKindFilter || x.kind==="both");
+  const tb = (label,v)=>`<button class="chip ${chCatKindFilter===v?'on':''}" onclick="setCatKindFilter('${v}')">${label}</button>`;
+  let html = `<div class="chips" style="margin-bottom:10px">${tb("Danh mục Chi","expense")}${tb("Danh mục Thu","income")}</div>`;
+  html += `<div class="card">`;
+  if(list.length===0){ html += `<div class="sub">Chưa có danh mục nào</div>`; }
+  else{
+    for(const cat of list){
+      const muted = cat.is_active ? "" : "opacity:.45";
+      html += `<div class="tx" style="${muted};cursor:pointer" onclick='openCat(${JSON.stringify(cat)})'>
+        <div><div class="desc">${cat.icon || catIcon(cat.name)} ${cat.name}${cat.is_default?' <span class="sub">(mặc định)</span>':''}</div>
+        ${!cat.is_active?'<div class="meta">Đang ẩn</div>':''}</div>
+        <span class="editbtn">✎</span></div>`;
+    }
+  }
+  html += `</div><button class="primary" style="margin-top:12px" onclick="openCat(null)">+ Thêm danh mục ${chCatKindFilter==='expense'?'Chi':'Thu'}</button>`;
+  body.innerHTML = html;
+}
+
+let editingCatId = null;
+function openCat(cat){
+  editingCatId = cat ? cat.id : null;
+  document.getElementById("catModalTitle").textContent = cat ? "Sửa danh mục" : "Thêm danh mục";
+  document.getElementById("catName").value = cat ? cat.name : "";
+  document.getElementById("catIcon").value = cat ? (cat.icon||"") : "";
+  document.getElementById("catActive").checked = cat ? cat.is_active : true;
+  document.getElementById("catErr").innerHTML = "";
+  setCatKind(cat ? (cat.kind==="income"?"income":"expense") : chCatKindFilter);
+  document.getElementById("catModal").classList.add("on");
+}
+function closeCat(){ document.getElementById("catModal").classList.remove("on"); }
+let catKind = "expense";
+function setCatKind(k){ catKind=k; document.getElementById("catBtnChi").className=k==="expense"?"exp-on":""; document.getElementById("catBtnThu").className=k==="income"?"inc-on":""; }
+async function saveCat(){
+  const name = document.getElementById("catName").value.trim();
+  if(!name){ document.getElementById("catErr").innerHTML = `<div class="err">Nhập tên danh mục</div>`; return; }
+  const payload = {name, kind:catKind, icon:document.getElementById("catIcon").value.trim()||null, is_active:document.getElementById("catActive").checked};
+  try{
+    if(editingCatId){ await jput("/categories/"+editingCatId, payload); }
+    else{ await jpost("/categories", payload); }
+    categories = await jget("/categories"); // lam moi danh sach dung cho man nhap giao dich
+    closeCat();
+    renderCauHinh(document.getElementById("content"));
+  }catch(e){ document.getElementById("catErr").innerHTML = `<div class="err">${e.message}</div>`; }
+}
+
+// ---- Nhom B: So tay / Tien ich ----
+let niItems = [];
+function setNiTypeFilter(v){ niTypeFilter=v; renderTienIch(document.getElementById("content").lastChild); }
+function onNiSearch(v){ niSearchQ=v; renderTienIch(document.getElementById("content").lastChild); }
+async function renderTienIch(body){
+  const params = new URLSearchParams();
+  if(niTypeFilter) params.set("type", niTypeFilter);
+  if(niSearchQ.trim()) params.set("q", niSearchQ.trim());
+  niItems = await jget(`/notebook-items?${params.toString()}`);
+
+  let html = `<input id="niSearchBox" placeholder="🔍 Tìm kiếm (vd: xe, mẹ, wifi...)" value="${niSearchQ.replace(/"/g,'&quot;')}" oninput="onNiSearch(this.value)" style="margin-bottom:8px" />`;
+  const allChip = `<button class="chip ${niTypeFilter===''?'on':''}" onclick="setNiTypeFilter('')">Tất cả</button>`;
+  const typeChips = NI_TYPES.map(t=>`<button class="chip ${niTypeFilter===t.v?'on':''}" onclick="setNiTypeFilter('${t.v}')">${t.icon} ${t.label}</button>`).join("");
+  html += `<div class="chips" style="margin-bottom:10px">${allChip}${typeChips}</div>`;
+
+  html += `<div class="card">`;
+  if(niItems.length===0){
+    html += `<div class="sub">Không tìm thấy mục nào</div>`;
+  }else{
+    // Nhom theo loai de de nhin, giu nguyen thu tu API tra ve (theo type, title).
+    let lastType = null;
+    for(const it of niItems){
+      if(it.type !== lastType){
+        const info = niTypeInfo(it.type);
+        html += `<div class="sectitle" style="margin-top:${lastType?'14px':'0'}">${info.icon} ${info.label}</div>`;
+        lastType = it.type;
+      }
+      const meta = niMetaLine(it);
+      html += `<div class="tx" style="cursor:pointer" onclick="editNi(${it.id})">
+        <div><div class="desc">${it.title}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>
+        <span class="editbtn">✎</span></div>`;
+    }
+  }
+  html += `</div><button class="primary" style="margin-top:12px" onclick="openNi(null)">+ Thêm mục sổ tay</button>`;
+  body.innerHTML = html;
+}
+function niMetaLine(it){
+  const parts = [];
+  if(it.relation) parts.push(it.relation);
+  if(it.date1) parts.push(fmtDate(it.date1) + (it.date1_is_lunar?" (âm lịch)":""));
+  if(it.date2) parts.push("hết hạn " + fmtDate(it.date2));
+  if(it.phone) parts.push(it.phone);
+  if(it.amount) parts.push(vnd(it.amount)+" đ");
+  return parts.join(" · ");
+}
+function editNi(id){ const it = niItems.find(x=>x.id===id); if(it) openNi(it); }
+
+let editingNiId = null;
+function openNi(item){
+  editingNiId = item ? item.id : null;
+  document.getElementById("niModalTitle").textContent = item ? "Sửa mục sổ tay" : "Thêm mục sổ tay";
+  document.getElementById("niTypeChips").innerHTML = NI_TYPES.map(t=>
+    `<span class="chip" id="niType-${t.v}" onclick="setNiType('${t.v}')">${t.icon} ${t.label}</span>`).join("");
+  document.getElementById("niTitle").value = item ? item.title : "";
+  document.getElementById("niRelation").value = item ? (item.relation||"") : "";
+  document.getElementById("niPhone").value = item ? (item.phone||"") : "";
+  document.getElementById("niAddress").value = item ? (item.address||"") : "";
+  document.getElementById("niDate1").value = item ? (item.date1||"") : "";
+  document.getElementById("niLunar").checked = item ? !!item.date1_is_lunar : false;
+  document.getElementById("niDate2").value = item ? (item.date2||"") : "";
+  document.getElementById("niRecurrence").value = item ? (item.recurrence_days||"") : "";
+  document.getElementById("niAmount").value = item ? (item.amount||"") : "";
+  document.getElementById("niTags").value = item ? (item.tags||"") : "";
+  document.getElementById("niNote").value = item ? (item.note||"") : "";
+  document.getElementById("niDelBtn").style.display = editingNiId ? "block" : "none";
+  document.getElementById("niErr").innerHTML = "";
+  setNiType(item ? item.type : (niTypeFilter || "address"));
+  document.getElementById("niModal").classList.add("on");
+}
+function closeNi(){ document.getElementById("niModal").classList.remove("on"); }
+let niType = "address";
+// Truong nao hien theo tung loai - de form gon, chi hoi dung cai can thiet.
+const NI_FIELDS = {
+  address:         {relation:1, phone:1, address:1},
+  birthday:        {relation:1, date1:1},
+  anniversary:     {relation:1, date1:1, lunar:1},
+  service:         {date1:1, date2:1, recurrence:1, amount:1},
+  maintenance:     {date1:1, date2:1, recurrence:1},
+  note:            {},
+  child_milestone: {date1:1},
+};
+function setNiType(v){
+  niType=v;
+  for(const t of NI_TYPES) { const el=document.getElementById("niType-"+t.v); if(el) el.classList.toggle("on", t.v===v); }
+  const f = NI_FIELDS[v] || {};
+  const show = (id, on) => { const el=document.getElementById(id); if(el) el.style.display = on ? "" : "none"; };
+  show("niRelation", f.relation);
+  show("niPhone", f.phone);
+  show("niAddress", f.address);
+  show("niDate1Label", f.date1);
+  document.getElementById("niDate1").parentElement.style.display = f.date1 ? "flex" : "none";
+  show("niLunarLabel", f.lunar);
+  show("niDate2Label", f.date2);
+  show("niDate2", f.date2);
+  show("niRecurrence", f.recurrence);
+  show("niAmount", f.amount);
+  const labels = {
+    birthday:"Ngày sinh", anniversary:"Ngày mất", service:"Ngày lắp đặt / bắt đầu",
+    maintenance:"Lần gần nhất", child_milestone:"Ngày",
+  };
+  document.getElementById("niDate1Label").textContent = labels[v] || "Ngày";
+  document.getElementById("niDate2Label").textContent = "Ngày hết hạn / đến hạn kế tiếp";
+}
+async function saveNi(){
+  const title = document.getElementById("niTitle").value.trim();
+  if(!title){ document.getElementById("niErr").innerHTML = `<div class="err">Nhập tiêu đề</div>`; return; }
+  const num = (id) => { const v = document.getElementById(id).value; return v===""?null:parseFloat(v.replace(/\./g,"")); };
+  const payload = {
+    type: niType, title,
+    relation: document.getElementById("niRelation").value.trim()||null,
+    phone: document.getElementById("niPhone").value.trim()||null,
+    address: document.getElementById("niAddress").value.trim()||null,
+    date1: document.getElementById("niDate1").value||null,
+    date1_is_lunar: document.getElementById("niLunar").checked,
+    date2: document.getElementById("niDate2").value||null,
+    recurrence_days: num("niRecurrence") ? Math.round(num("niRecurrence")) : null,
+    amount: num("niAmount"),
+    tags: document.getElementById("niTags").value.trim()||null,
+    note: document.getElementById("niNote").value.trim()||null,
+  };
+  try{
+    if(editingNiId){ await jput("/notebook-items/"+editingNiId, payload); }
+    else{ await jpost("/notebook-items", payload); }
+    closeNi();
+    renderCauHinh(document.getElementById("content"));
+  }catch(e){ document.getElementById("niErr").innerHTML = `<div class="err">${e.message}</div>`; }
+}
+async function deleteNi(){
+  if(!editingNiId) return;
+  if(!confirm("Xóa mục này?")) return;
+  try{ await jdelete("/notebook-items/"+editingNiId); closeNi(); renderCauHinh(document.getElementById("content")); }
+  catch(e){ document.getElementById("niErr").innerHTML = `<div class="err">${e.message}</div>`; }
+}
 
 // ---- Form giao dich ----
 let editingTxId = null;
