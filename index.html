@@ -102,6 +102,7 @@
   <div class="actionbar" id="actionbar"></div>
 
   <div class="tabs">
+    <button id="tab-dashboard" onclick="go('dashboard')"><span class="ico">⌂</span>Tổng quan</button>
     <button id="tab-thuchi" class="active" onclick="go('thuchi')"><span class="ico">☰</span>Thu chi</button>
     <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico">↗</span>Chứng khoán</button>
     <button id="tab-taisan" onclick="go('taisan')"><span class="ico">◆</span>Tài sản</button>
@@ -254,15 +255,40 @@
   </div>
 </div>
 
+<!-- Form loai tien ich (Cau hinh > Danh muc tien ich) -->
+<div class="modal" id="ntModal">
+  <div class="sheet" style="overflow-y:auto">
+    <h3 id="ntModalTitle">Thêm loại tiện ích</h3>
+    <input id="ntName" placeholder="Tên loại (vd: Số đo quần áo)" />
+    <div class="sub" style="margin:12px 0 6px">Chọn icon</div>
+    <div id="ntIconPicker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+    <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px">
+      <input type="checkbox" id="ntActive" style="width:auto" checked /> Hiển thị khi chọn loại tiện ích
+    </label>
+    <div class="sub" style="margin-bottom:6px">Mục tùy chỉnh dùng: Tiêu đề, Tag, Thông tin, Ghi chú. Không thể xóa loại (để không làm sai lệch mục sổ tay cũ) - bỏ tick ở trên để ẩn thay vì xóa.</div>
+    <div id="ntErr"></div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeNotebookType()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveNotebookType()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <!-- Form So tay / Tien ich (Cau hinh) -->
 <div class="modal" id="niModal">
   <div class="sheet" style="max-height:85vh;overflow-y:auto">
     <h3 id="niModalTitle">Thêm mục sổ tay</h3>
     <div class="chips" id="niTypeChips" style="margin-bottom:10px"></div>
     <input id="niTitle" placeholder="Tiêu đề" />
+    <input id="niSystem" placeholder="Hệ thống (vd: Netflix, Wifi FPT...)" />
     <input id="niRelation" placeholder="Quan hệ (vd: Bố, Mẹ...)" />
     <input id="niPhone" type="tel" placeholder="Điện thoại" />
     <input id="niAddress" placeholder="Địa chỉ" />
+    <input id="niUsername" placeholder="Tên đăng nhập" />
+    <div id="niPasswordWrap" style="position:relative;display:flex;align-items:center">
+      <input id="niPassword" type="password" placeholder="Mật khẩu" style="flex:1;padding-right:36px" />
+      <button type="button" onclick="toggleNiPassword()" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:6px;font-size:18px">👁️</button>
+    </div>
     <div class="sub" id="niDate1Label" style="margin:6px 0 2px">Ngày</div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
       <input id="niDate1" type="date" style="flex:1;margin:0" />
@@ -274,6 +300,7 @@
     <input id="niDate2" type="date" />
     <input id="niRecurrence" type="number" placeholder="Chu kỳ lặp lại (số ngày, không bắt buộc)" />
     <input id="niAmount" type="number" placeholder="Số tiền (không bắt buộc)" />
+    <textarea id="niInfo" placeholder="Thông tin" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;margin-top:8px;box-sizing:border-box"></textarea>
     <input id="niTags" placeholder="Tag (vd: #xe #gia_dinh)" />
     <textarea id="niNote" placeholder="Ghi chú" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;margin-top:8px;box-sizing:border-box"></textarea>
     <div id="niErr"></div>
@@ -301,16 +328,32 @@ let chView = "danhmuc";   // sub-tab trong Cau hinh: "danhmuc" | "tienich"
 let chCatKindFilter = "expense";  // dang xem danh muc Chi hay Thu
 let niTypeFilter = "";    // "" = tat ca
 let niSearchQ = "";
-const NI_TYPES = [
-  {v:"address",         label:"Địa chỉ",       icon:"📍"},
-  {v:"birthday",        label:"Sinh nhật",      icon:"🎂"},
-  {v:"anniversary",     label:"Ngày giỗ",       icon:"🕯️"},
-  {v:"service",         label:"Dịch vụ",        icon:"🌐"},
-  {v:"maintenance",     label:"Bảo trì",        icon:"🔧"},
-  {v:"note",            label:"Ghi chú",        icon:"📝"},
-  {v:"child_milestone", label:"Mốc của con",    icon:"👶"},
-];
-function niTypeInfo(v){ return NI_TYPES.find(t=>t.v===v) || {label:v, icon:"🏷️"}; }
+// Danh sach loai tien ich - tai dong tu API (khong con co dinh), vi nguoi
+// dung co the tu them loai moi qua Cau hinh > Danh muc tien ich.
+let niTypesCache = [];
+async function loadNiTypes(includeInactive){
+  niTypesCache = await jget(`/notebook-types?include_inactive=${includeInactive?"true":"false"}`);
+  return niTypesCache;
+}
+function niTypeInfo(v){
+  const t = niTypesCache.find(x=>x.key===v);
+  return t ? {v:t.key, label:t.name, icon:t.icon||"🏷️", is_default:t.is_default} : {v, label:v, icon:"🏷️", is_default:false};
+}
+// Bo field co dinh cho 8 loai co san. Loai tu tao (is_default=false) luon
+// dung bo field rut gon: tieu de, tag, thong tin, ghi chu (xem niFieldsFor).
+const NI_BUILTIN_FIELDS = {
+  address:         {relation:1, phone:1, address:1},
+  birthday:        {relation:1, date1:1},
+  anniversary:     {relation:1, date1:1, lunar:1},
+  service:         {date1:1, date2:1, recurrence:1, amount:1},
+  maintenance:     {date1:1, date2:1, recurrence:1},
+  account:         {system:1, relation:1, username:1, password:1},
+  note:            {},
+  child_milestone: {date1:1},
+};
+function niFieldsFor(typeKey){
+  return NI_BUILTIN_FIELDS[typeKey] || {info:1};
+}
 
 // Icon goi y theo ten danh muc (thuan UI, khong luu DB). Danh muc tu tao
 // (khong co trong danh sach) dung icon mac dinh.
@@ -450,7 +493,7 @@ function logout(){
   showLogin();
 }
 
-function go(t){ tab=t; for(const x of ["thuchi","chungkhoan","taisan","baocao","cauhinh"]) document.getElementById("tab-"+x).classList.toggle("active", x===t); render(); }
+function go(t){ tab=t; for(const x of ["dashboard","thuchi","chungkhoan","taisan","baocao","cauhinh"]) document.getElementById("tab-"+x).classList.toggle("active", x===t); render(); }
 function changeMonth(delta){ month+=delta; if(month<1){month=12;year--;} if(month>12){month=1;year++;} reportStart=reportEnd=null; render(); }
 
 async function ensureRef(){
@@ -484,7 +527,8 @@ function setActionBar(){
   }
   else if(tab==="cauhinh"){
     // Nut hanh dong doi theo nhom dang xem trong Cau hinh.
-    if(chView==="danhmuc") ab.innerHTML = `<button class="abtn" onclick="openCat(null)">+ Thêm danh mục ${chCatKindFilter==='expense'?'Chi':'Thu'}</button>`;
+    if(chView==="danhmuc" && chCatKindFilter==="tienich_type") ab.innerHTML = `<button class="abtn" onclick="openNotebookType(null)">+ Thêm loại tiện ích</button>`;
+    else if(chView==="danhmuc") ab.innerHTML = `<button class="abtn" onclick="openCat(null)">+ Thêm danh mục ${chCatKindFilter==='expense'?'Chi':'Thu'}</button>`;
     else if(chView==="tienich") ab.innerHTML = `<button class="abtn" onclick="openNi(null)">+ Thêm mục sổ tay</button>`;
     else ab.innerHTML = "";
   }
@@ -499,7 +543,8 @@ async function render(){
   c.innerHTML = "Đang tải…";
   await ensureRef();
   try{
-    if(tab==="thuchi") await renderThuChi(c);
+    if(tab==="dashboard") await renderDashboard(c);
+    else if(tab==="thuchi") await renderThuChi(c);
     else if(tab==="chungkhoan") await renderChungKhoan(c);
     else if(tab==="taisan") await renderTaiSan(c);
     else if(tab==="baocao") await renderBaoCao(c);
@@ -507,6 +552,70 @@ async function render(){
   }catch(e){
     c.innerHTML = `<div class="err">Không kết nối được máy chủ.<br>Hãy chắc chắn backend đang chạy (uvicorn) tại địa chỉ ở trên.<br><br>${e.message}</div>`;
   }
+}
+
+// ---- Tab Tong quan (Dashboard: nhac nho sap toi + tai chinh thang nay) ----
+// Luon dung THANG THUC (ngay hom nay), khong phu thuoc thanh chon thang o
+// tren dau man hinh (thanh do dieu khien cac tab khac: Thu chi/Tai san/...).
+async function renderDashboard(c){
+  if(niTypesCache.length===0){ try{ await loadNiTypes(false); }catch(e){} }
+
+  const todayY = now.getFullYear(), todayM = now.getMonth()+1;
+  const s0 = `${todayY}-${pad(todayM)}-01`;
+  const dLast = new Date(todayY, todayM, 0);
+  const e0 = `${todayY}-${pad(todayM)}-${pad(dLast.getDate())}`;
+
+  let html = "";
+
+  // --- Card tai chinh thang nay ---
+  try{
+    const s = await jget(`/reports/summary?start=${s0}&end=${e0}`);
+    const stat = (label,val,color)=>`<div style="text-align:center;flex:1">
+      <div class="sub" style="color:${color}">${label}</div>
+      <div style="font-size:17px;font-weight:600;color:${color}">${vnd(val)}</div></div>`;
+    html += `<div class="card">
+      <div class="sub" style="margin-bottom:8px">Tài chính tháng ${todayM}/${todayY} (tháng này)</div>
+      <div class="row" style="gap:8px">
+        ${stat("Tổng thu", s.total_income, "var(--green)")}
+        ${stat("Tổng chi", s.total_expense, "var(--red)")}
+        ${stat("Số dư", s.balance, "var(--accent)")}
+      </div>
+    </div>`;
+  }catch(e){
+    html += `<div class="card"><div class="sub">Không tải được số liệu tài chính tháng này.</div></div>`;
+  }
+
+  // --- Card nhac nho sap toi (30 ngay) ---
+  html += `<div class="card">
+    <div class="row" style="margin-bottom:8px">
+      <div class="sub">Nhắc nhở sắp tới (30 ngày)</div>
+      <span class="editbtn" style="font-size:12px" onclick="goToTienIch()">Xem sổ tay ›</span>
+    </div>`;
+  try{
+    const reminders = await jget(`/notebook-items/upcoming?days=30`);
+    if(reminders.length===0){
+      html += `<div class="sub">Không có nhắc nhở nào trong 30 ngày tới.</div>`;
+    }else{
+      for(const r of reminders){
+        const info = niTypeInfo(r.item.type);
+        const when = r.days_until===0 ? "Hôm nay" : r.days_until===1 ? "Ngày mai" : `còn ${r.days_until} ngày`;
+        html += `<div class="tx" style="cursor:pointer" onclick='goToTienIch(${JSON.stringify(r.item)})'>
+          <div><div class="desc">${info.icon} ${r.item.title}</div><div class="meta">${info.label}${r.item.relation?" · "+r.item.relation:""} · ${fmtDate(r.occurs_on)}</div></div>
+          <div style="color:var(--accent);font-weight:600;font-size:13px;white-space:nowrap">${when}</div>
+        </div>`;
+      }
+    }
+  }catch(e){
+    html += `<div class="sub">Không tải được danh sách nhắc nhở.</div>`;
+  }
+  html += `</div>`;
+
+  c.innerHTML = html;
+}
+function goToTienIch(item){
+  tab = "cauhinh"; chView = "tienich";
+  for(const x of ["dashboard","thuchi","chungkhoan","taisan","baocao","cauhinh"]) document.getElementById("tab-"+x).classList.toggle("active", x==="cauhinh");
+  render().then(()=>{ if(item) openNi(item); });
 }
 
 // ---- Tab Thu chi (2 tab con: Thu / Chi) ----
@@ -910,9 +1019,42 @@ async function renderBaoCao(c){
     });
   }
   html += `</div>`;
+
+  // Bieu do tai san theo nam - LUON hien thi toan bo lich su (tu 2022...),
+  // khong theo bo loc ngay/thang cua trang Bao cao (day la xu huong dai han).
+  html += await renderYearlyAssetsCard();
+
   c.innerHTML = html;
 }
 function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); renderBaoCao(document.getElementById("content")); }
+
+async function renderYearlyAssetsCard(){
+  let yearly = [];
+  try { yearly = await jget("/assets/yearly-history"); } catch(e) { yearly = []; }
+  if(yearly.length===0) return "";
+  const maxTotal = Math.max(...yearly.map(y=>y.total)) || 1;
+  let html = `<div class="card"><div class="sectitle" style="margin-top:0">Tài sản theo năm</div>`;
+  for(const y of yearly){
+    const pct = Math.max(4, Math.round((y.total/maxTotal)*100));
+    const changeColor = y.change_amount > 0 ? "var(--green)" : (y.change_amount < 0 ? "var(--red)" : "var(--muted)");
+    const changeSign = y.change_amount > 0 ? "▲ +" : (y.change_amount < 0 ? "▼ " : "");
+    const changeLine = yearly.indexOf(y) === 0
+      ? `<span class="sub">Năm đầu tiên có dữ liệu</span>`
+      : `<span style="color:${changeColor};font-weight:600">${changeSign}${vnd(Math.abs(y.change_amount))} đ${y.change_pct!==null?` (${y.change_pct>0?'+':''}${y.change_pct}%)`:''}</span>`;
+    html += `<div style="margin:8px 0">
+      <div class="row" style="padding:0 0 3px 0">
+        <span>Năm ${y.year} <span class="sub">(chốt T${y.closing_month})</span></span>
+        <span style="font-weight:600">${vnd(y.total)} đ</span>
+      </div>
+      <div style="background:var(--border,#eee);border-radius:6px;height:8px;overflow:hidden;margin-bottom:4px">
+        <div style="width:${pct}%;height:100%;background:var(--accent);border-radius:6px"></div>
+      </div>
+      <div style="text-align:right">${changeLine}</div>
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
+}
 
 function rowLine(label, val, color){ return `<div class="row" style="padding:4px 0"><span>${label}</span><span style="color:${color};font-weight:600">${vnd(val)} đ</span></div>`; }
 function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`; }
@@ -930,13 +1072,20 @@ async function renderCauHinh(c){
   else renderQuanLyUser(body);
 }
 
-// ---- Nhom A: Danh muc ----
+// ---- Nhom A: Danh muc (Chi / Thu / Tien ich) ----
 function setCatKindFilter(k){ chCatKindFilter=k; setActionBar(); renderCauHinh(document.getElementById("content")); }
 async function renderDanhMuc(body){
+  const tb = (label,v)=>`<button class="chip ${chCatKindFilter===v?'on':''}" onclick="setCatKindFilter('${v}')">${label}</button>`;
+  let html = `<div class="chips" style="margin-bottom:10px">${tb("Danh mục Chi","expense")}${tb("Danh mục Thu","income")}${tb("Danh mục Tiện ích","tienich_type")}</div>`;
+
+  if(chCatKindFilter === "tienich_type"){
+    html += await renderNotebookTypeList();
+    body.innerHTML = html;
+    return;
+  }
+
   const cats = await jget("/categories?include_inactive=true");
   const list = cats.filter(x => x.kind===chCatKindFilter || x.kind==="both");
-  const tb = (label,v)=>`<button class="chip ${chCatKindFilter===v?'on':''}" onclick="setCatKindFilter('${v}')">${label}</button>`;
-  let html = `<div class="chips" style="margin-bottom:10px">${tb("Danh mục Chi","expense")}${tb("Danh mục Thu","income")}</div>`;
   html += `<div class="card">`;
   if(list.length===0){ html += `<div class="sub">Chưa có danh mục nào</div>`; }
   else{
@@ -950,6 +1099,61 @@ async function renderDanhMuc(body){
   }
   html += `</div>`;
   body.innerHTML = html;
+}
+
+// ---- Danh muc Tien ich (quan ly cac "loai" tien ich trong So tay) ----
+async function renderNotebookTypeList(){
+  const types = await loadNiTypes(true); // include_inactive=true cho man Cau hinh
+  let html = `<div class="card">`;
+  if(types.length===0){ html += `<div class="sub">Chưa có loại tiện ích nào</div>`; }
+  else{
+    for(const t of types){
+      const muted = t.is_active ? "" : "opacity:.45";
+      html += `<div class="tx" style="${muted};cursor:pointer" onclick='openNotebookType(${JSON.stringify(t)})'>
+        <div><div class="desc">${t.icon||'🏷️'} ${t.name}${t.is_default?' <span class="sub">(mặc định)</span>':''}</div>
+        ${!t.is_active?'<div class="meta">Đang ẩn</div>':''}</div>
+        <span class="editbtn">✎</span></div>`;
+    }
+  }
+  html += `</div>`;
+  return html;
+}
+let editingNotebookTypeId = null;
+let notebookTypeSelectedIcon = null;
+function openNotebookType(t){
+  editingNotebookTypeId = t ? t.id : null;
+  document.getElementById("ntModalTitle").textContent = t ? "Sửa loại tiện ích" : "Thêm loại tiện ích";
+  document.getElementById("ntName").value = t ? t.name : "";
+  notebookTypeSelectedIcon = t ? (t.icon||null) : null;
+  document.getElementById("ntActive").checked = t ? t.is_active : true;
+  document.getElementById("ntErr").innerHTML = "";
+  const picker = document.getElementById("ntIconPicker");
+  picker.innerHTML = COMMON_ICONS.map(ico => {
+    const selected = notebookTypeSelectedIcon === ico;
+    return `<button type="button" onclick="setNotebookTypeIcon('${ico}')" style="width:42px;height:42px;border:${selected?'2px solid':'1px solid'} ${selected?'#0066cc':'#ddd'};border-radius:8px;background:${selected?'#f0f4ff':'#fff'};cursor:pointer;font-size:20px;padding:0">${ico}</button>`;
+  }).join("");
+  document.getElementById("ntModal").classList.add("on");
+}
+function setNotebookTypeIcon(ico){
+  notebookTypeSelectedIcon = ico;
+  const picker = document.getElementById("ntIconPicker");
+  picker.querySelectorAll("button").forEach(b => {
+    const selected = b.textContent === ico;
+    b.style.border = selected ? "2px solid #0066cc" : "1px solid #ddd";
+    b.style.background = selected ? "#f0f4ff" : "#fff";
+  });
+}
+function closeNotebookType(){ document.getElementById("ntModal").classList.remove("on"); }
+async function saveNotebookType(){
+  const name = document.getElementById("ntName").value.trim();
+  if(!name){ document.getElementById("ntErr").innerHTML = `<div class="err">Nhập tên loại tiện ích</div>`; return; }
+  const payload = { name, icon: notebookTypeSelectedIcon, is_active: document.getElementById("ntActive").checked };
+  try{
+    if(editingNotebookTypeId){ await jput("/notebook-types/"+editingNotebookTypeId, payload); }
+    else{ await jpost("/notebook-types", payload); }
+    closeNotebookType();
+    renderCauHinh(document.getElementById("content"));
+  }catch(e){ document.getElementById("ntErr").innerHTML = `<div class="err">${e.message}</div>`; }
 }
 
 let editingCatId = null;
@@ -1001,6 +1205,7 @@ let niItems = [];
 function setNiTypeFilter(v){ niTypeFilter=v; renderTienIch(document.getElementById("content").lastChild); }
 function onNiSearch(v){ niSearchQ=v; renderTienIch(document.getElementById("content").lastChild); }
 async function renderTienIch(body){
+  await loadNiTypes(false); // chi lay loai dang hien (an loai da bi an trong Cau hinh)
   const params = new URLSearchParams();
   if(niTypeFilter) params.set("type", niTypeFilter);
   if(niSearchQ.trim()) params.set("q", niSearchQ.trim());
@@ -1013,7 +1218,7 @@ async function renderTienIch(body){
 
   let html = `<input id="niSearchBox" placeholder="🔍 Tìm kiếm (vd: xe, mẹ, wifi...)" value="${niSearchQ.replace(/"/g,'&quot;')}" oninput="onNiSearch(this.value)" style="margin-bottom:8px" />`;
   const allChip = `<button class="chip ${niTypeFilter===''?'on':''}" onclick="setNiTypeFilter('')">Tất cả</button>`;
-  const typeChips = NI_TYPES.map(t=>`<button class="chip ${niTypeFilter===t.v?'on':''}" onclick="setNiTypeFilter('${t.v}')">${t.icon} ${t.label}</button>`).join("");
+  const typeChips = niTypesCache.map(t=>`<button class="chip ${niTypeFilter===t.key?'on':''}" onclick="setNiTypeFilter('${t.key}')">${t.icon||'🏷️'} ${t.name}</button>`).join("");
   html += `<div class="chips" style="margin-bottom:10px">${allChip}${typeChips}</div>`;
 
   html += `<div class="card">`;
@@ -1049,47 +1254,50 @@ function niMetaLine(it){
 function editNi(id){ const it = niItems.find(x=>x.id===id); if(it) openNi(it); }
 
 let editingNiId = null;
-function openNi(item){
+async function openNi(item){
   editingNiId = item ? item.id : null;
+  if(niTypesCache.length===0) await loadNiTypes(false);
   document.getElementById("niModalTitle").textContent = item ? "Sửa mục sổ tay" : "Thêm mục sổ tay";
-  document.getElementById("niTypeChips").innerHTML = NI_TYPES.map(t=>
-    `<span class="chip" id="niType-${t.v}" onclick="setNiType('${t.v}')">${t.icon} ${t.label}</span>`).join("");
+  document.getElementById("niTypeChips").innerHTML = niTypesCache.map(t=>
+    `<span class="chip" id="niType-${t.key}" onclick="setNiType('${t.key}')">${t.icon||'🏷️'} ${t.name}</span>`).join("");
   document.getElementById("niTitle").value = item ? item.title : "";
+  document.getElementById("niSystem").value = item ? (item.system||"") : "";
   document.getElementById("niRelation").value = item ? (item.relation||"") : "";
   document.getElementById("niPhone").value = item ? (item.phone||"") : "";
   document.getElementById("niAddress").value = item ? (item.address||"") : "";
+  document.getElementById("niUsername").value = item ? (item.username||"") : "";
+  document.getElementById("niPassword").value = item ? (item.password||"") : "";
+  document.getElementById("niPassword").type = "password";
   document.getElementById("niDate1").value = item ? (item.date1||"") : "";
   document.getElementById("niLunar").checked = item ? !!item.date1_is_lunar : false;
   document.getElementById("niDate2").value = item ? (item.date2||"") : "";
   document.getElementById("niRecurrence").value = item ? (item.recurrence_days||"") : "";
   document.getElementById("niAmount").value = item ? (item.amount||"") : "";
+  document.getElementById("niInfo").value = item ? (item.info||"") : "";
   document.getElementById("niTags").value = item ? (item.tags||"") : "";
   document.getElementById("niNote").value = item ? (item.note||"") : "";
   document.getElementById("niDelBtn").style.display = editingNiId ? "block" : "none";
   document.getElementById("niErr").innerHTML = "";
-  setNiType(item ? item.type : (niTypeFilter || "address"));
+  setNiType(item ? item.type : (niTypeFilter || (niTypesCache[0]&&niTypesCache[0].key) || "address"));
   document.getElementById("niModal").classList.add("on");
+}
+function toggleNiPassword(){
+  const inp = document.getElementById("niPassword");
+  inp.type = inp.type === "password" ? "text" : "password";
 }
 function closeNi(){ document.getElementById("niModal").classList.remove("on"); }
 let niType = "address";
-// Truong nao hien theo tung loai - de form gon, chi hoi dung cai can thiet.
-const NI_FIELDS = {
-  address:         {relation:1, phone:1, address:1},
-  birthday:        {relation:1, date1:1},
-  anniversary:     {relation:1, date1:1, lunar:1},
-  service:         {date1:1, date2:1, recurrence:1, amount:1},
-  maintenance:     {date1:1, date2:1, recurrence:1},
-  note:            {},
-  child_milestone: {date1:1},
-};
 function setNiType(v){
   niType=v;
-  for(const t of NI_TYPES) { const el=document.getElementById("niType-"+t.v); if(el) el.classList.toggle("on", t.v===v); }
-  const f = NI_FIELDS[v] || {};
+  for(const t of niTypesCache) { const el=document.getElementById("niType-"+t.key); if(el) el.classList.toggle("on", t.key===v); }
+  const f = niFieldsFor(v);
   const show = (id, on) => { const el=document.getElementById(id); if(el) el.style.display = on ? "" : "none"; };
+  show("niSystem", f.system);
   show("niRelation", f.relation);
   show("niPhone", f.phone);
   show("niAddress", f.address);
+  show("niUsername", f.username);
+  document.getElementById("niPasswordWrap").style.display = f.password ? "flex" : "none";
   show("niDate1Label", f.date1);
   document.getElementById("niDate1").parentElement.style.display = f.date1 ? "flex" : "none";
   show("niLunarLabel", f.lunar);
@@ -1097,12 +1305,16 @@ function setNiType(v){
   show("niDate2", f.date2);
   show("niRecurrence", f.recurrence);
   show("niAmount", f.amount);
+  show("niInfo", f.info);
   const labels = {
     birthday:"Ngày sinh", anniversary:"Ngày mất", service:"Ngày lắp đặt / bắt đầu",
     maintenance:"Lần gần nhất", child_milestone:"Ngày",
   };
   document.getElementById("niDate1Label").textContent = labels[v] || "Ngày";
   document.getElementById("niDate2Label").textContent = "Ngày hết hạn / đến hạn kế tiếp";
+  // Truong "Quan he" doi nghia thanh "Nguoi dung" cho loai Tai khoan.
+  const relInput = document.getElementById("niRelation");
+  relInput.placeholder = v === "account" ? "Người dùng (vd: Chồng, Vợ, Bông, bố chồng...)" : "Quan hệ (vd: Bố, Mẹ...)";
 }
 async function saveNi(){
   const title = document.getElementById("niTitle").value.trim();
@@ -1110,14 +1322,18 @@ async function saveNi(){
   const num = (id) => { const v = document.getElementById(id).value; return v===""?null:parseFloat(v.replace(/\./g,"")); };
   const payload = {
     type: niType, title,
+    system: document.getElementById("niSystem").value.trim()||null,
     relation: document.getElementById("niRelation").value.trim()||null,
     phone: document.getElementById("niPhone").value.trim()||null,
     address: document.getElementById("niAddress").value.trim()||null,
+    username: document.getElementById("niUsername").value.trim()||null,
+    password: document.getElementById("niPassword").value||null,
     date1: document.getElementById("niDate1").value||null,
     date1_is_lunar: document.getElementById("niLunar").checked,
     date2: document.getElementById("niDate2").value||null,
     recurrence_days: num("niRecurrence") ? Math.round(num("niRecurrence")) : null,
     amount: num("niAmount"),
+    info: document.getElementById("niInfo").value.trim()||null,
     tags: document.getElementById("niTags").value.trim()||null,
     note: document.getElementById("niNote").value.trim()||null,
   };
