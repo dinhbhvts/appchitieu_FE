@@ -230,14 +230,15 @@
 
 <!-- Form danh muc (Cau hinh) -->
 <div class="modal" id="catModal">
-  <div class="sheet">
+  <div class="sheet" style="overflow-y:auto">
     <h3 id="catModalTitle">Thêm danh mục</h3>
     <div class="seg">
       <button id="catBtnChi" class="exp-on" onclick="setCatKind('expense')">Chi</button>
       <button id="catBtnThu" onclick="setCatKind('income')">Thu</button>
     </div>
     <input id="catName" placeholder="Tên danh mục (vd: Xăng xe)" />
-    <input id="catIcon" placeholder="Icon (vd: ⛽) - được gợi ý từ tên danh mục nếu trùng khớp" maxlength="4" />
+    <div class="sub" style="margin:12px 0 6px">Chọn icon</div>
+    <div id="catIconPicker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
     <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px">
       <input type="checkbox" id="catActive" style="width:auto" checked /> Hiển thị khi chọn danh mục
     </label>
@@ -358,6 +359,11 @@ const CATEGORY_ICONS = {
   "Khác": "📦",
 };
 function catIcon(name){ return CATEGORY_ICONS[name] || "🏷️"; }
+// Common icons available for quick selection when creating/editing categories.
+const COMMON_ICONS = ["💼", "👛", "🎁", "💰", "🍜", "🚗", "⛽", "🛍️", "👕", "🚕",
+  "✈️", "💊", "🏥", "⚕️", "💇", "🧘", "👨‍👩‍👧", "🏠", "💧", "📱",
+  "🎓", "📚", "🎬", "🍿", "🎮", "💳", "🏦", "💸", "❤️", "🎀",
+  "🧾", "🔧", "🏋️", "🌐", "📝", "☕", "🍔", "🌿", "⌚", "👓"];
 function suggestIcon(name){
   const nameLower = name.toLowerCase().trim();
   if(!nameLower) return null;
@@ -917,7 +923,7 @@ async function renderDanhMuc(body){
   const list = cats.filter(x => x.kind===chCatKindFilter || x.kind==="both");
   const tb = (label,v)=>`<button class="chip ${chCatKindFilter===v?'on':''}" onclick="setCatKindFilter('${v}')">${label}</button>`;
   let html = `<div class="chips" style="margin-bottom:10px">${tb("Danh mục Chi","expense")}${tb("Danh mục Thu","income")}</div>`;
-  html += `<div class="card">`;
+  html += `<div class="card" style="flex:1;overflow-y:auto;margin-bottom:8px">`;
   if(list.length===0){ html += `<div class="sub">Chưa có danh mục nào</div>`; }
   else{
     for(const cat of list){
@@ -928,29 +934,37 @@ async function renderDanhMuc(body){
         <span class="editbtn">✎</span></div>`;
     }
   }
-  html += `</div><button class="primary" style="margin-top:12px" onclick="openCat(null)">+ Thêm danh mục ${chCatKindFilter==='expense'?'Chi':'Thu'}</button>`;
+  html += `</div><button class="primary" style="width:100%" onclick="openCat(null)">+ Thêm danh mục ${chCatKindFilter==='expense'?'Chi':'Thu'}</button>`;
   body.innerHTML = html;
 }
 
 let editingCatId = null;
+let catSelectedIcon = null;
 function openCat(cat){
   editingCatId = cat ? cat.id : null;
   document.getElementById("catModalTitle").textContent = cat ? "Sửa danh mục" : "Thêm danh mục";
   document.getElementById("catName").value = cat ? cat.name : "";
-  document.getElementById("catIcon").value = cat ? (cat.icon||"") : "";
+  catSelectedIcon = cat ? (cat.icon||null) : null;
   document.getElementById("catActive").checked = cat ? cat.is_active : true;
   document.getElementById("catErr").innerHTML = "";
   setCatKind(cat ? (cat.kind==="income"?"income":"expense") : chCatKindFilter);
-  // When the user changes the category name, auto-fill icon if a suggestion is found.
-  document.getElementById("catName").oninput = function(){
-    if(!editingCatId){ // Only auto-fill for new categories, not when editing.
-      const suggested = suggestIcon(this.value);
-      if(suggested && !document.getElementById("catIcon").value){
-        document.getElementById("catIcon").value = suggested;
-      }
-    }
-  };
+  // Render icon picker grid.
+  const picker = document.getElementById("catIconPicker");
+  picker.innerHTML = COMMON_ICONS.map(ico => {
+    const selected = catSelectedIcon === ico;
+    return `<button type="button" onclick="setCatIcon('${ico}')" style="width:42px;height:42px;border:${selected?'2px solid':'1px solid'} ${selected?'#0066cc':'#ddd'};border-radius:8px;background:${selected?'#f0f4ff':'#fff'};cursor:pointer;font-size:20px;padding:0">${ico}</button>`;
+  }).join("");
   document.getElementById("catModal").classList.add("on");
+}
+function setCatIcon(ico){
+  catSelectedIcon = ico;
+  const picker = document.getElementById("catIconPicker");
+  const btns = picker.querySelectorAll("button");
+  btns.forEach(b => {
+    const selected = b.textContent === ico;
+    b.style.border = selected ? "2px solid #0066cc" : "1px solid #ddd";
+    b.style.background = selected ? "#f0f4ff" : "#fff";
+  });
 }
 function closeCat(){ document.getElementById("catModal").classList.remove("on"); }
 let catKind = "expense";
@@ -958,7 +972,7 @@ function setCatKind(k){ catKind=k; document.getElementById("catBtnChi").classNam
 async function saveCat(){
   const name = document.getElementById("catName").value.trim();
   if(!name){ document.getElementById("catErr").innerHTML = `<div class="err">Nhập tên danh mục</div>`; return; }
-  const payload = {name, kind:catKind, icon:document.getElementById("catIcon").value.trim()||null, is_active:document.getElementById("catActive").checked};
+  const payload = {name, kind:catKind, icon:catSelectedIcon, is_active:document.getElementById("catActive").checked};
   try{
     if(editingCatId){ await jput("/categories/"+editingCatId, payload); }
     else{ await jpost("/categories", payload); }
@@ -976,14 +990,19 @@ async function renderTienIch(body){
   const params = new URLSearchParams();
   if(niTypeFilter) params.set("type", niTypeFilter);
   if(niSearchQ.trim()) params.set("q", niSearchQ.trim());
-  niItems = await jget(`/notebook-items?${params.toString()}`);
+  try {
+    niItems = await jget(`/notebook-items?${params.toString()}`);
+  } catch(e) {
+    console.error("Error loading notebook items:", e);
+    niItems = [];
+  }
 
   let html = `<input id="niSearchBox" placeholder="🔍 Tìm kiếm (vd: xe, mẹ, wifi...)" value="${niSearchQ.replace(/"/g,'&quot;')}" oninput="onNiSearch(this.value)" style="margin-bottom:8px" />`;
   const allChip = `<button class="chip ${niTypeFilter===''?'on':''}" onclick="setNiTypeFilter('')">Tất cả</button>`;
   const typeChips = NI_TYPES.map(t=>`<button class="chip ${niTypeFilter===t.v?'on':''}" onclick="setNiTypeFilter('${t.v}')">${t.icon} ${t.label}</button>`).join("");
   html += `<div class="chips" style="margin-bottom:10px">${allChip}${typeChips}</div>`;
 
-  html += `<div class="card">`;
+  html += `<div class="card" style="flex:1;overflow-y:auto;margin-bottom:8px">`;
   if(niItems.length===0){
     html += `<div class="sub">Không tìm thấy mục nào</div>`;
   }else{
@@ -1001,7 +1020,7 @@ async function renderTienIch(body){
         <span class="editbtn">✎</span></div>`;
     }
   }
-  html += `</div><button class="primary" style="margin-top:12px" onclick="openNi(null)">+ Thêm mục sổ tay</button>`;
+  html += `</div><button class="primary" style="width:100%" onclick="openNi(null)">+ Thêm mục sổ tay</button>`;
   body.innerHTML = html;
 }
 function niMetaLine(it){
