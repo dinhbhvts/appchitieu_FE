@@ -236,6 +236,19 @@
   </div>
 </div>
 
+<!-- Lich thang: duong + am song song, chuyen thang -->
+<div class="modal" id="lunarCalModal">
+  <div class="sheet" style="max-height:85vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button class="ghost" style="padding:6px 12px" onclick="changeLunarCalMonth(-1)">‹</button>
+      <h3 id="lunarCalTitle" style="margin:0">Lịch tháng</h3>
+      <button class="ghost" style="padding:6px 12px" onclick="changeLunarCalMonth(1)">›</button>
+    </div>
+    <div id="lunarCalBody"><div class="sub">Đang tải...</div></div>
+    <button class="ghost" style="width:100%;margin-top:10px" onclick="closeLunarCal()">Đóng</button>
+  </div>
+</div>
+
 <!-- Form them tai san -->
 <div class="modal" id="asModal">
   <div class="sheet">
@@ -665,7 +678,10 @@ async function renderDashboard(c){
 
   // --- Card tra cuu lich am ---
   html += `<div class="card">
-    <div class="sub" style="margin-bottom:8px">Tra cứu lịch âm</div>
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="sub">Tra cứu lịch âm</div>
+      <span class="editbtn" onclick="openLunarCal()" title="Xem lịch theo tháng">📅 Lịch tháng</span>
+    </div>
     <div class="chips" style="margin-bottom:10px">
       <button class="chip ${lunarMode==='s2l'?'on':''}" onclick="setLunarMode('s2l')">Dương → Âm</button>
       <button class="chip ${lunarMode==='l2s'?'on':''}" onclick="setLunarMode('l2s')">Âm → Dương</button>
@@ -679,15 +695,20 @@ async function renderDashboard(c){
 
 // ---- Tra cuu lich am (Tong quan) ----
 let lunarMode = "s2l"; // "s2l" = duong sang am, "l2s" = am sang duong
+// Ngay dang chon o che do s2l - mac dinh la hom nay, giu lai giua cac lan
+// render de khong bi mat lua chon khi doi tab.
+let lunarSolarValue = null;
+function todayISO(){ const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 function setLunarMode(v){ lunarMode = v; renderDashboard(document.getElementById("content")); }
 function renderLunarTool(){
   const body = document.getElementById("lunarBody");
   if(!body) return;
   if(lunarMode === "s2l"){
+    if(!lunarSolarValue) lunarSolarValue = todayISO();
     body.innerHTML = `
-      <input id="lunarSolarDate" type="date" style="margin-bottom:8px" />
-      <button class="primary" onclick="doSolarToLunar()">Xem ngày âm</button>
-      <div id="lunarResult" style="margin-top:8px"></div>`;
+      <input id="lunarSolarDate" type="date" value="${lunarSolarValue}" style="margin-bottom:8px" onchange="doSolarToLunar(this.value)" />
+      <div id="lunarResult" style="margin-top:4px"></div>`;
+    doSolarToLunar(lunarSolarValue);
   }else{
     body.innerHTML = `
       <div style="display:flex;gap:8px">
@@ -702,13 +723,28 @@ function renderLunarTool(){
       <div id="lunarResult" style="margin-top:8px"></div>`;
   }
 }
-async function doSolarToLunar(){
-  const d = document.getElementById("lunarSolarDate").value;
+// Hien LUON ca ngay duong (da chon) va ngay am tuong ung song song, khong
+// can bam nut rieng - goi ngay khi mo the/doi ngay.
+async function doSolarToLunar(d){
+  d = d || (document.getElementById("lunarSolarDate")||{}).value;
+  lunarSolarValue = d;
   const box = document.getElementById("lunarResult");
+  if(!box) return;
   if(!d){ box.innerHTML = `<div class="err">Chọn ngày dương lịch</div>`; return; }
+  box.innerHTML = `<div class="sub">Đang tính...</div>`;
   try{
     const r = await jget(`/lunar/to-lunar?date=${d}`);
-    box.innerHTML = `<div class="sub">Âm lịch:</div><div style="font-size:16px;font-weight:600">Ngày ${r.day} tháng ${r.month}${r.is_leap?" (nhuận)":""} năm ${r.year}</div>`;
+    box.innerHTML = `
+      <div class="row" style="gap:10px">
+        <div class="stat" style="flex:1;background:#f4f6f8">
+          <div class="sub">Dương lịch</div>
+          <div style="font-weight:600">${fmtDate(d)}</div>
+        </div>
+        <div class="stat" style="flex:1;background:#f4f6f8">
+          <div class="sub">Âm lịch</div>
+          <div style="font-weight:600">${r.day}/${r.month}${r.is_leap?" (nhuận)":""}/${r.year}</div>
+        </div>
+      </div>`;
   }catch(e){
     box.innerHTML = `<div class="err">${e.message}</div>`;
   }
@@ -727,6 +763,48 @@ async function doLunarToSolar(){
     box.innerHTML = `<div class="err">${e.message}</div>`;
   }
 }
+
+// ---- Lich thang (duong + am song song), cho phep chuyen thang ----
+let lunarCalYear = null, lunarCalMonth = null;
+function openLunarCal(){
+  const today = new Date();
+  if(!lunarCalYear){ lunarCalYear = today.getFullYear(); lunarCalMonth = today.getMonth()+1; }
+  document.getElementById("lunarCalModal").classList.add("on");
+  loadLunarCal();
+}
+function closeLunarCal(){ document.getElementById("lunarCalModal").classList.remove("on"); }
+function changeLunarCalMonth(delta){
+  lunarCalMonth += delta;
+  if(lunarCalMonth > 12){ lunarCalMonth = 1; lunarCalYear++; }
+  if(lunarCalMonth < 1){ lunarCalMonth = 12; lunarCalYear--; }
+  loadLunarCal();
+}
+async function loadLunarCal(){
+  document.getElementById("lunarCalTitle").textContent = `Tháng ${lunarCalMonth}/${lunarCalYear}`;
+  const body = document.getElementById("lunarCalBody");
+  body.innerHTML = `<div class="sub">Đang tải...</div>`;
+  try{
+    const rows = await jget(`/lunar/month?year=${lunarCalYear}&month=${lunarCalMonth}`);
+    const todayIso = todayISO();
+    body.innerHTML = rows.map(r => {
+      const isToday = r.date === todayIso;
+      const dayNum = parseInt(r.date.split("-")[2]);
+      return `<div class="row" style="padding:7px 4px;border-bottom:1px solid var(--line);${isToday?'background:#eef4ff;border-radius:8px':''}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;min-width:28px">${dayNum}</span>
+          <span class="sub">Dương</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-weight:600;color:var(--accent)">${r.lunar_day}/${r.lunar_month}${r.is_leap?"N":""}</span>
+          <span class="sub">Âm</span>
+        </div>
+      </div>`;
+    }).join("");
+  }catch(e){
+    body.innerHTML = `<div class="err">${e.message}</div>`;
+  }
+}
+
 function goToTienIch(item){
   tab = "cauhinh"; chView = "tienich";
   for(const x of ["dashboard","thuchi","chungkhoan","taisan","baocao","cauhinh"]) document.getElementById("tab-"+x).classList.toggle("active", x==="cauhinh");
