@@ -324,7 +324,7 @@ let reportStart = null, reportEnd = null;
 let catDetailId = null;
 
 // ---- Cau hinh: Danh muc + So tay/Tien ich ----
-let chView = "danhmuc";   // sub-tab trong Cau hinh: "danhmuc" | "tienich"
+let chView = "tienich";   // sub-tab trong Cau hinh: "danhmuc" | "tienich" - mac dinh mo Tien ich
 let chCatKindFilter = "expense";  // dang xem danh muc Chi hay Thu
 let niTypeFilter = "";    // "" = tat ca
 let niSearchQ = "";
@@ -1063,7 +1063,7 @@ function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`;
 function setChView(v){ chView=v; setActionBar(); renderCauHinh(document.getElementById("content")); }
 async function renderCauHinh(c){
   const tb = (label,v)=>`<button class="chip ${chView===v?'on':''}" onclick="setChView('${v}')">${label}</button>`;
-  let html = `<div class="chips" style="margin-bottom:12px">${tb("Danh mục","danhmuc")}${tb("Tiện ích","tienich")}${tb("Người dùng","quanlyuser")}</div>`;
+  let html = `<div class="chips" style="margin-bottom:12px">${tb("Tiện ích","tienich")}${tb("Danh mục","danhmuc")}${tb("Người dùng","quanlyuser")}</div>`;
   c.innerHTML = html;
   const body = document.createElement("div");
   c.appendChild(body);
@@ -1203,9 +1203,31 @@ async function saveCat(){
 // ---- Nhom B: So tay / Tien ich ----
 let niItems = [];
 function setNiTypeFilter(v){ niTypeFilter=v; renderTienIch(document.getElementById("content").lastChild); }
-function onNiSearch(v){ niSearchQ=v; renderTienIch(document.getElementById("content").lastChild); }
+// Go 1 ky tu roi mat focus (phai bam lai o tim kiem): truoc day moi lan go
+// phim goi renderTienIch() ghi de toan bo body.innerHTML, pha huy va tao lai
+// chinh o input dang go -> mat focus + con tro. Sua bang cach: chi ve
+// input+chips MOT LAN khi vao man (hoac doi loai), con moi lan go phim chi
+// cap nhat rieng phan ket qua (#niResultsBody), o input khong bi dung cham
+// toi nen giu duoc focus. Them debounce de khong goi API lien tuc tung phim.
+let niSearchDebounce = null;
+function onNiSearchInput(v){
+  niSearchQ = v;
+  clearTimeout(niSearchDebounce);
+  niSearchDebounce = setTimeout(refreshNiResults, 300);
+}
 async function renderTienIch(body){
   await loadNiTypes(false); // chi lay loai dang hien (an loai da bi an trong Cau hinh)
+  let html = `<input id="niSearchBox" placeholder="🔍 Tìm kiếm (vd: xe, mẹ, wifi...)" value="${niSearchQ.replace(/"/g,'&quot;')}" oninput="onNiSearchInput(this.value)" style="margin-bottom:8px" />`;
+  const allChip = `<button class="chip ${niTypeFilter===''?'on':''}" onclick="setNiTypeFilter('')">Tất cả</button>`;
+  const typeChips = niTypesCache.map(t=>`<button class="chip ${niTypeFilter===t.key?'on':''}" onclick="setNiTypeFilter('${t.key}')">${t.icon||'🏷️'} ${t.name}</button>`).join("");
+  html += `<div class="chips" style="margin-bottom:10px">${allChip}${typeChips}</div>`;
+  html += `<div id="niResultsBody"><div class="card"><div class="sub">Đang tải…</div></div></div>`;
+  body.innerHTML = html;
+  await refreshNiResults();
+}
+async function refreshNiResults(){
+  const container = document.getElementById("niResultsBody");
+  if(!container) return; // da roi khoi man Tien ich truoc khi tai xong
   const params = new URLSearchParams();
   if(niTypeFilter) params.set("type", niTypeFilter);
   if(niSearchQ.trim()) params.set("q", niSearchQ.trim());
@@ -1215,13 +1237,10 @@ async function renderTienIch(body){
     console.error("Error loading notebook items:", e);
     niItems = [];
   }
+  const c = document.getElementById("niResultsBody");
+  if(!c) return; // kiem tra lai vi vua await xong, co the da chuyen man khac
 
-  let html = `<input id="niSearchBox" placeholder="🔍 Tìm kiếm (vd: xe, mẹ, wifi...)" value="${niSearchQ.replace(/"/g,'&quot;')}" oninput="onNiSearch(this.value)" style="margin-bottom:8px" />`;
-  const allChip = `<button class="chip ${niTypeFilter===''?'on':''}" onclick="setNiTypeFilter('')">Tất cả</button>`;
-  const typeChips = niTypesCache.map(t=>`<button class="chip ${niTypeFilter===t.key?'on':''}" onclick="setNiTypeFilter('${t.key}')">${t.icon||'🏷️'} ${t.name}</button>`).join("");
-  html += `<div class="chips" style="margin-bottom:10px">${allChip}${typeChips}</div>`;
-
-  html += `<div class="card">`;
+  let html = `<div class="card">`;
   if(niItems.length===0){
     html += `<div class="sub">Không tìm thấy mục nào</div>`;
   }else{
@@ -1240,7 +1259,7 @@ async function renderTienIch(body){
     }
   }
   html += `</div>`;
-  body.innerHTML = html;
+  c.innerHTML = html;
 }
 function niMetaLine(it){
   const parts = [];
