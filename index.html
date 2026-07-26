@@ -311,11 +311,17 @@
       <button type="button" onclick="toggleNiPassword()" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:6px;font-size:18px">👁️</button>
     </div>
     <div class="sub" id="niDate1Label" style="margin:6px 0 2px">Ngày</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
       <input id="niDate1" type="date" style="flex:1;margin:0" />
       <label id="niLunarLabel" style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
         <input type="checkbox" id="niLunar" style="width:auto" /> Âm lịch
       </label>
+      <label id="niRemindBirthdayLabel" style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap">
+        <input type="checkbox" id="niRemindBirthday" style="width:auto" checked /> Nhắc sinh nhật
+      </label>
+    </div>
+    <div id="niRemindBirthdayNote" class="sub" style="margin:0 0 10px;font-size:11px;display:none">
+      Bỏ tích nếu đã có bản ghi "Sinh nhật" riêng cho người này (tránh nhắc trùng).
     </div>
     <input id="niIdNumber" placeholder="Số CCCD" />
     <input id="niIdIssuedDate" type="date" />
@@ -383,8 +389,8 @@ const NI_BUILTIN_FIELDS = {
   service:         {date1:1, date2:1, recurrence:1, amount:1},
   maintenance:     {date1:1, date2:1, recurrence:1},
   account:         {system:1, relation:1, username:1, password:1},
-  personal_info:   {fullName:1, date1:1, phone:1, idNumber:1, idIssuedDate:1,
-                     idIssuedPlace:1, date2:1, birthCertNo:1,
+  personal_info:   {fullName:1, date1:1, remindBirthday:1, phone:1, idNumber:1,
+                     idIssuedDate:1, idIssuedPlace:1, date2:1, birthCertNo:1,
                      healthInsuranceNo:1, address:1, hometown:1, attach:1},
   task:            {info:1, date2:1},
   note:            {},
@@ -1468,6 +1474,9 @@ async function openNi(item){
   document.getElementById("niPassword").type = "password";
   document.getElementById("niDate1").value = item ? (item.date1||"") : "";
   document.getElementById("niLunar").checked = item ? !!item.date1_is_lunar : false;
+  // Mac dinh co tich (nguoi dung moi them chua co gia tri) - chi bo tich khi
+  // ban ghi da luu roi va nguoi dung tung bo tich no truoc do.
+  document.getElementById("niRemindBirthday").checked = item ? (item.remind_birthday !== false) : true;
   document.getElementById("niIdNumber").value = item ? (item.id_number||"") : "";
   document.getElementById("niIdIssuedDate").value = item ? (item.id_issued_date||"") : "";
   document.getElementById("niIdIssuedPlace").value = item ? (item.id_issued_place||"") : "";
@@ -1557,6 +1566,8 @@ function setNiType(v){
   show("niDate1Label", f.date1);
   document.getElementById("niDate1").parentElement.style.display = f.date1 ? "flex" : "none";
   show("niLunarLabel", f.lunar);
+  show("niRemindBirthdayLabel", f.remindBirthday);
+  show("niRemindBirthdayNote", f.remindBirthday);
   show("niIdNumber", f.idNumber);
   show("niIdIssuedDate", f.idIssuedDate);
   show("niIdIssuedDateLabel", f.idIssuedDate);
@@ -1601,6 +1612,7 @@ async function saveNi(){
     password: document.getElementById("niPassword").value||null,
     date1: document.getElementById("niDate1").value||null,
     date1_is_lunar: document.getElementById("niLunar").checked,
+    remind_birthday: document.getElementById("niRemindBirthday").checked,
     id_number: document.getElementById("niIdNumber").value.trim()||null,
     id_issued_date: document.getElementById("niIdIssuedDate").value||null,
     id_issued_place: document.getElementById("niIdIssuedPlace").value.trim()||null,
