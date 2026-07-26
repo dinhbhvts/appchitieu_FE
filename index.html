@@ -143,7 +143,10 @@
     <label class="sub">Người dùng</label>
     <select id="loginUser"></select>
     <label class="sub">Mật khẩu</label>
-    <input id="loginPass" type="password" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')doLogin()" />
+    <div style="position:relative;display:flex;align-items:center">
+      <input id="loginPass" type="password" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')doLogin()" style="flex:1;padding-right:36px" />
+      <button type="button" onclick="toggleLoginPassword()" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:6px;font-size:18px">👁️</button>
+    </div>
     <div id="loginErr"></div>
     <button class="abtn" style="width:100%" onclick="doLogin()">Đăng nhập</button>
     <div class="server" style="margin-top:14px">Máy chủ: <input id="loginServer" oninput="document.getElementById('server').value=this.value" /></div>
@@ -420,6 +423,10 @@ async function loadLoginUsers(){
     const us = await (await fetch(api()+"/users")).json();
     document.getElementById("loginUser").innerHTML = us.map(u=>`<option value="${u.name}">${u.name}</option>`).join("");
   }catch(e){ document.getElementById("loginErr").innerHTML=`<div class="err">Không kết nối được máy chủ. Kiểm tra địa chỉ.</div>`; }
+}
+function toggleLoginPassword(){
+  const inp = document.getElementById("loginPass");
+  inp.type = inp.type === "password" ? "text" : "password";
 }
 async function doLogin(){
   const username = document.getElementById("loginUser").value;
@@ -904,16 +911,17 @@ function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); rend
 function rowLine(label, val, color){ return `<div class="row" style="padding:4px 0"><span>${label}</span><span style="color:${color};font-weight:600">${vnd(val)} đ</span></div>`; }
 function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`; }
 
-// ==== Tab Cau hinh: Danh muc + So tay/Tien ich ====
+// ==== Tab Cau hinh: Danh muc + So tay/Tien ich + Quan ly nguoi dung ====
 function setChView(v){ chView=v; renderCauHinh(document.getElementById("content")); }
 async function renderCauHinh(c){
   const tb = (label,v)=>`<button class="chip ${chView===v?'on':''}" onclick="setChView('${v}')">${label}</button>`;
-  let html = `<div class="chips" style="margin-bottom:12px">${tb("Danh mục","danhmuc")}${tb("Tiện ích","tienich")}</div>`;
+  let html = `<div class="chips" style="margin-bottom:12px">${tb("Danh mục","danhmuc")}${tb("Tiện ích","tienich")}${tb("Người dùng","quanlyuser")}</div>`;
   c.innerHTML = html;
   const body = document.createElement("div");
   c.appendChild(body);
   if(chView==="danhmuc") await renderDanhMuc(body);
-  else await renderTienIch(body);
+  else if(chView==="tienich") await renderTienIch(body);
+  else renderQuanLyUser(body);
 }
 
 // ---- Nhom A: Danh muc ----
@@ -1230,6 +1238,59 @@ function startApp(){ render(); }
 document.querySelectorAll(".modal").forEach(m=>{
   m.addEventListener("click", e=>{ if(e.target===m) m.classList.remove("on"); });
 });
+
+// ==================== Nhom C: Quan ly nguoi dung ====================
+let changePassOldPass = "", changePassNewPass = "", changePassConfirmPass = "";
+let changePassShowOld = false, changePassShowNew = false, changePassShowConfirm = false;
+function renderQuanLyUser(body){
+  let html = `<div style="padding:16px"><h3>Đổi Mật Khẩu</h3>`;
+  html += `<div style="margin-bottom:12px">
+    <label class="sub">Mật khẩu hiện tại</label>
+    <div style="position:relative;display:flex;align-items:center;margin-bottom:8px">
+      <input id="cpOldPass" type="password" placeholder="Mật khẩu hiện tại" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;padding-right:36px" oninput="changePassOldPass=this.value" />
+      <button type="button" onclick="changePassShowOld=!changePassShowOld; document.getElementById('cpOldPass').type=changePassShowOld?'text':'password'" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;font-size:18px">👁️</button>
+    </div>
+  </div>`;
+  html += `<div style="margin-bottom:12px">
+    <label class="sub">Mật khẩu mới</label>
+    <div style="position:relative;display:flex;align-items:center;margin-bottom:8px">
+      <input id="cpNewPass" type="password" placeholder="Mật khẩu mới" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;padding-right:36px" oninput="changePassNewPass=this.value" />
+      <button type="button" onclick="changePassShowNew=!changePassShowNew; document.getElementById('cpNewPass').type=changePassShowNew?'text':'password'" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;font-size:18px">👁️</button>
+    </div>
+  </div>`;
+  html += `<div style="margin-bottom:12px">
+    <label class="sub">Xác nhận mật khẩu</label>
+    <div style="position:relative;display:flex;align-items:center;margin-bottom:12px">
+      <input id="cpConfirmPass" type="password" placeholder="Xác nhận mật khẩu" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;padding-right:36px" oninput="changePassConfirmPass=this.value" />
+      <button type="button" onclick="changePassShowConfirm=!changePassShowConfirm; document.getElementById('cpConfirmPass').type=changePassShowConfirm?'text':'password'" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;font-size:18px">👁️</button>
+    </div>
+  </div>`;
+  html += `<div id="cpErr"></div><button class="primary" style="width:100%;margin-top:8px" onclick="doChangePassword()">Đổi Mật Khẩu</button>`;
+  html += `<hr style="margin:24px 0"><h3>Khác</h3><button class="ghost" style="width:100%" onclick="doLogout()">Đăng xuất</button></div>`;
+  body.innerHTML = html;
+}
+async function doChangePassword(){
+  const errDiv = document.getElementById("cpErr");
+  errDiv.innerHTML = "";
+  if(!changePassOldPass || !changePassNewPass || !changePassConfirmPass){
+    errDiv.innerHTML = `<div class="err">Tất cả trường không được để trống</div>`;
+    return;
+  }
+  try{
+    await jput("/users/me/password", {old_password: changePassOldPass, new_password: changePassNewPass, confirm_password: changePassConfirmPass});
+    errDiv.innerHTML = `<div style="color:green;margin-bottom:12px">Đổi mật khẩu thành công!</div>`;
+    changePassOldPass = ""; changePassNewPass = ""; changePassConfirmPass = "";
+    document.getElementById("cpOldPass").value = "";
+    document.getElementById("cpNewPass").value = "";
+    document.getElementById("cpConfirmPass").value = "";
+  }catch(e){
+    errDiv.innerHTML = `<div class="err">${e.message}</div>`;
+  }
+}
+function doLogout(){
+  if(!confirm("Bạn chắc chắn muốn đăng xuất?")) return;
+  logout();
+}
 
 async function boot(){
   // Chua co token -> bat dang nhap.
