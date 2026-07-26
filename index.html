@@ -482,6 +482,12 @@ function setActionBar(){
     if(stockUser===null) ab.innerHTML = "";
     else ab.innerHTML = `<button class="abtn alt" onclick="openCf()">Nạp/Rút</button><button class="abtn" onclick="openTr()">Mua/Bán</button><button class="abtn" style="background:var(--muted)" onclick="openHd()">Đang giữ</button>`;
   }
+  else if(tab==="cauhinh"){
+    // Nut hanh dong doi theo nhom dang xem trong Cau hinh.
+    if(chView==="danhmuc") ab.innerHTML = `<button class="abtn" onclick="openCat(null)">+ Thêm danh mục ${chCatKindFilter==='expense'?'Chi':'Thu'}</button>`;
+    else if(chView==="tienich") ab.innerHTML = `<button class="abtn" onclick="openNi(null)">+ Thêm mục sổ tay</button>`;
+    else ab.innerHTML = "";
+  }
   else ab.innerHTML = "";
 }
 
@@ -912,7 +918,7 @@ function rowLine(label, val, color){ return `<div class="row" style="padding:4px
 function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`; }
 
 // ==== Tab Cau hinh: Danh muc + So tay/Tien ich + Quan ly nguoi dung ====
-function setChView(v){ chView=v; renderCauHinh(document.getElementById("content")); }
+function setChView(v){ chView=v; setActionBar(); renderCauHinh(document.getElementById("content")); }
 async function renderCauHinh(c){
   const tb = (label,v)=>`<button class="chip ${chView===v?'on':''}" onclick="setChView('${v}')">${label}</button>`;
   let html = `<div class="chips" style="margin-bottom:12px">${tb("Danh mục","danhmuc")}${tb("Tiện ích","tienich")}${tb("Người dùng","quanlyuser")}</div>`;
@@ -925,13 +931,13 @@ async function renderCauHinh(c){
 }
 
 // ---- Nhom A: Danh muc ----
-function setCatKindFilter(k){ chCatKindFilter=k; renderCauHinh(document.getElementById("content")); }
+function setCatKindFilter(k){ chCatKindFilter=k; setActionBar(); renderCauHinh(document.getElementById("content")); }
 async function renderDanhMuc(body){
   const cats = await jget("/categories?include_inactive=true");
   const list = cats.filter(x => x.kind===chCatKindFilter || x.kind==="both");
   const tb = (label,v)=>`<button class="chip ${chCatKindFilter===v?'on':''}" onclick="setCatKindFilter('${v}')">${label}</button>`;
   let html = `<div class="chips" style="margin-bottom:10px">${tb("Danh mục Chi","expense")}${tb("Danh mục Thu","income")}</div>`;
-  html += `<div class="card" style="flex:1;overflow-y:auto;margin-bottom:8px">`;
+  html += `<div class="card">`;
   if(list.length===0){ html += `<div class="sub">Chưa có danh mục nào</div>`; }
   else{
     for(const cat of list){
@@ -942,7 +948,7 @@ async function renderDanhMuc(body){
         <span class="editbtn">✎</span></div>`;
     }
   }
-  html += `</div><button class="primary" style="width:100%" onclick="openCat(null)">+ Thêm danh mục ${chCatKindFilter==='expense'?'Chi':'Thu'}</button>`;
+  html += `</div>`;
   body.innerHTML = html;
 }
 
@@ -1010,7 +1016,7 @@ async function renderTienIch(body){
   const typeChips = NI_TYPES.map(t=>`<button class="chip ${niTypeFilter===t.v?'on':''}" onclick="setNiTypeFilter('${t.v}')">${t.icon} ${t.label}</button>`).join("");
   html += `<div class="chips" style="margin-bottom:10px">${allChip}${typeChips}</div>`;
 
-  html += `<div class="card" style="flex:1;overflow-y:auto;margin-bottom:8px">`;
+  html += `<div class="card">`;
   if(niItems.length===0){
     html += `<div class="sub">Không tìm thấy mục nào</div>`;
   }else{
@@ -1028,7 +1034,7 @@ async function renderTienIch(body){
         <span class="editbtn">✎</span></div>`;
     }
   }
-  html += `</div><button class="primary" style="width:100%" onclick="openNi(null)">+ Thêm mục sổ tay</button>`;
+  html += `</div>`;
   body.innerHTML = html;
 }
 function niMetaLine(it){
