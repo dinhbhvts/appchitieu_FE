@@ -221,7 +221,8 @@
   <div class="sheet">
     <h3 id="dvModalTitle">Cổ tức</h3>
     <input id="dvSymbol" placeholder="Mã CK (vd: NKG)" />
-    <input id="dvAmount" type="number" placeholder="Số tiền thực nhận" />
+    <input id="dvQuantity" type="number" placeholder="Số lượng cổ phiếu (không bắt buộc)" />
+    <input id="dvAmount" type="number" placeholder="Số tiền thực nhận (không bắt buộc)" />
     <input id="dvFee" type="number" placeholder="Thuế/phí (không bắt buộc)" />
     <input id="dvDate" type="date" />
     <select id="dvUser"></select>
@@ -852,8 +853,8 @@ async function renderChungKhoan(c){
     </div>
     <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
       ${miniStat("Vốn đầu tư (nạp−rút)", s.invested_capital, "var(--accent)")}
-      ${miniStat("Cổ tức lũy kế", s.total_dividend||0, "var(--green)")}
-      ${miniStat("Lãi/lỗ (giữ+rút+cổ tức−nạp)", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
+      ${miniStat("Cổ tức lũy kế (chỉ lưu trữ)", s.total_dividend||0, "#8B5CF6")}
+      ${miniStat("Lãi/lỗ (giữ+rút−nạp)", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
     </div></div>`;
 
   // Danh muc dang giu - NHAP TAY (co so luong). Tab Tong: gop theo ma CK.
@@ -926,9 +927,15 @@ async function renderChungKhoan(c){
   }else{
     for(const d of dvInRange.slice().reverse()){
       const edit = canEdit ? `<span class="editbtn" onclick="editDv(${d.id})" title="Sửa">✎</span>` : '';
+      const hasAmount = d.amount!=null;
+      const qtyMeta = d.quantity ? `${vnd(d.quantity)} cp` : '';
+      // Số lượng ở dòng chi tiết chỉ khi KHÔNG hiện ở ô số tiền bên phải, để
+      // tránh lặp lại.
+      const meta = [fmtDate(d.date), hasAmount?qtyMeta:'', d.fee?`thuế/phí ${vnd(d.fee)}`:''].filter(Boolean).join(' · ');
+      const amountLabel = hasAmount ? `+${vnd(d.amount)}` : (qtyMeta || '—');
       html += `<div class="tx"><div><div class="desc">${d.symbol} · Cổ tức${d.note?' · '+d.note:''}</div>
-        <div class="meta">${fmtDate(d.date)}${d.fee?` · thuế/phí ${vnd(d.fee)}`:''}</div></div>
-        <div style="display:flex;align-items:center;gap:10px"><span class="inc">+${vnd(d.amount)}</span>${edit}</div></div>`;
+        <div class="meta">${meta}</div></div>
+        <div style="display:flex;align-items:center;gap:10px"><span class="inc">${amountLabel}</span>${edit}</div></div>`;
     }
   }
   html += `</div>`;
@@ -1024,7 +1031,8 @@ function openDv(d){
   document.getElementById("dvModalTitle").textContent = editingDvId ? "Sửa cổ tức" : "Cổ tức";
   document.getElementById("dvDelBtn").style.display = editingDvId ? "block" : "none";
   document.getElementById("dvSymbol").value = d ? d.symbol : "";
-  document.getElementById("dvAmount").value = d ? d.amount : "";
+  document.getElementById("dvQuantity").value = (d && d.quantity!=null) ? d.quantity : "";
+  document.getElementById("dvAmount").value = (d && d.amount!=null) ? d.amount : "";
   document.getElementById("dvFee").value = (d && d.fee) ? d.fee : "";
   document.getElementById("dvNote").value = d ? (d.note||"") : "";
   document.getElementById("dvErr").innerHTML = "";
@@ -1036,11 +1044,17 @@ function openDv(d){
 function closeDv(){ document.getElementById("dvModal").classList.remove("on"); }
 async function saveDv(){
   const symbol = document.getElementById("dvSymbol").value.trim();
-  const amount = parseFloat((document.getElementById("dvAmount").value||"").replace(/\./g,""));
+  const qtyRaw = document.getElementById("dvQuantity").value;
+  const amtRaw = document.getElementById("dvAmount").value;
+  const quantity = qtyRaw ? parseInt(qtyRaw) : null;
+  const amount = amtRaw ? parseFloat(amtRaw.replace(/\./g,"")) : null;
   const fee = parseFloat((document.getElementById("dvFee").value||"").replace(/\./g,""))||0;
-  if(!symbol||!amount||amount<=0){ document.getElementById("dvErr").innerHTML=`<div class="err">Nhập mã CK và số tiền</div>`; return; }
+  if(!symbol || (!quantity && !amount)){
+    document.getElementById("dvErr").innerHTML=`<div class="err">Nhập mã CK và ít nhất số lượng hoặc số tiền</div>`;
+    return;
+  }
   const payload = {
-    date: document.getElementById("dvDate").value, symbol, amount, fee,
+    date: document.getElementById("dvDate").value, symbol, quantity, amount, fee,
     user_id: parseInt(document.getElementById("dvUser").value),
     note: document.getElementById("dvNote").value.trim()||null,
   };
