@@ -237,7 +237,7 @@
       <button id="catBtnThu" onclick="setCatKind('income')">Thu</button>
     </div>
     <input id="catName" placeholder="Tên danh mục (vd: Xăng xe)" />
-    <input id="catIcon" placeholder="Icon (vd: ⛽) - không bắt buộc" maxlength="4" />
+    <input id="catIcon" placeholder="Icon (vd: ⛽) - được gợi ý từ tên danh mục nếu trùng khớp" maxlength="4" />
     <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px">
       <input type="checkbox" id="catActive" style="width:auto" checked /> Hiển thị khi chọn danh mục
     </label>
@@ -311,12 +311,65 @@ function niTypeInfo(v){ return NI_TYPES.find(t=>t.v===v) || {label:v, icon:"🏷
 // Icon goi y theo ten danh muc (thuan UI, khong luu DB). Danh muc tu tao
 // (khong co trong danh sach) dung icon mac dinh.
 const CATEGORY_ICONS = {
-  "Lương chồng": "💼", "Lương vợ": "👛", "Thưởng": "🎁", "Thu khác": "💰",
-  "Ăn uống": "🍜", "Đi lại": "🚗", "Mua sắm": "🛍️", "Sức khỏe": "💊",
-  "Gia đình": "👨‍👩‍👧", "Giáo dục": "🎓", "Giải trí": "🎬", "Tài chính": "💳",
-  "Quà tặng": "🎀", "Dịch vụ": "🧾", "Sửa chữa": "🔧", "Khác": "📦",
+  // Income (Thu)
+  "Lương chồng": "💼", "Lương vợ": "👛", "Thưởng": "🎁", "Bonus": "🎁", "Thu khác": "💰",
+  "Tiền lãi": "📈", "Cổ tức": "📊", "Bán hàng": "🏪", "Dịch vụ thêm": "💼", "Hoàn tiền": "💵",
+  // Expense (Chi) - Food & Dining
+  "Ăn uống": "🍜", "Ăn sáng": "🥐", "Ăn trưa": "🍱", "Ăn tối": "🍽️",
+  "Cà phê": "☕", "Cafe": "☕", "Đồ ăn nhanh": "🍔", "Nhà hàng": "🍽️", "Quán ăn": "🍜",
+  "Giao đồ ăn": "🛵", "GrabFood": "🛵", "Shopee Food": "🛵",
+  // Transport
+  "Đi lại": "🚗", "Xăng xe": "⛽", "Xăng": "⛽", "Dầu": "⛽",
+  "Taxi": "🚕", "Grab": "🚕", "Uber": "🚕", "Xe buýt": "🚌", "Tàu": "🚆",
+  "Máy bay": "✈️", "Du lịch": "✈️", "Vé máy bay": "✈️", "Vé tàu": "🚆",
+  "Bảo hiểm xe": "🛡️", "Rửa xe": "🚗", "Sửa xe": "🔧", "Bảo dưỡng xe": "🔧", "Đỗ xe": "🅿️",
+  // Shopping
+  "Mua sắm": "🛍️", "Quần áo": "👕", "Giày": "👟", "Túi xách": "👜", "Phụ kiện": "⌚",
+  "Trang sức": "💍", "Thời trang": "👗", "Makeup": "💄", "Mỹ phẩm": "💄", "Dụng cụ": "🧹",
+  "Đồ gia dụng": "🏠", "Đồ chơi": "🧸", "Sách": "📖", "Khám phá": "📦",
+  "Lazada": "🛍️", "Shopee": "🛍️", "Tiki": "🛍️",
+  // Health & Wellness
+  "Sức khỏe": "💊", "Thuốc": "💊", "Khám bác sĩ": "⚕️", "Bệnh viện": "🏥", "Nha sĩ": "🦷",
+  "Mắt kính": "👓", "Thể dục": "💪", "Gym": "🏋️", "Yoga": "🧘", "Spa": "🧖",
+  "Massage": "🧖", "Làm tóc": "💇", "Cắt tóc": "✂️",
+  // Family & Household
+  "Gia đình": "👨‍👩‍👧", "Sinh nhật": "🎂", "Quà sinh nhật": "🎁", "Hôn nhân": "💒",
+  "Nhà trọ": "🏠", "Tiền nhà": "🏠", "Điện nước": "💧", "Internet": "📶",
+  "Điện thoại": "📱", "TV cable": "📺", "Gas": "🔥",
+  // Education
+  "Giáo dục": "🎓", "Học thêm": "📚", "Lớp học": "🎓", "Khóa học": "📚",
+  "Sách giáo khoa": "📖", "Học online": "💻",
+  // Entertainment & Leisure
+  "Giải trí": "🎬", "Phim": "🎬", "Cinema": "🎬", "Xem phim": "🍿", "Vé xem phim": "🎫",
+  "Nhạc": "🎵", "Liveshow": "🎤", "Concert": "🎸", "Sân vận động": "⚽", "Trò chơi": "🎮",
+  "Game": "🎮", "Chơi game": "🎮",
+  // Financial & Banking
+  "Tài chính": "💳", "Ngân hàng": "🏦", "Phí ngân hàng": "💳", "Tiền gốc": "💰",
+  "Tiền gửi": "🏦", "Rút tiền": "💸", "Chuyển tiền": "💸", "Thanh toán": "💳",
+  "Thẻ tín dụng": "💳", "Nợ": "📉", "Cho vay": "💰",
+  // Gifts & Special
+  "Quà tặng": "🎀", "Quà": "🎁", "Tặng": "🎁", "Charity": "❤️", "Từ thiện": "❤️", "Quyên góp": "❤️",
+  // Services & Maintenance
+  "Dịch vụ": "🧾", "Sửa chữa": "🔧", "Bảo trì": "🔧", "Sửa nhà": "🏠", "Sửa đồ": "🔧",
+  "Vệ sinh": "🧹", "Giặt ủi": "👕", "Cắt cỏ": "🌱", "Làm vườn": "🌿",
+  // Insurance
+  "Bảo hiểm": "🛡️", "Bảo hiểm sức khỏe": "🛡️", "Bảo hiểm nhân thọ": "🛡️",
+  // Miscellaneous
+  "Khác": "📦",
 };
 function catIcon(name){ return CATEGORY_ICONS[name] || "🏷️"; }
+function suggestIcon(name){
+  const nameLower = name.toLowerCase().trim();
+  if(!nameLower) return null;
+  // Exact match (case-insensitive)
+  for(const [k,v] of Object.entries(CATEGORY_ICONS)) if(k.toLowerCase()===nameLower) return v;
+  // Substring match
+  for(const [k,v] of Object.entries(CATEGORY_ICONS)){
+    const kLower=k.toLowerCase();
+    if(nameLower.includes(kLower) || kLower.includes(nameLower)) return v;
+  }
+  return null;
+}
 // Mau nen theo nguoi thuc hien giao dich, de phan biet nhanh Chong/Vo trong danh sach.
 function userTint(userId){
   const u = users.find(x=>x.id===userId);
@@ -888,6 +941,15 @@ function openCat(cat){
   document.getElementById("catActive").checked = cat ? cat.is_active : true;
   document.getElementById("catErr").innerHTML = "";
   setCatKind(cat ? (cat.kind==="income"?"income":"expense") : chCatKindFilter);
+  // When the user changes the category name, auto-fill icon if a suggestion is found.
+  document.getElementById("catName").oninput = function(){
+    if(!editingCatId){ // Only auto-fill for new categories, not when editing.
+      const suggested = suggestIcon(this.value);
+      if(suggested && !document.getElementById("catIcon").value){
+        document.getElementById("catIcon").value = suggested;
+      }
+    }
+  };
   document.getElementById("catModal").classList.add("on");
 }
 function closeCat(){ document.getElementById("catModal").classList.remove("on"); }
