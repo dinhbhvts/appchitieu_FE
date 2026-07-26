@@ -90,7 +90,7 @@
     <div class="server">Máy chủ: <input id="server" value="https://appchitieu.onrender.com" /></div>
   </header>
 
-  <div class="monthbar">
+  <div class="monthbar" id="monthbar">
     <button onclick="changeMonth(-1)">‹</button>
     <select id="monthSel" onchange="jumpYM()" style="margin:0;width:auto;display:inline-block"></select>
     <select id="yearSel" onchange="jumpYM()" style="margin:0;width:auto;display:inline-block"></select>
@@ -104,7 +104,7 @@
   <div class="tabs">
     <button id="tab-dashboard" onclick="go('dashboard')"><span class="ico">⌂</span>Tổng quan</button>
     <button id="tab-thuchi" class="active" onclick="go('thuchi')"><span class="ico">☰</span>Thu chi</button>
-    <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico">↗</span>Chứng khoán</button>
+    <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico">↗</span>CK</button>
     <button id="tab-taisan" onclick="go('taisan')"><span class="ico">◆</span>Tài sản</button>
     <button id="tab-baocao" onclick="go('baocao')"><span class="ico">▤</span>Báo cáo</button>
     <button id="tab-cauhinh" onclick="go('cauhinh')"><span class="ico">⚙</span>Cấu hình</button>
@@ -216,6 +216,25 @@
   </div>
 </div>
 
+<!-- Form co tuc -->
+<div class="modal" id="dvModal">
+  <div class="sheet">
+    <h3 id="dvModalTitle">Cổ tức</h3>
+    <input id="dvSymbol" placeholder="Mã CK (vd: NKG)" />
+    <input id="dvAmount" type="number" placeholder="Số tiền thực nhận" />
+    <input id="dvFee" type="number" placeholder="Thuế/phí (không bắt buộc)" />
+    <input id="dvDate" type="date" />
+    <select id="dvUser"></select>
+    <input id="dvNote" placeholder="Ghi chú (không bắt buộc)" />
+    <div id="dvErr"></div>
+    <button id="dvDelBtn" onclick="deleteDv()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeDv()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveDv()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <!-- Form them tai san -->
 <div class="modal" id="asModal">
   <div class="sheet">
@@ -281,6 +300,7 @@
     <div class="chips" id="niTypeChips" style="margin-bottom:10px"></div>
     <input id="niTitle" placeholder="Tiêu đề" />
     <input id="niSystem" placeholder="Hệ thống (vd: Netflix, Wifi FPT...)" />
+    <input id="niFullName" placeholder="Họ tên" />
     <input id="niRelation" placeholder="Quan hệ (vd: Bố, Mẹ...)" />
     <input id="niPhone" type="tel" placeholder="Điện thoại" />
     <input id="niAddress" placeholder="Địa chỉ" />
@@ -296,13 +316,27 @@
         <input type="checkbox" id="niLunar" style="width:auto" /> Âm lịch
       </label>
     </div>
+    <input id="niIdNumber" placeholder="Số CCCD" />
+    <input id="niIdIssuedDate" type="date" />
+    <div class="sub" id="niIdIssuedDateLabel" style="margin:-8px 0 8px;font-size:11px">Ngày cấp</div>
+    <input id="niIdIssuedPlace" placeholder="Nơi cấp" />
     <div class="sub" id="niDate2Label" style="margin:6px 0 2px">Ngày hết hạn / đến hạn kế tiếp</div>
     <input id="niDate2" type="date" />
+    <input id="niBirthCertNo" placeholder="Số giấy khai sinh" />
+    <input id="niHealthInsuranceNo" placeholder="Số thẻ BHYT" />
+    <input id="niHometown" placeholder="Quê quán" />
     <input id="niRecurrence" type="number" placeholder="Chu kỳ lặp lại (số ngày, không bắt buộc)" />
     <input id="niAmount" type="number" placeholder="Số tiền (không bắt buộc)" />
     <textarea id="niInfo" placeholder="Thông tin" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;margin-top:8px;box-sizing:border-box"></textarea>
     <input id="niTags" placeholder="Tag (vd: #xe #gia_dinh)" />
     <textarea id="niNote" placeholder="Ghi chú" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;margin-top:8px;box-sizing:border-box"></textarea>
+    <div id="niAttachSection" style="display:none">
+      <div class="sub" style="margin:14px 0 6px">Hồ sơ đính kèm</div>
+      <div id="niAttachList" style="margin-bottom:8px"></div>
+      <input type="file" id="niAttachFile" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.doc,.docx" style="display:none" onchange="onNiAttachFileChosen(event)" />
+      <button type="button" class="ghost" style="width:100%" onclick="document.getElementById('niAttachFile').click()">+ Thêm file đính kèm</button>
+      <div id="niAttachErr" style="margin-top:6px"></div>
+    </div>
     <div id="niErr"></div>
     <button id="niDelBtn" onclick="deleteNi()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-top:8px;cursor:pointer;font-size:14px">Xóa mục này</button>
     <div style="display:flex;gap:8px;margin-top:8px;">
@@ -348,6 +382,10 @@ const NI_BUILTIN_FIELDS = {
   service:         {date1:1, date2:1, recurrence:1, amount:1},
   maintenance:     {date1:1, date2:1, recurrence:1},
   account:         {system:1, relation:1, username:1, password:1},
+  personal_info:   {fullName:1, date1:1, phone:1, idNumber:1, idIssuedDate:1,
+                     idIssuedPlace:1, date2:1, birthCertNo:1,
+                     healthInsuranceNo:1, address:1, hometown:1, attach:1},
+  task:            {info:1, date2:1},
   note:            {},
   child_milestone: {date1:1},
 };
@@ -453,6 +491,9 @@ async function jget(path){ return handleResp(await fetch(api()+path, {headers: a
 async function jpost(path, body){ return handleResp(await fetch(api()+path,{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),body:body?JSON.stringify(body):null})); }
 async function jput(path, body){ return handleResp(await fetch(api()+path,{method:"PUT",headers:authHeaders({"Content-Type":"application/json"}),body:JSON.stringify(body)})); }
 async function jdelete(path){ return handleResp(await fetch(api()+path,{method:"DELETE",headers:authHeaders()})); }
+// Upload file (multipart) - KHONG tu dat Content-Type, trinh duyet tu them
+// boundary dung khi body la FormData.
+async function jupload(path, formData){ return handleResp(await fetch(api()+path,{method:"POST",headers:authHeaders(),body:formData})); }
 
 // ---- Dang nhap / dang xuat ----
 function showLogin(){
@@ -523,7 +564,7 @@ function setActionBar(){
   else if(tab==="chungkhoan"){
     // Tab Tổng chỉ xem; tab Chồng/Vợ mới cho thêm/sửa.
     if(stockUser===null) ab.innerHTML = "";
-    else ab.innerHTML = `<button class="abtn alt" onclick="openCf()">Nạp/Rút</button><button class="abtn" onclick="openTr()">Mua/Bán</button><button class="abtn" style="background:var(--muted)" onclick="openHd()">Đang giữ</button>`;
+    else ab.innerHTML = `<button class="abtn alt" onclick="openCf()">Nạp/Rút</button><button class="abtn" onclick="openTr()">Mua/Bán</button><button class="abtn" style="background:#8B5CF6" onclick="openDv()">Cổ tức</button><button class="abtn" style="background:var(--muted)" onclick="openHd()">Đang giữ</button>`;
   }
   else if(tab==="cauhinh"){
     // Nut hanh dong doi theo nhom dang xem trong Cau hinh.
@@ -538,6 +579,11 @@ function setActionBar(){
 async function render(){
   syncYM();
   setActionBar();
+  // Thanh chon thang chi lien quan Thu chi/Chung khoan/Tai san/Bao cao - o
+  // Tong quan va Cau hinh no khong dieu khien gi ca nen an di, danh dat cho
+  // noi dung khac.
+  document.getElementById("monthbar").style.display =
+    (tab==="cauhinh" || tab==="dashboard") ? "none" : "flex";
   document.getElementById("whoami").textContent = currentUser ? currentUser.name : "";
   const c = document.getElementById("content");
   c.innerHTML = "Đang tải…";
@@ -610,7 +656,69 @@ async function renderDashboard(c){
   }
   html += `</div>`;
 
+  // --- Card tra cuu lich am ---
+  html += `<div class="card">
+    <div class="sub" style="margin-bottom:8px">Tra cứu lịch âm</div>
+    <div class="chips" style="margin-bottom:10px">
+      <button class="chip ${lunarMode==='s2l'?'on':''}" onclick="setLunarMode('s2l')">Dương → Âm</button>
+      <button class="chip ${lunarMode==='l2s'?'on':''}" onclick="setLunarMode('l2s')">Âm → Dương</button>
+    </div>
+    <div id="lunarBody"></div>
+  </div>`;
+
   c.innerHTML = html;
+  renderLunarTool();
+}
+
+// ---- Tra cuu lich am (Tong quan) ----
+let lunarMode = "s2l"; // "s2l" = duong sang am, "l2s" = am sang duong
+function setLunarMode(v){ lunarMode = v; renderDashboard(document.getElementById("content")); }
+function renderLunarTool(){
+  const body = document.getElementById("lunarBody");
+  if(!body) return;
+  if(lunarMode === "s2l"){
+    body.innerHTML = `
+      <input id="lunarSolarDate" type="date" style="margin-bottom:8px" />
+      <button class="primary" onclick="doSolarToLunar()">Xem ngày âm</button>
+      <div id="lunarResult" style="margin-top:8px"></div>`;
+  }else{
+    body.innerHTML = `
+      <div style="display:flex;gap:8px">
+        <input id="lunarDay" type="number" placeholder="Ngày" style="flex:1" />
+        <input id="lunarMonth" type="number" placeholder="Tháng" style="flex:1" />
+        <input id="lunarYear" type="number" placeholder="Năm" style="flex:1" />
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;margin:6px 0 10px;font-size:13px">
+        <input type="checkbox" id="lunarLeap" style="width:auto" /> Tháng nhuận
+      </label>
+      <button class="primary" onclick="doLunarToSolar()">Xem ngày dương</button>
+      <div id="lunarResult" style="margin-top:8px"></div>`;
+  }
+}
+async function doSolarToLunar(){
+  const d = document.getElementById("lunarSolarDate").value;
+  const box = document.getElementById("lunarResult");
+  if(!d){ box.innerHTML = `<div class="err">Chọn ngày dương lịch</div>`; return; }
+  try{
+    const r = await jget(`/lunar/to-lunar?date=${d}`);
+    box.innerHTML = `<div class="sub">Âm lịch:</div><div style="font-size:16px;font-weight:600">Ngày ${r.day} tháng ${r.month}${r.is_leap?" (nhuận)":""} năm ${r.year}</div>`;
+  }catch(e){
+    box.innerHTML = `<div class="err">${e.message}</div>`;
+  }
+}
+async function doLunarToSolar(){
+  const day = document.getElementById("lunarDay").value;
+  const month = document.getElementById("lunarMonth").value;
+  const year = document.getElementById("lunarYear").value;
+  const leap = document.getElementById("lunarLeap").checked;
+  const box = document.getElementById("lunarResult");
+  if(!day || !month || !year){ box.innerHTML = `<div class="err">Nhập đủ ngày/tháng/năm âm lịch</div>`; return; }
+  try{
+    const r = await jget(`/lunar/to-solar?year=${year}&month=${month}&day=${day}&is_leap=${leap}`);
+    box.innerHTML = `<div class="sub">Dương lịch:</div><div style="font-size:16px;font-weight:600">${fmtDate(r.date)}</div>`;
+  }catch(e){
+    box.innerHTML = `<div class="err">${e.message}</div>`;
+  }
 }
 function goToTienIch(item){
   tab = "cauhinh"; chView = "tienich";
@@ -699,7 +807,7 @@ async function renderTaiSan(c){
 // ---- Tab Chung khoan ----
 let cfType = "deposit", trSide = "buy";
 let stockUser = null;           // null = Tong; hoac id Chong/Vo
-let stockCashflows = [], stockTrades = [], stockHoldings = [];
+let stockCashflows = [], stockTrades = [], stockHoldings = [], stockDividends = [];
 function setStockUser(v){ stockUser = v; setActionBar(); renderChungKhoan(document.getElementById("content")); }
 // So thu tu lan goi renderChungKhoan gan nhat - de tranh race condition: neu
 // chuyen tab (Tong/Chong/Vo) nhanh, ket qua cua lan goi cu (thang truoc) co
@@ -714,14 +822,15 @@ async function renderChungKhoan(c){
   const q = stockUser ? `?user_id=${stockUser}&${rng}` : `?${rng}`;
   const qUser = stockUser ? `?user_id=${stockUser}` : "";
   const s = await jget(`/stocks/summary${q}`);
-  let trades=[], cashflows=[], holdings=[];
+  let trades=[], cashflows=[], holdings=[], dividends=[];
   try{ trades = await jget(`/stocks/trades${qUser}`); }catch(e){}
   try{ cashflows = await jget(`/stocks/cashflows${qUser}`); }catch(e){}
   try{ holdings = await jget(`/stocks/holdings${qUser}`); }catch(e){}
+  try{ dividends = await jget(`/stocks/dividends${qUser}`); }catch(e){}
   // Da co lan goi moi hon bat dau sau lan nay (vd nguoi dung da bam sang tab
   // khac) -> ket qua nay da lac hau, bo qua, khong ghi de state/DOM.
   if(mySeq !== stockLoadSeq) return;
-  stockTrades = trades; stockCashflows = cashflows; stockHoldings = holdings;
+  stockTrades = trades; stockCashflows = cashflows; stockHoldings = holdings; stockDividends = dividends;
   const chId = chongUserId();
   const voId = (users.find(u=>u.name==="Vợ")||{}).id;
 
@@ -743,7 +852,8 @@ async function renderChungKhoan(c){
     </div>
     <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
       ${miniStat("Vốn đầu tư (nạp−rút)", s.invested_capital, "var(--accent)")}
-      ${miniStat("Lãi/lỗ (giữ+rút−nạp)", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
+      ${miniStat("Cổ tức lũy kế", s.total_dividend||0, "var(--green)")}
+      ${miniStat("Lãi/lỗ (giữ+rút+cổ tức−nạp)", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
     </div></div>`;
 
   // Danh muc dang giu - NHAP TAY (co so luong). Tab Tong: gop theo ma CK.
@@ -808,11 +918,27 @@ async function renderChungKhoan(c){
   }
   html += `</div>`;
 
+  // Co tuc nhan trong thang dang xem.
+  const dvInRange = stockDividends.filter(d => d.date >= rgS && d.date <= rgE);
+  html += `<div class="sectitle">Cổ tức trong Tháng ${month}/${year}</div><div class="card">`;
+  if(dvInRange.length===0){
+    html += `<div class="sub">Chưa có cổ tức nào trong tháng</div>`;
+  }else{
+    for(const d of dvInRange.slice().reverse()){
+      const edit = canEdit ? `<span class="editbtn" onclick="editDv(${d.id})" title="Sửa">✎</span>` : '';
+      html += `<div class="tx"><div><div class="desc">${d.symbol} · Cổ tức${d.note?' · '+d.note:''}</div>
+        <div class="meta">${fmtDate(d.date)}${d.fee?` · thuế/phí ${vnd(d.fee)}`:''}</div></div>
+        <div style="display:flex;align-items:center;gap:10px"><span class="inc">+${vnd(d.amount)}</span>${edit}</div></div>`;
+    }
+  }
+  html += `</div>`;
+
   c.innerHTML = html;
 }
 function editHd(id){ const hd = stockHoldings.find(x=>x.id===id); if(hd) openHd(hd); }
 function editCf(id){ const cf = stockCashflows.find(x=>x.id===id); if(cf) openCf(cf); }
 function editTr(id){ const t = stockTrades.find(x=>x.id===id); if(t) openTr(t); }
+function editDv(id){ const d = stockDividends.find(x=>x.id===id); if(d) openDv(d); }
 function miniStat(label, val, color){
   return `<div class="stat" style="background:#f4f6f8;min-width:45%"><div class="sub">${label}</div>
     <div style="color:${color};font-weight:600">${vnd(val)}</div></div>`;
@@ -889,6 +1015,43 @@ async function saveTr(){
 }
 async function deleteTr(){ if(!editingTrId) return; if(!confirm("Xóa lệnh này?")) return;
   try{ await jdelete("/stocks/trades/"+editingTrId); closeTr(); render(); }catch(e){ document.getElementById("trErr").innerHTML=`<div class="err">${e.message}</div>`; } }
+
+// Form co tuc - cung dang du lieu voi Mua/Ban (ngay, ma CK, nguoi, ghi chu)
+// nhung khong co Mua/Ban vi day la tien nhan ve, khong phai lenh dat.
+let editingDvId = null;
+function openDv(d){
+  editingDvId = (d && d.id) ? d.id : null;
+  document.getElementById("dvModalTitle").textContent = editingDvId ? "Sửa cổ tức" : "Cổ tức";
+  document.getElementById("dvDelBtn").style.display = editingDvId ? "block" : "none";
+  document.getElementById("dvSymbol").value = d ? d.symbol : "";
+  document.getElementById("dvAmount").value = d ? d.amount : "";
+  document.getElementById("dvFee").value = (d && d.fee) ? d.fee : "";
+  document.getElementById("dvNote").value = d ? (d.note||"") : "";
+  document.getElementById("dvErr").innerHTML = "";
+  document.getElementById("dvDate").value = d ? d.date : `${year}-${pad(month)}-${pad(new Date().getDate())}`;
+  document.getElementById("dvUser").innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
+  if(d) document.getElementById("dvUser").value = d.user_id; else if(currentUser) document.getElementById("dvUser").value = currentUser.id;
+  document.getElementById("dvModal").classList.add("on");
+}
+function closeDv(){ document.getElementById("dvModal").classList.remove("on"); }
+async function saveDv(){
+  const symbol = document.getElementById("dvSymbol").value.trim();
+  const amount = parseFloat((document.getElementById("dvAmount").value||"").replace(/\./g,""));
+  const fee = parseFloat((document.getElementById("dvFee").value||"").replace(/\./g,""))||0;
+  if(!symbol||!amount||amount<=0){ document.getElementById("dvErr").innerHTML=`<div class="err">Nhập mã CK và số tiền</div>`; return; }
+  const payload = {
+    date: document.getElementById("dvDate").value, symbol, amount, fee,
+    user_id: parseInt(document.getElementById("dvUser").value),
+    note: document.getElementById("dvNote").value.trim()||null,
+  };
+  try{
+    if(editingDvId){ await jput("/stocks/dividends/"+editingDvId, payload); }
+    else { await jpost("/stocks/dividends", payload); }
+    closeDv(); render();
+  }catch(e){ document.getElementById("dvErr").innerHTML=`<div class="err">${e.message}</div>`; }
+}
+async function deleteDv(){ if(!editingDvId) return; if(!confirm("Xóa khoản cổ tức này?")) return;
+  try{ await jdelete("/stocks/dividends/"+editingDvId); closeDv(); render(); }catch(e){ document.getElementById("dvErr").innerHTML=`<div class="err">${e.message}</div>`; } }
 
 // Form danh muc dang giu (nhap tay)
 let editingHdId = null;
@@ -1263,6 +1426,7 @@ async function refreshNiResults(){
 }
 function niMetaLine(it){
   const parts = [];
+  if(it.full_name) parts.push(it.full_name);
   if(it.relation) parts.push(it.relation);
   if(it.date1) parts.push(fmtDate(it.date1) + (it.date1_is_lunar?" (âm lịch)":""));
   if(it.date2) parts.push("hết hạn " + fmtDate(it.date2));
@@ -1281,6 +1445,7 @@ async function openNi(item){
     `<span class="chip" id="niType-${t.key}" onclick="setNiType('${t.key}')">${t.icon||'🏷️'} ${t.name}</span>`).join("");
   document.getElementById("niTitle").value = item ? item.title : "";
   document.getElementById("niSystem").value = item ? (item.system||"") : "";
+  document.getElementById("niFullName").value = item ? (item.full_name||"") : "";
   document.getElementById("niRelation").value = item ? (item.relation||"") : "";
   document.getElementById("niPhone").value = item ? (item.phone||"") : "";
   document.getElementById("niAddress").value = item ? (item.address||"") : "";
@@ -1289,7 +1454,13 @@ async function openNi(item){
   document.getElementById("niPassword").type = "password";
   document.getElementById("niDate1").value = item ? (item.date1||"") : "";
   document.getElementById("niLunar").checked = item ? !!item.date1_is_lunar : false;
+  document.getElementById("niIdNumber").value = item ? (item.id_number||"") : "";
+  document.getElementById("niIdIssuedDate").value = item ? (item.id_issued_date||"") : "";
+  document.getElementById("niIdIssuedPlace").value = item ? (item.id_issued_place||"") : "";
   document.getElementById("niDate2").value = item ? (item.date2||"") : "";
+  document.getElementById("niBirthCertNo").value = item ? (item.birth_cert_no||"") : "";
+  document.getElementById("niHealthInsuranceNo").value = item ? (item.health_insurance_no||"") : "";
+  document.getElementById("niHometown").value = item ? (item.hometown||"") : "";
   document.getElementById("niRecurrence").value = item ? (item.recurrence_days||"") : "";
   document.getElementById("niAmount").value = item ? (item.amount||"") : "";
   document.getElementById("niInfo").value = item ? (item.info||"") : "";
@@ -1298,6 +1469,8 @@ async function openNi(item){
   document.getElementById("niDelBtn").style.display = editingNiId ? "block" : "none";
   document.getElementById("niErr").innerHTML = "";
   setNiType(item ? item.type : (niTypeFilter || (niTypesCache[0]&&niTypesCache[0].key) || "address"));
+  if(editingNiId) loadNiAttachments(editingNiId);
+  else { document.getElementById("niAttachList").innerHTML = ""; }
   document.getElementById("niModal").classList.add("on");
 }
 function toggleNiPassword(){
@@ -1305,6 +1478,55 @@ function toggleNiPassword(){
   inp.type = inp.type === "password" ? "text" : "password";
 }
 function closeNi(){ document.getElementById("niModal").classList.remove("on"); }
+
+// ---- Ho so dinh kem (chi ap dung khi da co editingNiId - xem setNiType) ----
+async function loadNiAttachments(itemId){
+  const box = document.getElementById("niAttachList");
+  box.innerHTML = `<div class="sub">Đang tải...</div>`;
+  try{
+    const files = await jget(`/notebook-items/${itemId}/attachments`);
+    if(files.length===0){ box.innerHTML = `<div class="sub">Chưa có file đính kèm</div>`; return; }
+    box.innerHTML = files.map(f => `
+      <div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)">
+        <div style="min-width:0">
+          <div class="desc" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.file_name}</div>
+          <div class="meta">${f.size_bytes ? Math.round(f.size_bytes/1024)+" KB" : ""}</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-shrink:0">
+          ${f.drive_link ? `<a href="${f.drive_link}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">Xem</a>` : ""}
+          <span class="editbtn" onclick="deleteNiAttachment(${itemId},${f.id})" title="Xóa">🗑️</span>
+        </div>
+      </div>`).join("");
+  }catch(e){
+    box.innerHTML = `<div class="sub">Không tải được danh sách file: ${e.message}</div>`;
+  }
+}
+async function onNiAttachFileChosen(evt){
+  const input = evt.target;
+  const file = input.files && input.files[0];
+  input.value = ""; // cho phep chon lai cung 1 file lan sau (vd sau khi loi)
+  if(!file || !editingNiId) return;
+  const errBox = document.getElementById("niAttachErr");
+  errBox.innerHTML = `<div class="sub">Đang tải lên...</div>`;
+  try{
+    const fd = new FormData();
+    fd.append("file", file);
+    await jupload(`/notebook-items/${editingNiId}/attachments`, fd);
+    errBox.innerHTML = "";
+    await loadNiAttachments(editingNiId);
+  }catch(e){
+    errBox.innerHTML = `<div class="err">${e.message}</div>`;
+  }
+}
+async function deleteNiAttachment(itemId, attId){
+  if(!confirm("Xóa file đính kèm này khỏi mục sổ tay?")) return;
+  try{
+    await jdelete(`/notebook-attachments/${attId}`);
+    await loadNiAttachments(itemId);
+  }catch(e){
+    document.getElementById("niAttachErr").innerHTML = `<div class="err">${e.message}</div>`;
+  }
+}
 let niType = "address";
 function setNiType(v){
   niType=v;
@@ -1312,6 +1534,7 @@ function setNiType(v){
   const f = niFieldsFor(v);
   const show = (id, on) => { const el=document.getElementById(id); if(el) el.style.display = on ? "" : "none"; };
   show("niSystem", f.system);
+  show("niFullName", f.fullName);
   show("niRelation", f.relation);
   show("niPhone", f.phone);
   show("niAddress", f.address);
@@ -1320,17 +1543,31 @@ function setNiType(v){
   show("niDate1Label", f.date1);
   document.getElementById("niDate1").parentElement.style.display = f.date1 ? "flex" : "none";
   show("niLunarLabel", f.lunar);
+  show("niIdNumber", f.idNumber);
+  show("niIdIssuedDate", f.idIssuedDate);
+  show("niIdIssuedDateLabel", f.idIssuedDate);
+  show("niIdIssuedPlace", f.idIssuedPlace);
   show("niDate2Label", f.date2);
   show("niDate2", f.date2);
+  show("niBirthCertNo", f.birthCertNo);
+  show("niHealthInsuranceNo", f.healthInsuranceNo);
+  show("niHometown", f.hometown);
   show("niRecurrence", f.recurrence);
   show("niAmount", f.amount);
   show("niInfo", f.info);
-  const labels = {
+  // Chi cho dinh kem file khi dang SUA mot muc da co san (can id de goi API) -
+  // khi dang THEM MOI thi an di, du loai co f.attach.
+  document.getElementById("niAttachSection").style.display = (f.attach && editingNiId) ? "block" : "none";
+  const date1Labels = {
     birthday:"Ngày sinh", anniversary:"Ngày mất", service:"Ngày lắp đặt / bắt đầu",
-    maintenance:"Lần gần nhất", child_milestone:"Ngày",
+    maintenance:"Lần gần nhất", child_milestone:"Ngày", personal_info:"Ngày sinh",
   };
-  document.getElementById("niDate1Label").textContent = labels[v] || "Ngày";
-  document.getElementById("niDate2Label").textContent = "Ngày hết hạn / đến hạn kế tiếp";
+  document.getElementById("niDate1Label").textContent = date1Labels[v] || "Ngày";
+  const date2Labels = { task:"Ngày cần hoàn thành", personal_info:"Ngày hết hạn CCCD" };
+  document.getElementById("niDate2Label").textContent =
+    date2Labels[v] || "Ngày hết hạn / đến hạn kế tiếp";
+  // Truong "Thong tin" doi nghia thanh "Cong viec" cho loai Nhac viec.
+  document.getElementById("niInfo").placeholder = v === "task" ? "Công việc" : "Thông tin";
   // Truong "Quan he" doi nghia thanh "Nguoi dung" cho loai Tai khoan.
   const relInput = document.getElementById("niRelation");
   relInput.placeholder = v === "account" ? "Người dùng (vd: Chồng, Vợ, Bông, bố chồng...)" : "Quan hệ (vd: Bố, Mẹ...)";
@@ -1342,6 +1579,7 @@ async function saveNi(){
   const payload = {
     type: niType, title,
     system: document.getElementById("niSystem").value.trim()||null,
+    full_name: document.getElementById("niFullName").value.trim()||null,
     relation: document.getElementById("niRelation").value.trim()||null,
     phone: document.getElementById("niPhone").value.trim()||null,
     address: document.getElementById("niAddress").value.trim()||null,
@@ -1349,7 +1587,13 @@ async function saveNi(){
     password: document.getElementById("niPassword").value||null,
     date1: document.getElementById("niDate1").value||null,
     date1_is_lunar: document.getElementById("niLunar").checked,
+    id_number: document.getElementById("niIdNumber").value.trim()||null,
+    id_issued_date: document.getElementById("niIdIssuedDate").value||null,
+    id_issued_place: document.getElementById("niIdIssuedPlace").value.trim()||null,
     date2: document.getElementById("niDate2").value||null,
+    birth_cert_no: document.getElementById("niBirthCertNo").value.trim()||null,
+    health_insurance_no: document.getElementById("niHealthInsuranceNo").value.trim()||null,
+    hometown: document.getElementById("niHometown").value.trim()||null,
     recurrence_days: num("niRecurrence") ? Math.round(num("niRecurrence")) : null,
     amount: num("niAmount"),
     info: document.getElementById("niInfo").value.trim()||null,
