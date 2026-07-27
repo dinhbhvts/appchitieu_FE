@@ -421,10 +421,15 @@
     <input id="niTags" placeholder="VD: #xe #gia_dinh" />
     <div class="flabel">Ghi chú</div>
     <textarea id="niNote" placeholder="Ghi chú" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;box-sizing:border-box"></textarea>
+    <div class="flabel" id="niProfileNameLabel">Tên hồ sơ</div>
+    <input id="niProfileName" placeholder="VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive" />
+    <div id="niProfileNameNote" class="sub" style="margin:0 0 10px;font-size:11px;display:none">
+      Tự tạo 1 thư mục riêng trên Drive để chứa file đính kèm của người này. Không thể đổi sau khi lưu.
+    </div>
     <div id="niAttachSection" style="display:none">
       <div class="sub" style="margin:14px 0 6px">Hồ sơ đính kèm</div>
       <div id="niAttachList" style="margin-bottom:8px"></div>
-      <input type="file" id="niAttachFile" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.doc,.docx" style="display:none" onchange="onNiAttachFileChosen(event)" />
+      <input type="file" id="niAttachFile" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar" style="display:none" onchange="onNiAttachFileChosen(event)" />
       <button type="button" class="ghost" style="width:100%" onclick="document.getElementById('niAttachFile').click()">+ Thêm file đính kèm</button>
       <div id="niAttachErr" style="margin-top:6px"></div>
     </div>
@@ -475,7 +480,7 @@ const NI_BUILTIN_FIELDS = {
   account:         {system:1, relation:1, username:1, password:1},
   personal_info:   {fullName:1, date1:1, remindBirthday:1, phone:1, idNumber:1,
                      idIssuedDate:1, idIssuedPlace:1, date2:1, birthCertNo:1,
-                     healthInsuranceNo:1, address:1, hometown:1, attach:1},
+                     healthInsuranceNo:1, address:1, hometown:1, profileName:1, attach:1},
   task:            {info:1, date2:1},
   note:            {},
   child_milestone: {date1:1},
@@ -581,6 +586,7 @@ async function handleResp(r){
 async function jget(path){ return handleResp(await fetch(api()+path, {headers: authHeaders()})); }
 async function jpost(path, body){ return handleResp(await fetch(api()+path,{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),body:body?JSON.stringify(body):null})); }
 async function jput(path, body){ return handleResp(await fetch(api()+path,{method:"PUT",headers:authHeaders({"Content-Type":"application/json"}),body:JSON.stringify(body)})); }
+async function jpatch(path, body){ return handleResp(await fetch(api()+path,{method:"PATCH",headers:authHeaders({"Content-Type":"application/json"}),body:JSON.stringify(body)})); }
 async function jdelete(path){ return handleResp(await fetch(api()+path,{method:"DELETE",headers:authHeaders()})); }
 // Upload file (multipart) - KHONG tu dat Content-Type, trinh duyet tu them
 // boundary dung khi body la FormData.
@@ -1008,8 +1014,12 @@ async function renderTaiSan(c){
       <button class="ghost" onclick="copyPrev()">⧉ Chép từ tháng trước</button>`;
   }else{
     for(const a of m.items){
-      html += `<div class="tx"><div><div class="desc">${a.name}</div>${a.note?`<div class="meta">${a.note}</div>`:''}</div>
-        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(a.value)}</span><span class="editbtn" onclick="editAs(${a.id})" title="Sửa">✎</span></div></div>`;
+      const sys = !!a.system_key;
+      const tint = sys ? `background:var(--accent-bg);border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none` : '';
+      const badge = sys ? `<span style="color:var(--accent);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap">🔒 Tự động</span>` : '';
+      const edit = sys ? '' : `<span class="editbtn" onclick="editAs(${a.id})" title="Sửa">✎</span>`;
+      html += `<div class="tx" style="${tint}"><div><div class="desc" style="${sys?'color:var(--accent)':''}">${a.name}${badge}</div>${a.note?`<div class="meta">${a.note}</div>`:''}</div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600;${sys?'color:var(--accent)':''}">${vnd(a.value)}</span>${edit}</div></div>`;
     }
   }
   html += `</div>`;
@@ -1692,6 +1702,7 @@ async function openNi(item){
   document.getElementById("niRecurrence").value = item ? (item.recurrence_days||"") : "";
   document.getElementById("niAmount").value = item ? (item.amount||"") : "";
   document.getElementById("niInfo").value = item ? (item.info||"") : "";
+  document.getElementById("niProfileName").value = item ? (item.profile_name||"") : "";
   document.getElementById("niTags").value = item ? (item.tags||"") : "";
   document.getElementById("niNote").value = item ? (item.note||"") : "";
   document.getElementById("niDelBtn").style.display = editingNiId ? "block" : "none";
@@ -1722,11 +1733,24 @@ async function loadNiAttachments(itemId){
         </div>
         <div style="display:flex;gap:10px;flex-shrink:0">
           ${f.drive_link ? `<a href="${f.drive_link}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:13px">Xem</a>` : ""}
+          <span class="editbtn" onclick="renameNiAttachment(${itemId},${f.id},'${f.file_name.replace(/'/g,"\\'")}')" title="Đổi tên">✎</span>
           <span class="editbtn" onclick="deleteNiAttachment(${itemId},${f.id})" title="Xóa">🗑️</span>
         </div>
       </div>`).join("");
   }catch(e){
     box.innerHTML = `<div class="sub">Không tải được danh sách file: ${e.message}</div>`;
+  }
+}
+async function renameNiAttachment(itemId, attId, currentName){
+  const name = prompt("Đổi tên file đính kèm:", currentName);
+  if(name===null) return; // huy
+  const trimmed = name.trim();
+  if(!trimmed || trimmed===currentName) return;
+  try{
+    await jpatch(`/notebook-attachments/${attId}`, {file_name: trimmed});
+    await loadNiAttachments(itemId);
+  }catch(e){
+    document.getElementById("niAttachErr").innerHTML = `<div class="err">${e.message}</div>`;
   }
 }
 async function onNiAttachFileChosen(evt){
@@ -1747,7 +1771,7 @@ async function onNiAttachFileChosen(evt){
   }
 }
 async function deleteNiAttachment(itemId, attId){
-  if(!confirm("Xóa file đính kèm này khỏi mục sổ tay?")) return;
+  if(!confirm("Xóa file đính kèm này? File trên Google Drive cũng sẽ bị xóa, không khôi phục được.")) return;
   try{
     await jdelete(`/notebook-attachments/${attId}`);
     await loadNiAttachments(itemId);
@@ -1791,6 +1815,13 @@ function setNiType(v){
   show("niRecurrence", f.recurrence);
   show("niAmount", f.amount);
   show("niInfo", f.info);
+  show("niProfileName", f.profileName);
+  show("niProfileNameLabel", f.profileName);
+  document.getElementById("niProfileNameNote").style.display = f.profileName ? "block" : "none";
+  // "Ten ho so" chi nhap duoc luc TAO MOI - khi sua, khoa lai (readonly) de
+  // khong bao gio lech voi ten thu muc da tao that tren Drive (backend cung
+  // bo qua truong nay khi PUT, day chi la khoa o UI cho ro rang).
+  document.getElementById("niProfileName").disabled = !!editingNiId;
   // Chi cho dinh kem file khi dang SUA mot muc da co san (can id de goi API) -
   // khi dang THEM MOI thi an di, du loai co f.attach.
   document.getElementById("niAttachSection").style.display = (f.attach && editingNiId) ? "block" : "none";
@@ -1842,6 +1873,11 @@ async function saveNi(){
     tags: document.getElementById("niTags").value.trim()||null,
     note: document.getElementById("niNote").value.trim()||null,
   };
+  // "Ten ho so" chi gui luc TAO MOI - sua thi khong gui (bi khoa o UI, va
+  // backend cung bo qua truong nay trong PUT du co gui hay khong).
+  if(!editingNiId){
+    payload.profile_name = document.getElementById("niProfileName").value.trim()||null;
+  }
   try{
     if(editingNiId){ await jput("/notebook-items/"+editingNiId, payload); }
     else{ await jpost("/notebook-items", payload); }
