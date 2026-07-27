@@ -17,9 +17,16 @@
     --green:#0F6E56; --green-bg:#E1F5EE; --red:#A32D2D; --red-bg:#FCEBEB;
     /* Mau nen phan biet giao dich theo nguoi (Chong/Vo) trong danh sach. */
     --chong-bg:#EAF2FE; --vo-bg:#FCEAF4;
-    /* Cham danh dau su kien tren lich thang (Tong quan) - mau bao hoa, chi
-       dung cho cham nho nen khong can tinh tuong phan chu/nen nhu text. */
-    --dot-holiday:#B45309; --dot-birthday:#E11D48; --dot-anniv:#7C3AED; --dot-task:#0D9488;
+    /* Mau vien+nen highlight ngay tren lich thang (Tong quan) - vien dam +
+       nen nhat cung tong mau, chu ngay luon giu mau toi (--text) nen khong
+       bao gio anh huong toi tuong phan. */
+    --hl-holiday:#B45309; --hl-holiday-bg:#FDF1E3;
+    --hl-birthday:#E11D48; --hl-birthday-bg:#FDECEF;
+    --hl-anniv:#7C3AED; --hl-anniv-bg:#F1EAFE;
+    --hl-task:#0D9488; --hl-task-bg:#E3F6F4;
+    /* Mau chu dam hon --muted, dung cho chu nho nhung PHAI doc duoc ro rang
+       (vd: ngay am lich tren lich thang, nhan truong nhap lieu). */
+    --label:#475569;
   }
   *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
   body{margin:0;background:var(--bg);color:var(--text);}
@@ -81,25 +88,38 @@
   .logout{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;}
   h3{font-size:15px;margin:6px 0 10px;}
   .sectitle{font-size:12px;color:var(--muted);margin:14px 0 6px;}
-  /* Lich thang: luoi 7 cot, T2 dau tuan, so duong to + am nho, danh dau
-     hom nay va cac ngay co su kien - mau trung tinh theo style-guide (khong
-     dung do/xanh dam nhu bang excel). Moi ngay luon giu nen/chu mac dinh
-     (du tuong phan), su kien chi danh dau bang cham mau nho ben duoi - tach
-     rieng khoi mau nen de khong bao gio lam giam do tuong phan chu ngay. */
+  /* Nhan co dinh phia tren moi truong nhap trong cac form (Cau hinh > Danh
+     muc / Danh muc tien ich / So tay) - de sau khi da nhap du lieu van biet
+     truong do la gi (placeholder bien mat khi co gia tri). */
+  .flabel{font-size:12px;color:var(--label);font-weight:600;margin:10px 0 4px;display:block;}
+  .flabel:first-child{margin-top:0;}
+  /* Lich thang: luoi 7 cot, T2 dau tuan, so duong to + am nho, danh dau hom
+     nay va cac ngay co su kien bang VIEN + NEN mau (de nhan biet hon cham
+     nho), chu ngay luon giu mau toi (--text/--accent) khong bao gio doi mau
+     theo loai su kien - tach rieng "mau bao hieu loai" (vien/nen) khoi "mau
+     chu" de luon dam bao tuong phan. Neu 1 ngay co nhieu loai su kien, loai
+     chinh (uu tien theo _CAL_PRIORITY trong JS) duoc the hien bang vien/nen,
+     cac loai con lai hien them bang cham nho ben duoi. */
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
   .cal-head{font-size:11px;color:var(--muted);text-align:center;padding-bottom:6px;font-weight:600;}
   .cal-head.weekend{color:var(--red);}
-  .cal-cell{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--bg);position:relative;}
+  .cal-cell{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--bg);border:1.5px solid transparent;position:relative;}
   .cal-cell .d{font-size:15px;font-weight:700;color:var(--text);line-height:1.15;}
-  .cal-cell .l{font-size:9px;color:var(--muted);line-height:1.1;margin-top:1px;}
+  .cal-cell .l{font-size:9px;color:var(--label);line-height:1.1;margin-top:1px;}
   .cal-cell .dots{display:flex;gap:2px;margin-top:2px;min-height:5px;}
   .cal-dot-sm{width:4px;height:4px;border-radius:50%;display:inline-block;}
-  .cal-cell.today{background:var(--accent-bg);border:1.5px solid var(--accent);}
+  .cal-cell.hl-holiday{background:var(--hl-holiday-bg);border-color:var(--hl-holiday);}
+  .cal-cell.hl-birthday{background:var(--hl-birthday-bg);border-color:var(--hl-birthday);}
+  .cal-cell.hl-anniv{background:var(--hl-anniv-bg);border-color:var(--hl-anniv);}
+  .cal-cell.hl-task{background:var(--hl-task-bg);border-color:var(--hl-task);}
+  /* .today dat SAU cac .hl-* de luon thang khi 1 ngay vua la hom nay vua co
+     su kien (cung do specificity, thu tu CSS quyet dinh). */
+  .cal-cell.today{background:var(--accent-bg);border-color:var(--accent);}
   .cal-cell.today .d{color:var(--accent);}
-  .cal-cell.empty{background:none;}
-  .cal-legend{display:flex;gap:12px;row-gap:6px;margin-top:10px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
+  .cal-cell.empty{background:none;border-color:transparent;}
+  .cal-legend{display:flex;gap:12px;row-gap:6px;margin-top:10px;font-size:11px;color:var(--label);flex-wrap:wrap;}
   .cal-legend span{display:inline-flex;align-items:center;gap:4px;}
-  .cal-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .cal-dot{width:12px;height:9px;border-radius:4px;display:inline-block;}
 </style>
 </head>
 <body>
@@ -124,8 +144,8 @@
   <div class="actionbar" id="actionbar"></div>
 
   <div class="tabs">
-    <button id="tab-dashboard" onclick="go('dashboard')"><span class="ico">⌂</span>Tổng quan</button>
-    <button id="tab-thuchi" class="active" onclick="go('thuchi')"><span class="ico">☰</span>Thu chi</button>
+    <button id="tab-dashboard" class="active" onclick="go('dashboard')"><span class="ico">⌂</span>Tổng quan</button>
+    <button id="tab-thuchi" onclick="go('thuchi')"><span class="ico">☰</span>Thu chi</button>
     <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico">↗</span>CK</button>
     <button id="tab-taisan" onclick="go('taisan')"><span class="ico">◆</span>Tài sản</button>
     <button id="tab-baocao" onclick="go('baocao')"><span class="ico">▤</span>Báo cáo</button>
@@ -269,10 +289,10 @@
     <div id="lunarCalBody"><div class="sub">Đang tải...</div></div>
     <div class="cal-legend">
       <span><i class="cal-dot" style="background:var(--accent-bg);border:1.5px solid var(--accent)"></i>Hôm nay</span>
-      <span><i class="cal-dot" style="background:var(--dot-holiday)"></i>Lễ, Tết</span>
-      <span><i class="cal-dot" style="background:var(--dot-birthday)"></i>Sinh nhật</span>
-      <span><i class="cal-dot" style="background:var(--dot-anniv)"></i>Ngày giỗ</span>
-      <span><i class="cal-dot" style="background:var(--dot-task)"></i>Nhắc việc</span>
+      <span><i class="cal-dot" style="background:var(--hl-holiday-bg);border:1.5px solid var(--hl-holiday)"></i>Lễ, Tết</span>
+      <span><i class="cal-dot" style="background:var(--hl-birthday-bg);border:1.5px solid var(--hl-birthday)"></i>Sinh nhật</span>
+      <span><i class="cal-dot" style="background:var(--hl-anniv-bg);border:1.5px solid var(--hl-anniv)"></i>Ngày giỗ</span>
+      <span><i class="cal-dot" style="background:var(--hl-task-bg);border:1.5px solid var(--hl-task)"></i>Nhắc việc</span>
     </div>
     <button class="ghost" style="width:100%;margin-top:10px" onclick="closeLunarCal()">Đóng</button>
   </div>
@@ -302,7 +322,8 @@
       <button id="catBtnChi" class="exp-on" onclick="setCatKind('expense')">Chi</button>
       <button id="catBtnThu" onclick="setCatKind('income')">Thu</button>
     </div>
-    <input id="catName" placeholder="Tên danh mục (vd: Xăng xe)" />
+    <div class="flabel">Tên danh mục</div>
+    <input id="catName" placeholder="VD: Xăng xe" />
     <div class="sub" style="margin:12px 0 6px">Chọn icon</div>
     <div id="catIconPicker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
     <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px">
@@ -321,7 +342,8 @@
 <div class="modal" id="ntModal">
   <div class="sheet" style="overflow-y:auto">
     <h3 id="ntModalTitle">Thêm loại tiện ích</h3>
-    <input id="ntName" placeholder="Tên loại (vd: Số đo quần áo)" />
+    <div class="flabel">Tên loại tiện ích</div>
+    <input id="ntName" placeholder="VD: Số đo quần áo" />
     <div class="sub" style="margin:12px 0 6px">Chọn icon</div>
     <div id="ntIconPicker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
     <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px">
@@ -341,16 +363,26 @@
   <div class="sheet" style="max-height:85vh;overflow-y:auto">
     <h3 id="niModalTitle">Thêm mục sổ tay</h3>
     <div class="chips" id="niTypeChips" style="margin-bottom:10px"></div>
-    <input id="niTitle" placeholder="Tiêu đề" />
-    <input id="niSystem" placeholder="Hệ thống (vd: Netflix, Wifi FPT...)" />
-    <input id="niFullName" placeholder="Họ tên" />
-    <input id="niRelation" placeholder="Quan hệ (vd: Bố, Mẹ...)" />
-    <input id="niPhone" type="tel" placeholder="Điện thoại" />
+    <div class="flabel" id="niTitleLabel">Tiêu đề</div>
+    <input id="niTitle" placeholder="VD: Bố, Netflix, Xe Vision" />
+    <div class="flabel" id="niSystemLabel">Hệ thống</div>
+    <input id="niSystem" placeholder="VD: Netflix, Wifi FPT..." />
+    <div class="flabel" id="niFullNameLabel">Họ tên</div>
+    <input id="niFullName" placeholder="Họ tên đầy đủ (khai sinh/CCCD)" />
+    <div class="flabel" id="niRelationLabel">Quan hệ</div>
+    <input id="niRelation" placeholder="VD: Bố, Mẹ..." />
+    <div class="flabel" id="niPhoneLabel">Điện thoại</div>
+    <input id="niPhone" type="tel" placeholder="Số điện thoại" />
+    <div class="flabel" id="niAddressLabel">Địa chỉ</div>
     <input id="niAddress" placeholder="Địa chỉ" />
+    <div class="flabel" id="niUsernameLabel">Tên đăng nhập</div>
     <input id="niUsername" placeholder="Tên đăng nhập" />
-    <div id="niPasswordWrap" style="position:relative;display:flex;align-items:center">
-      <input id="niPassword" type="password" placeholder="Mật khẩu" style="flex:1;padding-right:36px" />
-      <button type="button" onclick="toggleNiPassword()" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:6px;font-size:18px">👁️</button>
+    <div id="niPasswordGroup">
+      <div class="flabel">Mật khẩu</div>
+      <div id="niPasswordWrap" style="position:relative;display:flex;align-items:center">
+        <input id="niPassword" type="password" placeholder="Mật khẩu" style="flex:1;padding-right:36px" />
+        <button type="button" onclick="toggleNiPassword()" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:6px;font-size:18px">👁️</button>
+      </div>
     </div>
     <div class="sub" id="niDate1Label" style="margin:6px 0 2px">Ngày</div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
@@ -365,20 +397,30 @@
     <div id="niRemindBirthdayNote" class="sub" style="margin:0 0 10px;font-size:11px;display:none">
       Bỏ tích nếu đã có bản ghi "Sinh nhật" riêng cho người này (tránh nhắc trùng).
     </div>
+    <div class="flabel" id="niIdNumberLabel">Số CCCD</div>
     <input id="niIdNumber" placeholder="Số CCCD" />
+    <div class="sub" id="niIdIssuedDateLabel" style="margin:6px 0 2px">Ngày cấp</div>
     <input id="niIdIssuedDate" type="date" />
-    <div class="sub" id="niIdIssuedDateLabel" style="margin:-8px 0 8px;font-size:11px">Ngày cấp</div>
-    <input id="niIdIssuedPlace" placeholder="Nơi cấp" />
+    <div class="flabel" id="niIdIssuedPlaceLabel">Nơi cấp</div>
+    <input id="niIdIssuedPlace" placeholder="Nơi cấp CCCD" />
     <div class="sub" id="niDate2Label" style="margin:6px 0 2px">Ngày hết hạn / đến hạn kế tiếp</div>
     <input id="niDate2" type="date" />
+    <div class="flabel" id="niBirthCertNoLabel">Số giấy khai sinh</div>
     <input id="niBirthCertNo" placeholder="Số giấy khai sinh" />
-    <input id="niHealthInsuranceNo" placeholder="Số thẻ BHYT" />
+    <div class="flabel" id="niHealthInsuranceNoLabel">Số thẻ BHYT</div>
+    <input id="niHealthInsuranceNo" placeholder="Số thẻ bảo hiểm y tế" />
+    <div class="flabel" id="niHometownLabel">Quê quán</div>
     <input id="niHometown" placeholder="Quê quán" />
-    <input id="niRecurrence" type="number" placeholder="Chu kỳ lặp lại (số ngày, không bắt buộc)" />
-    <input id="niAmount" type="number" placeholder="Số tiền (không bắt buộc)" />
-    <textarea id="niInfo" placeholder="Thông tin" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;margin-top:8px;box-sizing:border-box"></textarea>
-    <input id="niTags" placeholder="Tag (vd: #xe #gia_dinh)" />
-    <textarea id="niNote" placeholder="Ghi chú" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;margin-top:8px;box-sizing:border-box"></textarea>
+    <div class="flabel" id="niRecurrenceLabel">Chu kỳ lặp lại (số ngày)</div>
+    <input id="niRecurrence" type="number" placeholder="Không bắt buộc" />
+    <div class="flabel" id="niAmountLabel">Số tiền</div>
+    <input id="niAmount" type="number" placeholder="Không bắt buộc" />
+    <div class="flabel" id="niInfoLabel">Thông tin</div>
+    <textarea id="niInfo" placeholder="Thông tin" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;box-sizing:border-box"></textarea>
+    <div class="flabel">Tag</div>
+    <input id="niTags" placeholder="VD: #xe #gia_dinh" />
+    <div class="flabel">Ghi chú</div>
+    <textarea id="niNote" placeholder="Ghi chú" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;box-sizing:border-box"></textarea>
     <div id="niAttachSection" style="display:none">
       <div class="sub" style="margin:14px 0 6px">Hồ sơ đính kèm</div>
       <div id="niAttachList" style="margin-bottom:8px"></div>
@@ -397,7 +439,7 @@
 
 <script>
 // ---- Trang thai chung ----
-let tab = "thuchi";
+let tab = "dashboard";
 let now = new Date();
 let year = now.getFullYear(), month = now.getMonth() + 1; // 1..12
 let users = [], categories = [], txType = "expense", chosenCat = null;
@@ -823,12 +865,16 @@ function lunarHolidayLabel(solarMonth, solarDay, lunarMonth, lunarDay){
   };
   return solarMap[`${solarMonth}-${solarDay}`] || lunarMap[`${lunarMonth}-${lunarDay}`] || null;
 }
-// Nhan hien thi + mau cham cho tung loai su kien tren lich thang.
+// Nhan hien thi + lop CSS vien/nen cho tung loai su kien tren lich thang.
+// Neu 1 ngay co nhieu loai, loai dung dau danh sach uu tien duoc hien bang
+// vien+nen (de nhan biet nhat), cac loai con lai hien them bang cham nho.
 const CAL_CAT_LABEL = { birthday: "Sinh nhật", anniversary: "Ngày giỗ", task: "Nhắc việc" };
-const CAL_CAT_DOT = {
-  holiday: "var(--dot-holiday)", birthday: "var(--dot-birthday)",
-  anniversary: "var(--dot-anniv)", task: "var(--dot-task)",
+const CAL_CAT_CLASS = { holiday: "hl-holiday", birthday: "hl-birthday", anniversary: "hl-anniv", task: "hl-task" };
+const CAL_CAT_DOT_COLOR = {
+  holiday: "var(--hl-holiday)", birthday: "var(--hl-birthday)",
+  anniversary: "var(--hl-anniv)", task: "var(--hl-task)",
 };
+const CAL_PRIORITY = ["birthday", "anniversary", "task", "holiday"];
 async function loadLunarCal(){
   document.getElementById("lunarCalTitle").textContent = `Tháng ${lunarCalMonth}/${lunarCalYear}`;
   const body = document.getElementById("lunarCalBody");
@@ -854,17 +900,24 @@ async function loadLunarCal(){
       const isToday = r.date === todayIso;
       const holidayLabel = lunarHolidayLabel(lunarCalMonth, dayNum, r.lunar_month, r.lunar_day);
       const dayEvents = eventsByDate[r.date] || [];
-      const dotColors = [];
-      const titleParts = [];
-      if(holidayLabel){ dotColors.push(CAL_CAT_DOT.holiday); titleParts.push(holidayLabel); }
+      // cats: { category: {label, ...} } gop ca ngay le/Tet vao chung mot he
+      // thong voi 3 loai tu API, de dung chung logic uu tien + cham phu.
+      const cats = {};
+      if(holidayLabel) cats.holiday = holidayLabel;
       dayEvents.forEach(e => {
-        dotColors.push(CAL_CAT_DOT[e.category] || "var(--muted)");
-        titleParts.push(`${CAL_CAT_LABEL[e.category] || e.category}: ${e.title}`);
+        cats[e.category] = `${CAL_CAT_LABEL[e.category] || e.category}: ${e.title}`;
       });
+      const catKeys = Object.keys(cats);
+      const primary = CAL_PRIORITY.find(k => catKeys.includes(k));
+      // Hom nay luon uu tien vien/nen accent (khong dung vien/nen theo loai
+      // su kien nua) - moi loai su kien hom do deu chuyen thanh cham nho.
+      const secondary = isToday ? catKeys : catKeys.filter(k => k !== primary);
       const cls = ["cal-cell"];
+      if(primary && !isToday) cls.push(CAL_CAT_CLASS[primary]);
       if(isToday) cls.push("today");
-      const dotsHtml = dotColors.length
-        ? `<div class="dots">${dotColors.map(c => `<i class="cal-dot-sm" style="background:${c}"></i>`).join("")}</div>`
+      const titleParts = catKeys.map(k => cats[k]);
+      const dotsHtml = secondary.length
+        ? `<div class="dots">${secondary.map(k => `<i class="cal-dot-sm" style="background:${CAL_CAT_DOT_COLOR[k]}"></i>`).join("")}</div>`
         : "";
       html += `<div class="${cls.join(" ")}"${titleParts.length ? ` title="${titleParts.join("\n")}"` : ""}>
         <div class="d">${dayNum}</div>
@@ -1707,14 +1760,20 @@ function setNiType(v){
   niType=v;
   for(const t of niTypesCache) { const el=document.getElementById("niType-"+t.key); if(el) el.classList.toggle("on", t.key===v); }
   const f = niFieldsFor(v);
-  const show = (id, on) => { const el=document.getElementById(id); if(el) el.style.display = on ? "" : "none"; };
+  // An/hien 1 truong VA nhan flabel di kem cua no cung luc (id+"Label") -
+  // moi truong duoc them nhan gan day deu dat id theo dung quy uoc nay nen
+  // khong can goi rieng cho tung cai.
+  const show = (id, on) => {
+    const el=document.getElementById(id); if(el) el.style.display = on ? "" : "none";
+    const lbl=document.getElementById(id+"Label"); if(lbl) lbl.style.display = on ? "" : "none";
+  };
   show("niSystem", f.system);
   show("niFullName", f.fullName);
   show("niRelation", f.relation);
   show("niPhone", f.phone);
   show("niAddress", f.address);
   show("niUsername", f.username);
-  document.getElementById("niPasswordWrap").style.display = f.password ? "flex" : "none";
+  document.getElementById("niPasswordGroup").style.display = f.password ? "block" : "none";
   show("niDate1Label", f.date1);
   document.getElementById("niDate1").parentElement.style.display = f.date1 ? "flex" : "none";
   show("niLunarLabel", f.lunar);
@@ -1744,10 +1803,15 @@ function setNiType(v){
   document.getElementById("niDate2Label").textContent =
     date2Labels[v] || "Ngày hết hạn / đến hạn kế tiếp";
   // Truong "Thong tin" doi nghia thanh "Cong viec" cho loai Nhac viec.
-  document.getElementById("niInfo").placeholder = v === "task" ? "Công việc" : "Thông tin";
+  document.getElementById("niInfoLabel").textContent = v === "task" ? "Công việc" : "Thông tin";
+  document.getElementById("niInfo").placeholder = v === "task" ? "Công việc cần làm" : "Thông tin";
   // Truong "Quan he" doi nghia thanh "Nguoi dung" cho loai Tai khoan.
+  document.getElementById("niRelationLabel").textContent = v === "account" ? "Người dùng" : "Quan hệ";
   const relInput = document.getElementById("niRelation");
-  relInput.placeholder = v === "account" ? "Người dùng (vd: Chồng, Vợ, Bông, bố chồng...)" : "Quan hệ (vd: Bố, Mẹ...)";
+  relInput.placeholder = v === "account" ? "VD: Chồng, Vợ, Bông, bố chồng..." : "VD: Bố, Mẹ...";
+  // Truong "Tieu de" doi nghia thanh "Ten thuong goi" cho Thong tin ca nhan.
+  document.getElementById("niTitleLabel").textContent =
+    v === "personal_info" ? "Tên thường gọi" : "Tiêu đề";
 }
 async function saveNi(){
   const title = document.getElementById("niTitle").value.trim();
