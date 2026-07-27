@@ -15,9 +15,11 @@
     --bg:#f4f6f8; --card:#ffffff; --line:#e3e7eb; --text:#1f2933;
     --muted:#6b7280; --accent:#185FA5; --accent-bg:#E6F1FB;
     --green:#0F6E56; --green-bg:#E1F5EE; --red:#A32D2D; --red-bg:#FCEBEB;
-    --gold:#9C6B12; --gold-bg:#FBF1DC;
     /* Mau nen phan biet giao dich theo nguoi (Chong/Vo) trong danh sach. */
     --chong-bg:#EAF2FE; --vo-bg:#FCEAF4;
+    /* Cham danh dau su kien tren lich thang (Tong quan) - mau bao hoa, chi
+       dung cho cham nho nen khong can tinh tuong phan chu/nen nhu text. */
+    --dot-holiday:#B45309; --dot-birthday:#E11D48; --dot-anniv:#7C3AED; --dot-task:#0D9488;
   }
   *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
   body{margin:0;background:var(--bg);color:var(--text);}
@@ -80,22 +82,24 @@
   h3{font-size:15px;margin:6px 0 10px;}
   .sectitle{font-size:12px;color:var(--muted);margin:14px 0 6px;}
   /* Lich thang: luoi 7 cot, T2 dau tuan, so duong to + am nho, danh dau
-     hom nay va ngay le/Tet - mau trung tinh theo style-guide (khong dung
-     do/xanh dam nhu bang excel). */
+     hom nay va cac ngay co su kien - mau trung tinh theo style-guide (khong
+     dung do/xanh dam nhu bang excel). Moi ngay luon giu nen/chu mac dinh
+     (du tuong phan), su kien chi danh dau bang cham mau nho ben duoi - tach
+     rieng khoi mau nen de khong bao gio lam giam do tuong phan chu ngay. */
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
   .cal-head{font-size:11px;color:var(--muted);text-align:center;padding-bottom:6px;font-weight:600;}
-  .cal-head.weekend{color:var(--red);opacity:.75;}
+  .cal-head.weekend{color:var(--red);}
   .cal-cell{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--bg);position:relative;}
   .cal-cell .d{font-size:15px;font-weight:700;color:var(--text);line-height:1.15;}
-  .cal-cell .l{font-size:9px;color:var(--muted);line-height:1.1;margin-top:2px;}
-  .cal-cell.today{border:1.5px solid var(--accent);}
+  .cal-cell .l{font-size:9px;color:var(--muted);line-height:1.1;margin-top:1px;}
+  .cal-cell .dots{display:flex;gap:2px;margin-top:2px;min-height:5px;}
+  .cal-dot-sm{width:4px;height:4px;border-radius:50%;display:inline-block;}
+  .cal-cell.today{background:var(--accent-bg);border:1.5px solid var(--accent);}
   .cal-cell.today .d{color:var(--accent);}
-  .cal-cell.holiday{background:var(--gold-bg);}
-  .cal-cell.holiday .d{color:var(--gold);}
   .cal-cell.empty{background:none;}
-  .cal-legend{display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
+  .cal-legend{display:flex;gap:12px;row-gap:6px;margin-top:10px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
   .cal-legend span{display:inline-flex;align-items:center;gap:4px;}
-  .cal-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .cal-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
 </style>
 </head>
 <body>
@@ -264,8 +268,11 @@
     </div>
     <div id="lunarCalBody"><div class="sub">Đang tải...</div></div>
     <div class="cal-legend">
-      <span><i class="cal-dot" style="background:#fff;border:1.5px solid var(--accent)"></i>Hôm nay</span>
-      <span><i class="cal-dot" style="background:var(--gold)"></i>Ngày lễ, Tết</span>
+      <span><i class="cal-dot" style="background:var(--accent-bg);border:1.5px solid var(--accent)"></i>Hôm nay</span>
+      <span><i class="cal-dot" style="background:var(--dot-holiday)"></i>Lễ, Tết</span>
+      <span><i class="cal-dot" style="background:var(--dot-birthday)"></i>Sinh nhật</span>
+      <span><i class="cal-dot" style="background:var(--dot-anniv)"></i>Ngày giỗ</span>
+      <span><i class="cal-dot" style="background:var(--dot-task)"></i>Nhắc việc</span>
     </div>
     <button class="ghost" style="width:100%;margin-top:10px" onclick="closeLunarCal()">Đóng</button>
   </div>
@@ -816,12 +823,23 @@ function lunarHolidayLabel(solarMonth, solarDay, lunarMonth, lunarDay){
   };
   return solarMap[`${solarMonth}-${solarDay}`] || lunarMap[`${lunarMonth}-${lunarDay}`] || null;
 }
+// Nhan hien thi + mau cham cho tung loai su kien tren lich thang.
+const CAL_CAT_LABEL = { birthday: "Sinh nhật", anniversary: "Ngày giỗ", task: "Nhắc việc" };
+const CAL_CAT_DOT = {
+  holiday: "var(--dot-holiday)", birthday: "var(--dot-birthday)",
+  anniversary: "var(--dot-anniv)", task: "var(--dot-task)",
+};
 async function loadLunarCal(){
   document.getElementById("lunarCalTitle").textContent = `Tháng ${lunarCalMonth}/${lunarCalYear}`;
   const body = document.getElementById("lunarCalBody");
   body.innerHTML = `<div class="sub">Đang tải...</div>`;
   try{
-    const rows = await jget(`/lunar/month?year=${lunarCalYear}&month=${lunarCalMonth}`);
+    const [rows, events] = await Promise.all([
+      jget(`/lunar/month?year=${lunarCalYear}&month=${lunarCalMonth}`),
+      jget(`/notebook-items/calendar-events?year=${lunarCalYear}&month=${lunarCalMonth}`),
+    ]);
+    const eventsByDate = {};
+    events.forEach(e => { (eventsByDate[e.date] = eventsByDate[e.date] || []).push(e); });
     const todayIso = todayISO();
     // Thu 2 la ngay dau tuan: Date.getDay() tra ve 0=CN..6=T7, quy doi sang 0=T2..6=CN.
     const firstWeekday = (new Date(lunarCalYear, lunarCalMonth - 1, 1).getDay() + 6) % 7;
@@ -835,12 +853,23 @@ async function loadLunarCal(){
       const dayNum = parseInt(r.date.split("-")[2]);
       const isToday = r.date === todayIso;
       const holidayLabel = lunarHolidayLabel(lunarCalMonth, dayNum, r.lunar_month, r.lunar_day);
+      const dayEvents = eventsByDate[r.date] || [];
+      const dotColors = [];
+      const titleParts = [];
+      if(holidayLabel){ dotColors.push(CAL_CAT_DOT.holiday); titleParts.push(holidayLabel); }
+      dayEvents.forEach(e => {
+        dotColors.push(CAL_CAT_DOT[e.category] || "var(--muted)");
+        titleParts.push(`${CAL_CAT_LABEL[e.category] || e.category}: ${e.title}`);
+      });
       const cls = ["cal-cell"];
       if(isToday) cls.push("today");
-      if(holidayLabel) cls.push("holiday");
-      html += `<div class="${cls.join(" ")}"${holidayLabel ? ` title="${holidayLabel}"` : ""}>
+      const dotsHtml = dotColors.length
+        ? `<div class="dots">${dotColors.map(c => `<i class="cal-dot-sm" style="background:${c}"></i>`).join("")}</div>`
+        : "";
+      html += `<div class="${cls.join(" ")}"${titleParts.length ? ` title="${titleParts.join("\n")}"` : ""}>
         <div class="d">${dayNum}</div>
         <div class="l">${r.lunar_day}/${r.lunar_month}${r.is_leap ? "N" : ""}</div>
+        ${dotsHtml}
       </div>`;
     });
     html += `</div>`;
