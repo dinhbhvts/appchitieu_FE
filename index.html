@@ -15,6 +15,7 @@
     --bg:#f4f6f8; --card:#ffffff; --line:#e3e7eb; --text:#1f2933;
     --muted:#6b7280; --accent:#185FA5; --accent-bg:#E6F1FB;
     --green:#0F6E56; --green-bg:#E1F5EE; --red:#A32D2D; --red-bg:#FCEBEB;
+    --gold:#9C6B12; --gold-bg:#FBF1DC;
     /* Mau nen phan biet giao dich theo nguoi (Chong/Vo) trong danh sach. */
     --chong-bg:#EAF2FE; --vo-bg:#FCEAF4;
   }
@@ -78,6 +79,23 @@
   .logout{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;}
   h3{font-size:15px;margin:6px 0 10px;}
   .sectitle{font-size:12px;color:var(--muted);margin:14px 0 6px;}
+  /* Lich thang: luoi 7 cot, T2 dau tuan, so duong to + am nho, danh dau
+     hom nay va ngay le/Tet - mau trung tinh theo style-guide (khong dung
+     do/xanh dam nhu bang excel). */
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal-head{font-size:11px;color:var(--muted);text-align:center;padding-bottom:6px;font-weight:600;}
+  .cal-head.weekend{color:var(--red);opacity:.75;}
+  .cal-cell{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;background:var(--bg);position:relative;}
+  .cal-cell .d{font-size:15px;font-weight:700;color:var(--text);line-height:1.15;}
+  .cal-cell .l{font-size:9px;color:var(--muted);line-height:1.1;margin-top:2px;}
+  .cal-cell.today{border:1.5px solid var(--accent);}
+  .cal-cell.today .d{color:var(--accent);}
+  .cal-cell.holiday{background:var(--gold-bg);}
+  .cal-cell.holiday .d{color:var(--gold);}
+  .cal-cell.empty{background:none;}
+  .cal-legend{display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
+  .cal-legend span{display:inline-flex;align-items:center;gap:4px;}
+  .cal-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
 </style>
 </head>
 <body>
@@ -245,6 +263,10 @@
       <button class="ghost" style="padding:6px 12px" onclick="changeLunarCalMonth(1)">›</button>
     </div>
     <div id="lunarCalBody"><div class="sub">Đang tải...</div></div>
+    <div class="cal-legend">
+      <span><i class="cal-dot" style="background:#fff;border:1.5px solid var(--accent)"></i>Hôm nay</span>
+      <span><i class="cal-dot" style="background:var(--gold)"></i>Ngày lễ, Tết</span>
+    </div>
     <button class="ghost" style="width:100%;margin-top:10px" onclick="closeLunarCal()">Đóng</button>
   </div>
 </div>
@@ -779,6 +801,21 @@ function changeLunarCalMonth(delta){
   if(lunarCalMonth < 1){ lunarCalMonth = 12; lunarCalYear--; }
   loadLunarCal();
 }
+// Ngay le/Tet co dinh (chi mang tinh tham khao, khong lay tu API ngoai) -
+// duong lich theo cong lich VN, am lich theo cac ngay truyen thong pho bien.
+// Tra ve nhan hien thi (title) hoac null neu ngay thuong.
+function lunarHolidayLabel(solarMonth, solarDay, lunarMonth, lunarDay){
+  const solarMap = {
+    "1-1": "Tết Dương lịch", "4-30": "Giải phóng miền Nam",
+    "5-1": "Quốc tế Lao động", "9-2": "Quốc khánh",
+  };
+  const lunarMap = {
+    "1-1": "Mùng 1 Tết", "1-2": "Mùng 2 Tết", "1-3": "Mùng 3 Tết",
+    "1-15": "Rằm tháng Giêng", "3-10": "Giỗ tổ Hùng Vương",
+    "5-5": "Tết Đoan Ngọ", "7-15": "Lễ Vu Lan", "8-15": "Tết Trung Thu",
+  };
+  return solarMap[`${solarMonth}-${solarDay}`] || lunarMap[`${lunarMonth}-${lunarDay}`] || null;
+}
 async function loadLunarCal(){
   document.getElementById("lunarCalTitle").textContent = `Tháng ${lunarCalMonth}/${lunarCalYear}`;
   const body = document.getElementById("lunarCalBody");
@@ -786,20 +823,28 @@ async function loadLunarCal(){
   try{
     const rows = await jget(`/lunar/month?year=${lunarCalYear}&month=${lunarCalMonth}`);
     const todayIso = todayISO();
-    body.innerHTML = rows.map(r => {
-      const isToday = r.date === todayIso;
+    // Thu 2 la ngay dau tuan: Date.getDay() tra ve 0=CN..6=T7, quy doi sang 0=T2..6=CN.
+    const firstWeekday = (new Date(lunarCalYear, lunarCalMonth - 1, 1).getDay() + 6) % 7;
+    const heads = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+    let html = `<div class="cal-grid">`;
+    heads.forEach((h, i) => {
+      html += `<div class="cal-head${i >= 5 ? " weekend" : ""}">${h}</div>`;
+    });
+    for(let i = 0; i < firstWeekday; i++) html += `<div class="cal-cell empty"></div>`;
+    rows.forEach(r => {
       const dayNum = parseInt(r.date.split("-")[2]);
-      return `<div class="row" style="padding:7px 4px;border-bottom:1px solid var(--line);${isToday?'background:#eef4ff;border-radius:8px':''}">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:600;min-width:28px">${dayNum}</span>
-          <span class="sub">Dương</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-weight:600;color:var(--accent)">${r.lunar_day}/${r.lunar_month}${r.is_leap?"N":""}</span>
-          <span class="sub">Âm</span>
-        </div>
+      const isToday = r.date === todayIso;
+      const holidayLabel = lunarHolidayLabel(lunarCalMonth, dayNum, r.lunar_month, r.lunar_day);
+      const cls = ["cal-cell"];
+      if(isToday) cls.push("today");
+      if(holidayLabel) cls.push("holiday");
+      html += `<div class="${cls.join(" ")}"${holidayLabel ? ` title="${holidayLabel}"` : ""}>
+        <div class="d">${dayNum}</div>
+        <div class="l">${r.lunar_day}/${r.lunar_month}${r.is_leap ? "N" : ""}</div>
       </div>`;
-    }).join("");
+    });
+    html += `</div>`;
+    body.innerHTML = html;
   }catch(e){
     body.innerHTML = `<div class="err">${e.message}</div>`;
   }
