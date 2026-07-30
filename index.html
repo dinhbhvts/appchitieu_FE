@@ -741,9 +741,16 @@ async function renderDashboard(c){
     }else{
       for(const r of reminders){
         const info = niTypeInfo(r.item.type);
+        // Nhắc sinh nhật (type=birthday, hoặc type=personal_info có tích
+        // "Nhắc sinh nhật") hiển thị đồng nhất theo cú pháp riêng thay vì chỉ
+        // dùng icon/label chung của loại sổ tay - dễ nhận biết hơn là chỉ có
+        // mỗi tên thường gọi (đặc biệt khi nguồn là Thông tin cá nhân).
+        const isBirthday = r.item.type === "birthday" ||
+          (r.item.type === "personal_info" && r.item.remind_birthday);
+        const desc = isBirthday ? `🎂 Sinh nhật ${r.item.title}` : `${info.icon} ${r.item.title}`;
         const when = r.days_until===0 ? "Hôm nay" : r.days_until===1 ? "Ngày mai" : `còn ${r.days_until} ngày`;
         html += `<div class="tx" style="cursor:pointer" onclick='goToTienIch(${JSON.stringify(r.item)})'>
-          <div><div class="desc">${info.icon} ${r.item.title}</div><div class="meta">${info.label}${r.item.relation?" · "+r.item.relation:""} · ${fmtDate(r.occurs_on)}</div></div>
+          <div><div class="desc">${desc}</div><div class="meta">${info.label}${r.item.relation?" · "+r.item.relation:""} · ${fmtDate(r.occurs_on)}</div></div>
           <div style="color:var(--accent);font-weight:600;font-size:13px;white-space:nowrap">${when}</div>
         </div>`;
       }
