@@ -1107,14 +1107,20 @@ async function renderTietKiem(){
   html += `</div>`;
 
   // Card: tong hop tien gui trong nam (nam dang chon o thanh tren dau man hinh).
-  let summary = {total_active_amount:0, active_count:0, interest_received_this_year:0};
+  let summary = {total_active_amount:0, active_count:0, interest_received_this_year:0,
+    total_settled_amount_this_year:0, total_deposited_this_year:0, avg_return_rate_pct:null};
   try{ summary = await jget(`/savings/summary?year=${year}`); }catch(e){}
   html += `<div class="card">
-    <div class="sectitle" style="margin-top:0">Tổng hợp tiền gửi năm ${year}</div>
+    <div class="sectitle" style="margin-top:0">Tổng hợp khoản đã tất toán trong năm ${year}</div>
     <div class="row" style="gap:8px;flex-wrap:wrap">
-      ${miniStat("Đang gửi", summary.total_active_amount, "var(--accent)")}
-      ${miniStat("Số khoản đang gửi", summary.active_count, "var(--muted)")}
+      ${miniStat("Tổng số tiền tất toán", summary.total_settled_amount_this_year, "var(--muted)")}
       ${miniStat("Lãi đã nhận trong năm", summary.interest_received_this_year, "var(--green)")}
+    </div></div>`;
+  html += `<div class="card">
+    <div class="sectitle" style="margin-top:0">Tổng hợp các khoản đang gửi</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      ${miniStat("Tổng số tiền đang gửi", summary.total_active_amount, "var(--accent)")}
+      ${miniStat("Số khoản đang gửi", summary.active_count, "var(--muted)")}
     </div></div>`;
 
   // Card: cac khoan chua tat toan - khong phu thuoc bo loc ngay.
@@ -1728,6 +1734,9 @@ async function renderBaoCao(c){
   }
   html += `</div>`;
 
+  // Thong tin gui tiet kiem theo nam dang chon (nam hien tai o thanh tren).
+  html += await renderSavingsInfoCard();
+
   // Bieu do tai san theo nam - LUON hien thi toan bo lich su (tu 2022...),
   // khong theo bo loc ngay/thang cua trang Bao cao (day la xu huong dai han).
   html += await renderYearlyAssetsCard();
@@ -1735,6 +1744,20 @@ async function renderBaoCao(c){
   c.innerHTML = html;
 }
 function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); renderBaoCao(document.getElementById("content")); }
+
+async function renderSavingsInfoCard(){
+  let s = {total_active_amount:0, total_deposited_this_year:0,
+    total_settled_amount_this_year:0, interest_received_this_year:0, avg_return_rate_pct:null};
+  try{ s = await jget(`/savings/summary?year=${year}`); }catch(e){ return ""; }
+  const rateText = (s.avg_return_rate_pct===null || s.avg_return_rate_pct===undefined) ? "—" : `${s.avg_return_rate_pct}%`;
+  return `<div class="card"><div class="sectitle" style="margin-top:0">Thông tin gửi tiết kiệm (năm ${year})</div>
+    ${rowLine("Tổng số tiền gửi từ trước (chưa tất toán)", s.total_active_amount, "var(--accent)")}
+    ${rowLine("Gửi thêm trong năm", s.total_deposited_this_year, "var(--muted)")}
+    ${rowLine("Tất toán trong năm", s.total_settled_amount_this_year, "var(--muted)")}
+    ${rowLine("Lãi nhận trong năm", s.interest_received_this_year, "var(--green)")}
+    <div class="row" style="padding:4px 0"><span>Tỉ suất lợi nhuận trung bình</span><span style="color:var(--green);font-weight:600">${rateText}</span></div>
+  </div>`;
+}
 
 async function renderYearlyAssetsCard(){
   let yearly = [];
