@@ -278,6 +278,53 @@
   </div>
 </div>
 
+<!-- Form them/sua khoan tiet kiem -->
+<div class="modal" id="svModal">
+  <div class="sheet" style="max-height:85vh;overflow-y:auto">
+    <h3 id="svModalTitle">Thêm khoản tiết kiệm</h3>
+    <input id="svName" placeholder="Tên khoản tiết kiệm" />
+    <input id="svContent" placeholder="Nội dung (không bắt buộc)" />
+    <input id="svDate" type="date" oninput="svRecalc()" />
+    <input id="svAmount" type="number" placeholder="Số tiền" oninput="svRecalc()" />
+    <div style="display:flex;gap:8px">
+      <input id="svTermValue" type="number" placeholder="Kỳ hạn" style="flex:1" oninput="svRecalc()" />
+      <select id="svTermUnit" style="flex:1" onchange="svRecalc()">
+        <option value="month">Tháng</option>
+        <option value="day">Ngày</option>
+      </select>
+    </div>
+    <div class="sub" id="svMaturityDisplay" style="margin:-4px 0 10px">Ngày đáo hạn (tự động): —</div>
+    <input id="svRate" type="number" step="0.01" placeholder="Lãi suất (%/năm)" oninput="svRecalc()" />
+    <input id="svExpectedInterest" type="number" placeholder="Tiền lãi dự kiến" oninput="svMarkExpectedManual()" />
+    <input id="svBank" placeholder="Ngân hàng (không bắt buộc)" />
+    <select id="svStatus" onchange="svToggleSettled()">
+      <option value="active">Đang gửi</option>
+      <option value="settled">Đã tất toán</option>
+    </select>
+    <div id="svSettledBlock" style="display:none">
+      <input id="svActualInterest" type="number" placeholder="Tiền lãi thực nhận" />
+      <input id="svSettledDate" type="date" />
+    </div>
+    <select id="svUser"></select>
+    <input id="svNote" placeholder="Ghi chú (không bắt buộc)" />
+    <div id="svErr"></div>
+    <button id="svDelBtn" onclick="deleteSv()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ghost" style="flex:1" onclick="closeSv()">Hủy</button>
+      <button class="primary" style="flex:2" onclick="saveSv()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Thong tin cong thuc tinh cho muc he thong Tai san -->
+<div class="modal" id="tsInfoModal">
+  <div class="sheet">
+    <h3 id="tsInfoTitle">Công thức tính</h3>
+    <div class="sub" id="tsInfoDesc" style="line-height:1.5;margin-bottom:14px"></div>
+    <button class="primary" style="width:100%" onclick="closeTsInfo()">Đã hiểu</button>
+  </div>
+</div>
+
 <!-- Lich thang: duong + am song song, chuyen thang -->
 <div class="modal" id="lunarCalModal">
   <div class="sheet" style="max-height:85vh;overflow-y:auto">
@@ -632,7 +679,7 @@ function logout(){
 }
 
 function go(t){ tab=t; for(const x of ["dashboard","thuchi","chungkhoan","taisan","baocao","cauhinh"]) document.getElementById("tab-"+x).classList.toggle("active", x===t); render(); }
-function changeMonth(delta){ month+=delta; if(month<1){month=12;year--;} if(month>12){month=1;year++;} reportStart=reportEnd=null; render(); }
+function changeMonth(delta){ month+=delta; if(month<1){month=12;year--;} if(month>12){month=1;year++;} reportStart=reportEnd=null; svStart=svEnd=null; render(); }
 
 async function ensureRef(){
   if(users.length===0){ try{ users = await jget("/users"); }catch(e){} }
@@ -652,11 +699,13 @@ function syncYM(){
   }
   ys.value = year; ms.value = month;
 }
-function jumpYM(){ year=parseInt(document.getElementById("yearSel").value); month=parseInt(document.getElementById("monthSel").value); reportStart=reportEnd=null; render(); }
+function jumpYM(){ year=parseInt(document.getElementById("yearSel").value); month=parseInt(document.getElementById("monthSel").value); reportStart=reportEnd=null; svStart=svEnd=null; render(); }
 
 function setActionBar(){
   const ab = document.getElementById("actionbar");
-  if(tab==="thuchi") ab.innerHTML = `<button class="abtn" onclick="openTx()">+ Thêm giao dịch</button>`;
+  if(tab==="thuchi") ab.innerHTML = tcView==="tietkiem"
+    ? `<button class="abtn" onclick="openSv()">+ Thêm khoản tiết kiệm</button>`
+    : `<button class="abtn" onclick="openTx()">+ Thêm giao dịch</button>`;
   else if(tab==="taisan") ab.innerHTML = `<button class="abtn" onclick="openAs()">+ Thêm tài sản</button>`;
   else if(tab==="chungkhoan"){
     // Tab Tổng chỉ xem; tab Chồng/Vợ mới cho thêm/sửa.
@@ -953,16 +1002,22 @@ function goToTienIch(item){
 
 // ---- Tab Thu chi (2 tab con: Thu / Chi) ----
 let monthTxs = [];   // luu giao dich thang hien tai de bam sua
-let tcView = "thu";  // "thu" | "chi"
-function setTcView(v){ tcView=v; renderThuChi(document.getElementById("content")); }
+let tcView = "thu";  // "thu" | "chi" | "tietkiem"
+function setTcView(v){ tcView=v; setActionBar(); renderThuChi(document.getElementById("content")); }
 async function renderThuChi(c){
+  // Sub-tabs Thu / Chi / Gui tiet kiem
+  const tb = (label,v)=>`<button class="chip ${tcView===v?'on':''}" onclick="setTcView('${v}')">${label}</button>`;
+  let html = `<div class="chips" style="margin-bottom:12px">${tb("Thu","thu")}${tb("Chi","chi")}${tb("Gửi tiết kiệm","tietkiem")}</div>`;
+
+  if(tcView==="tietkiem"){
+    html += await renderTietKiem();
+    c.innerHTML = html;
+    return;
+  }
+
   const s = await jget(`/reports/summary?start=${startDate()}&end=${endDate()}`);
   const txs = await jget(`/transactions?start=${startDate()}&end=${endDate()}`);
   monthTxs = txs;
-
-  // Sub-tabs Thu / Chi
-  const tb = (label,v)=>`<button class="chip ${tcView===v?'on':''}" onclick="setTcView('${v}')">${label}</button>`;
-  let html = `<div class="chips" style="margin-bottom:12px">${tb("Thu","thu")}${tb("Chi","chi")}</div>`;
 
   if(tcView==="thu"){
     // Card tong quan gon: du 3 so lieu Thu / Chi / So du.
@@ -999,6 +1054,209 @@ async function renderThuChi(c){
 }
 function editTx(id){ const t = monthTxs.find(x=>x.id===id); if(t) openTx(t); }
 
+// ---- Sub-tab "Gui tiet kiem" (trong Thu chi) ----
+let svStart = null, svEnd = null, svRangeOpen = false;
+let unsettledSavings = [], rangeSavings = [];
+
+function toggleSvRange(){ svRangeOpen=!svRangeOpen; renderThuChi(document.getElementById("content")); }
+function applySvRange(){
+  svStart = document.getElementById("svRpStart").value || null;
+  svEnd = document.getElementById("svRpEnd").value || null;
+  renderThuChi(document.getElementById("content"));
+}
+function resetSvRange(){ svStart=svEnd=null; renderThuChi(document.getElementById("content")); }
+
+async function renderTietKiem(){
+  const s0 = svStart || startDate();
+  const e0 = svEnd || endDate();
+  const custom = !!(svStart || svEnd);
+
+  // Card: loc theo khoang ngay (giong Bao cao).
+  let html = `<div class="card" style="padding:10px 14px">
+    <div class="row" style="cursor:pointer" onclick="toggleSvRange()">
+      <span class="sub">🔍 Lọc theo khoảng ngày${custom?` · ${fmtDate(s0)} → ${fmtDate(e0)}`:` (mặc định: tháng ${month}/${year})`}</span>
+      <span class="sub">${svRangeOpen?"▲":"▼"}</span>
+    </div>`;
+  if(svRangeOpen){
+    html += `<div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+      <input type="date" id="svRpStart" value="${s0}" style="margin:0">
+      <span class="sub">→</span>
+      <input type="date" id="svRpEnd" value="${e0}" style="margin:0">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="primary" style="flex:1" onclick="applySvRange()">Xem</button>
+      ${custom ? `<button class="ghost" onclick="resetSvRange()">Về tháng ${month}/${year}</button>` : ``}
+    </div>`;
+  }
+  html += `</div>`;
+
+  // Card: tong hop tien gui trong nam (nam dang chon o thanh tren dau man hinh).
+  let summary = {total_active_amount:0, active_count:0, interest_received_this_year:0};
+  try{ summary = await jget(`/savings/summary?year=${year}`); }catch(e){}
+  html += `<div class="card">
+    <div class="sectitle" style="margin-top:0">Tổng hợp tiền gửi năm ${year}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      ${miniStat("Đang gửi", summary.total_active_amount, "var(--accent)")}
+      ${miniStat("Số khoản đang gửi", summary.active_count, "var(--muted)")}
+      ${miniStat("Lãi đã nhận trong năm", summary.interest_received_this_year, "var(--green)")}
+    </div></div>`;
+
+  // Card: cac khoan chua tat toan - khong phu thuoc bo loc ngay.
+  let unsettled = [];
+  try{ unsettled = await jget(`/savings/unsettled`); }catch(e){}
+  unsettledSavings = unsettled;
+  html += `<div class="sectitle">Chưa tất toán</div><div class="card">`;
+  if(unsettled.length===0){
+    html += `<div class="sub">Chưa có khoản tiết kiệm nào đang gửi</div>`;
+  }else{
+    for(const d of unsettled){
+      html += `<div class="tx"><div><div class="desc">${d.name}</div>
+        <div class="meta">${fmtDate(d.start_date)} · Kỳ hạn ${d.term_value} ${d.term_unit==='day'?'ngày':'tháng'} · ${d.interest_rate}%/năm</div></div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(d.amount)}</span><span class="editbtn" onclick="editSv(${d.id})" title="Sửa">✎</span></div></div>`;
+    }
+  }
+  html += `</div>`;
+
+  // Card: cac khoan gui theo khoang thoi gian tim kiem (theo ngay gui), ca
+  // dang gui va da tat toan, phan biet mau + trang thai.
+  let ranged = [];
+  try{ ranged = await jget(`/savings?start=${s0}&end=${e0}`); }catch(e){}
+  rangeSavings = ranged;
+  html += `<div class="sectitle">Các khoản gửi từ ${fmtDate(s0)} đến ${fmtDate(e0)}</div><div class="card">`;
+  if(ranged.length===0){
+    html += `<div class="sub">Không có khoản tiết kiệm nào trong khoảng thời gian này</div>`;
+  }else{
+    for(const d of ranged.slice().reverse()){
+      const isSettled = d.status==="settled";
+      const tint = isSettled
+        ? `background:var(--green-bg);border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`
+        : `background:var(--accent-bg);border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`;
+      const statusLabel = isSettled
+        ? `<span style="color:var(--green);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap">✔ Đã tất toán</span>`
+        : `<span style="color:var(--accent);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap">● Đang gửi</span>`;
+      html += `<div class="tx" style="${tint}"><div><div class="desc">${d.name}${statusLabel}</div>
+        <div class="meta">${fmtDate(d.start_date)} → ${fmtDate(d.maturity_date)}${d.bank?' · '+d.bank:''}</div></div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(d.amount)}</span><span class="editbtn" onclick="editSv(${d.id})" title="Sửa">✎</span></div></div>`;
+    }
+  }
+  html += `</div>`;
+  return html;
+}
+function editSv(id){
+  const d = unsettledSavings.find(x=>x.id===id) || rangeSavings.find(x=>x.id===id);
+  if(d) openSv(d);
+}
+
+// Form them/sua khoan tiet kiem
+let editingSvId = null, svExpectedManuallySet = false;
+function openSv(d){
+  editingSvId = (d && d.id) ? d.id : null;
+  // Khi sua: giu nguyen so tien lai da co, khong tu dong ghi de ngay khi mo
+  // form (chi ghi de khi nguoi dung thuc su thay doi so tien/lai suat/ky han).
+  svExpectedManuallySet = !!d;
+  document.getElementById("svModalTitle").textContent = editingSvId ? "Sửa khoản tiết kiệm" : "Thêm khoản tiết kiệm";
+  document.getElementById("svDelBtn").style.display = editingSvId ? "block" : "none";
+  document.getElementById("svName").value = d ? d.name : "";
+  document.getElementById("svContent").value = d ? (d.content||"") : "";
+  document.getElementById("svDate").value = d ? d.start_date : `${year}-${pad(month)}-${pad(new Date().getDate())}`;
+  document.getElementById("svAmount").value = d ? d.amount : "";
+  document.getElementById("svTermValue").value = d ? d.term_value : 6;
+  document.getElementById("svTermUnit").value = d ? d.term_unit : "month";
+  document.getElementById("svRate").value = d ? d.interest_rate : "";
+  document.getElementById("svExpectedInterest").value = d ? d.expected_interest : "";
+  document.getElementById("svBank").value = d ? (d.bank||"") : "";
+  document.getElementById("svStatus").value = d ? d.status : "active";
+  document.getElementById("svActualInterest").value = (d && d.actual_interest!=null) ? d.actual_interest : "";
+  document.getElementById("svSettledDate").value = (d && d.settled_date) ? d.settled_date : "";
+  document.getElementById("svUser").innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
+  if(d) document.getElementById("svUser").value = d.user_id; else if(currentUser) document.getElementById("svUser").value = currentUser.id;
+  document.getElementById("svNote").value = d ? (d.note||"") : "";
+  document.getElementById("svErr").innerHTML = "";
+  svToggleSettled();
+  svRecalc();
+  document.getElementById("svModal").classList.add("on");
+}
+function closeSv(){ document.getElementById("svModal").classList.remove("on"); }
+function svToggleSettled(){
+  const settled = document.getElementById("svStatus").value === "settled";
+  document.getElementById("svSettledBlock").style.display = settled ? "block" : "none";
+}
+function svMarkExpectedManual(){ svExpectedManuallySet = true; }
+// Ngay dao han = ngay gui + ky han (cung cong thuc voi backend
+// savings_service._compute_maturity_date, de hien thi ngay tren form ma
+// khong can goi API). Tien lai du kien = lai don theo so ngay gui thuc te,
+// chi tu dong cap nhat khi nguoi dung CHUA tu sua tay o phien nhap nay.
+function svAddTerm(startStr, termValue, termUnit){
+  const [y,m,dd] = startStr.split("-").map(Number);
+  if(termUnit==="day"){
+    const dt = new Date(y, m-1, dd);
+    dt.setDate(dt.getDate() + termValue);
+    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+  }
+  const total = (m-1) + termValue;
+  const ny = y + Math.floor(total/12);
+  const nm = (total%12) + 1;
+  const lastDay = new Date(ny, nm, 0).getDate();
+  const day = Math.min(dd, lastDay);
+  return `${ny}-${pad(nm)}-${pad(day)}`;
+}
+function svRecalc(){
+  const start = document.getElementById("svDate").value;
+  const termValue = parseInt(document.getElementById("svTermValue").value) || 0;
+  const termUnit = document.getElementById("svTermUnit").value;
+  const amount = parseFloat((document.getElementById("svAmount").value||"").toString().replace(/\./g,"")) || 0;
+  const rate = parseFloat(document.getElementById("svRate").value) || 0;
+  const disp = document.getElementById("svMaturityDisplay");
+  if(!start || termValue<=0){ disp.textContent = "Ngày đáo hạn (tự động): —"; return; }
+  const maturity = svAddTerm(start, termValue, termUnit);
+  disp.textContent = "Ngày đáo hạn (tự động): " + fmtDate(maturity);
+  if(!svExpectedManuallySet){
+    const days = Math.round((new Date(maturity+"T00:00:00") - new Date(start+"T00:00:00")) / 86400000);
+    const interest = Math.max(0, Math.round(amount * (rate/100) * (days/365)));
+    document.getElementById("svExpectedInterest").value = interest;
+  }
+}
+async function saveSv(){
+  const name = document.getElementById("svName").value.trim();
+  const amount = parseFloat((document.getElementById("svAmount").value||"").toString().replace(/\./g,""));
+  const termValue = parseInt(document.getElementById("svTermValue").value);
+  const rate = parseFloat(document.getElementById("svRate").value);
+  const status = document.getElementById("svStatus").value;
+  const settledDate = document.getElementById("svSettledDate").value || null;
+  if(!name || !amount || amount<=0 || !termValue || termValue<=0 || isNaN(rate)){
+    document.getElementById("svErr").innerHTML = `<div class="err">Nhập đủ tên, số tiền, kỳ hạn và lãi suất</div>`;
+    return;
+  }
+  if(status==="settled" && !settledDate){
+    document.getElementById("svErr").innerHTML = `<div class="err">Đã tất toán thì cần nhập thời gian tất toán</div>`;
+    return;
+  }
+  const payload = {
+    name, content: document.getElementById("svContent").value.trim()||null,
+    start_date: document.getElementById("svDate").value,
+    amount, term_value: termValue, term_unit: document.getElementById("svTermUnit").value,
+    interest_rate: rate,
+    expected_interest: parseFloat(document.getElementById("svExpectedInterest").value||"0") || 0,
+    bank: document.getElementById("svBank").value.trim()||null,
+    status,
+    actual_interest: document.getElementById("svActualInterest").value ? parseFloat(document.getElementById("svActualInterest").value) : null,
+    settled_date: settledDate,
+    user_id: parseInt(document.getElementById("svUser").value),
+    note: document.getElementById("svNote").value.trim()||null,
+  };
+  try{
+    if(editingSvId){ await jput("/savings/"+editingSvId, payload); }
+    else { await jpost("/savings", payload); }
+    closeSv(); render();
+  }catch(e){ document.getElementById("svErr").innerHTML = `<div class="err">${e.message}</div>`; }
+}
+async function deleteSv(){
+  if(!editingSvId) return;
+  if(!confirm("Xóa khoản tiết kiệm này?")) return;
+  try{ await jdelete("/savings/"+editingSvId); closeSv(); render(); }
+  catch(e){ document.getElementById("svErr").innerHTML = `<div class="err">${e.message}</div>`; }
+}
+
 // ---- Tab Tai san ----
 let monthAssets = [];
 async function renderTaiSan(c){
@@ -1023,7 +1281,7 @@ async function renderTaiSan(c){
     for(const a of m.items){
       const sys = !!a.system_key;
       const tint = sys ? `background:var(--accent-bg);border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none` : '';
-      const badge = sys ? `<span style="color:var(--accent);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap">🔒 Tự động</span>` : '';
+      const badge = sys ? `<span style="color:var(--accent);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap;cursor:pointer" onclick="showSystemItemInfo('${a.system_key}')" title="Xem công thức tính">🔒 Tự động</span>` : '';
       const edit = sys ? '' : `<span class="editbtn" onclick="editAs(${a.id})" title="Sửa">✎</span>`;
       html += `<div class="tx" style="${tint}"><div><div class="desc" style="${sys?'color:var(--accent)':''}">${a.name}${badge}</div>${a.note?`<div class="meta">${a.note}</div>`:''}</div>
         <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600;${sys?'color:var(--accent)':''}">${vnd(a.value)}</span>${edit}</div></div>`;
@@ -1032,6 +1290,34 @@ async function renderTaiSan(c){
   html += `</div>`;
   c.innerHTML = html;
 }
+
+// Cong thuc tinh cua 4 muc he thong (khoa sua/xoa) - hien khi bam icon khoa.
+const SYSTEM_ITEM_INFO = {
+  vo_taikhoan: {
+    title: "Tài khoản vợ",
+    desc: "Số dư chốt tháng trước + Số dư phát sinh trong tháng (thu − chi ± chuyển khoản với chồng) + Lãi tiết kiệm thực nhận trong tháng (các khoản Đã tất toán có Thời gian tất toán rơi vào tháng này, của vợ)."
+  },
+  chong_taikhoan: {
+    title: "Tài khoản chồng",
+    desc: "Số dư chốt tháng trước + Số dư phát sinh trong tháng (thu − chi ± chuyển khoản với vợ) + Lãi tiết kiệm thực nhận trong tháng (các khoản Đã tất toán có Thời gian tất toán rơi vào tháng này, của chồng)."
+  },
+  vo_ck: {
+    title: "Chứng khoán vợ",
+    desc: "Tổng giá trị hiện tại của các khoản đang giữ (mục \"Đang giữ\" trong tab Chứng khoán) của vợ."
+  },
+  chong_ck: {
+    title: "Chứng khoán chồng",
+    desc: "Tổng giá trị hiện tại của các khoản đang giữ (mục \"Đang giữ\" trong tab Chứng khoán) của chồng."
+  },
+};
+function showSystemItemInfo(key){
+  const info = SYSTEM_ITEM_INFO[key];
+  if(!info) return;
+  document.getElementById("tsInfoTitle").textContent = info.title;
+  document.getElementById("tsInfoDesc").textContent = info.desc;
+  document.getElementById("tsInfoModal").classList.add("on");
+}
+function closeTsInfo(){ document.getElementById("tsInfoModal").classList.remove("on"); }
 
 // ---- Tab Chung khoan ----
 let cfType = "deposit", trSide = "buy";
