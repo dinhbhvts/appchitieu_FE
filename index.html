@@ -1116,18 +1116,17 @@ async function renderTietKiem(){
       ${miniStat("Tổng số tiền tất toán", summary.total_settled_amount_this_year, "var(--muted)")}
       ${miniStat("Lãi đã nhận trong năm", summary.interest_received_this_year, "var(--green)")}
     </div></div>`;
-  html += `<div class="card">
-    <div class="sectitle" style="margin-top:0">Tổng hợp các khoản đang gửi</div>
-    <div class="row" style="gap:8px;flex-wrap:wrap">
-      ${miniStat("Tổng số tiền đang gửi", summary.total_active_amount, "var(--accent)")}
-      ${miniStat("Số khoản đang gửi", summary.active_count, "var(--muted)")}
-    </div></div>`;
-
-  // Card: cac khoan chua tat toan - khong phu thuoc bo loc ngay.
+  // Card: tong hop cac khoan dang gui - phan tong o tren, chi tiet (chua tat
+  // toan, khong phu thuoc bo loc ngay) ngay ben duoi trong cung 1 card.
   let unsettled = [];
   try{ unsettled = await jget(`/savings/unsettled`); }catch(e){}
   unsettledSavings = unsettled;
-  html += `<div class="sectitle">Chưa tất toán</div><div class="card">`;
+  html += `<div class="card">
+    <div class="sectitle" style="margin-top:0">Tổng hợp các khoản đang gửi</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      ${miniStat("Tổng số tiền đang gửi", summary.total_active_amount, "var(--accent)")}
+      ${miniStat("Số khoản đang gửi", summary.active_count, "var(--muted)")}
+    </div>`;
   if(unsettled.length===0){
     html += `<div class="sub">Chưa có khoản tiết kiệm nào đang gửi</div>`;
   }else{
@@ -1747,11 +1746,12 @@ function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); rend
 
 async function renderSavingsInfoCard(){
   let s = {total_active_amount:0, total_deposited_this_year:0,
-    total_settled_amount_this_year:0, interest_received_this_year:0, avg_return_rate_pct:null};
+    total_settled_amount_this_year:0, interest_received_this_year:0, avg_return_rate_pct:null,
+    active_amount_before_this_year:0};
   try{ s = await jget(`/savings/summary?year=${year}`); }catch(e){ return ""; }
   const rateText = (s.avg_return_rate_pct===null || s.avg_return_rate_pct===undefined) ? "—" : `${s.avg_return_rate_pct}%`;
   return `<div class="card"><div class="sectitle" style="margin-top:0">Thông tin gửi tiết kiệm (năm ${year})</div>
-    ${rowLine("Tổng số tiền gửi từ trước (chưa tất toán)", s.total_active_amount, "var(--accent)")}
+    ${rowLine("Tổng số tiền gửi từ trước (chưa tất toán)", s.active_amount_before_this_year, "var(--accent)")}
     ${rowLine("Gửi thêm trong năm", s.total_deposited_this_year, "var(--muted)")}
     ${rowLine("Tất toán trong năm", s.total_settled_amount_this_year, "var(--muted)")}
     ${rowLine("Lãi nhận trong năm", s.interest_received_this_year, "var(--green)")}
