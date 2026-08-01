@@ -282,10 +282,15 @@
 <div class="modal" id="svModal">
   <div class="sheet" style="max-height:85vh;overflow-y:auto">
     <h3 id="svModalTitle">Thêm khoản tiết kiệm</h3>
+    <div class="flabel">Tên khoản tiết kiệm</div>
     <input id="svName" placeholder="Tên khoản tiết kiệm" />
+    <div class="flabel">Nội dung</div>
     <input id="svContent" placeholder="Nội dung (không bắt buộc)" />
+    <div class="flabel">Ngày gửi</div>
     <input id="svDate" type="date" oninput="svRecalc()" />
+    <div class="flabel">Số tiền</div>
     <input id="svAmount" type="number" placeholder="Số tiền" oninput="svRecalc()" />
+    <div class="flabel">Kỳ hạn</div>
     <div style="display:flex;gap:8px">
       <input id="svTermValue" type="number" placeholder="Kỳ hạn" style="flex:1" oninput="svRecalc()" />
       <select id="svTermUnit" style="flex:1" onchange="svRecalc()">
@@ -293,19 +298,30 @@
         <option value="day">Ngày</option>
       </select>
     </div>
-    <div class="sub" id="svMaturityDisplay" style="margin:-4px 0 10px">Ngày đáo hạn (tự động): —</div>
+    <div class="sub" id="svMaturityDisplay" style="margin:4px 0 10px">Ngày đáo hạn (tự động): —</div>
+    <div class="flabel">Lãi suất (%/năm)</div>
     <input id="svRate" type="number" step="0.01" placeholder="Lãi suất (%/năm)" oninput="svRecalc()" />
+    <div class="flabel">Tiền lãi dự kiến</div>
     <input id="svExpectedInterest" type="number" placeholder="Tiền lãi dự kiến" oninput="svMarkExpectedManual()" />
+    <div class="flabel">Ngân hàng</div>
     <input id="svBank" placeholder="Ngân hàng (không bắt buộc)" />
+    <div class="flabel">Trạng thái</div>
     <select id="svStatus" onchange="svToggleSettled()">
       <option value="active">Đang gửi</option>
       <option value="settled">Đã tất toán</option>
     </select>
     <div id="svSettledBlock" style="display:none">
-      <input id="svActualInterest" type="number" placeholder="Tiền lãi thực nhận" />
+      <div class="flabel" style="color:var(--accent)">Tiền lãi thực nhận</div>
+      <div style="background:var(--accent-bg);border-radius:8px;padding:8px 8px 6px">
+        <input id="svActualInterest" type="number" placeholder="Tiền lãi thực nhận" style="margin:0" />
+        <div class="sub" style="color:var(--accent);font-size:11px;line-height:1.4;margin:6px 0 2px">💡 Số tiền này sẽ được cộng thêm vào Tổng tài sản (mục Tài khoản của người gửi) trong tháng tất toán.</div>
+      </div>
+      <div class="flabel">Thời gian tất toán</div>
       <input id="svSettledDate" type="date" />
     </div>
+    <div class="flabel">Người gửi</div>
     <select id="svUser"></select>
+    <div class="flabel">Ghi chú</div>
     <input id="svNote" placeholder="Ghi chú (không bắt buộc)" />
     <div id="svErr"></div>
     <button id="svDelBtn" onclick="deleteSv()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
@@ -1110,7 +1126,8 @@ async function renderTietKiem(){
     html += `<div class="sub">Chưa có khoản tiết kiệm nào đang gửi</div>`;
   }else{
     for(const d of unsettled){
-      html += `<div class="tx"><div><div class="desc">${d.name}</div>
+      const tint = `background:${userTint(d.user_id)};border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`;
+      html += `<div class="tx" style="${tint}"><div><div class="desc">${d.name}</div>
         <div class="meta">${fmtDate(d.start_date)} · Kỳ hạn ${d.term_value} ${d.term_unit==='day'?'ngày':'tháng'} · ${d.interest_rate}%/năm</div></div>
         <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(d.amount)}</span><span class="editbtn" onclick="editSv(${d.id})" title="Sửa">✎</span></div></div>`;
     }
@@ -1128,9 +1145,9 @@ async function renderTietKiem(){
   }else{
     for(const d of ranged.slice().reverse()){
       const isSettled = d.status==="settled";
-      const tint = isSettled
-        ? `background:var(--green-bg);border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`
-        : `background:var(--accent-bg);border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`;
+      // Nen mau theo nguoi gui (Chong/Vo), giong danh sach giao dich Thu chi,
+      // de phan biet nhanh khoan cua ai; trang thai van the hien rieng qua badge.
+      const tint = `background:${userTint(d.user_id)};border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`;
       const statusLabel = isSettled
         ? `<span style="color:var(--green);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap">✔ Đã tất toán</span>`
         : `<span style="color:var(--accent);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap">● Đang gửi</span>`;
