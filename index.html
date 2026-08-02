@@ -248,6 +248,7 @@
     <input id="hdSymbol" placeholder="Mã CK / tên (vd: NKG)" />
     <input id="hdQty" type="number" placeholder="Số lượng (số cổ phiếu)" />
     <input id="hdValue" type="number" placeholder="Giá trị hiện tại (số tiền)" />
+    <select id="hdUser"></select>
     <input id="hdNote" placeholder="Ghi chú (không bắt buộc)" />
     <div id="hdErr"></div>
     <button id="hdDelBtn" onclick="deleteHd()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
@@ -722,7 +723,7 @@ function setActionBar(){
   if(tab==="thuchi") ab.innerHTML = tcView==="tietkiem"
     ? `<button class="abtn" onclick="openSv()">+ Thêm khoản tiết kiệm</button>`
     : `<button class="abtn" onclick="openTx()">+ Thêm giao dịch</button>`;
-  else if(tab==="taisan") ab.innerHTML = `<button class="abtn" onclick="openAs()">+ Thêm tài sản</button>`;
+  else if(tab==="taisan") ab.innerHTML = `<button class="abtn alt" onclick="recomputeAssets()" title="Tính lại 4 mục tự động cho toàn bộ các tháng, phòng khi vừa sửa số liệu tháng trước">⟳ Tổng hợp lại</button><button class="abtn" onclick="openAs()">+ Thêm tài sản</button>`;
   else if(tab==="chungkhoan"){
     // Tab Tổng chỉ xem; tab Chồng/Vợ mới cho thêm/sửa.
     if(stockUser===null) ab.innerHTML = "";
@@ -1612,6 +1613,9 @@ function openHd(hd){
   document.getElementById("hdSymbol").value = hd ? hd.symbol : "";
   document.getElementById("hdQty").value = hd ? hd.quantity : "";
   document.getElementById("hdValue").value = hd ? hd.value : "";
+  document.getElementById("hdUser").innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
+  if(hd) document.getElementById("hdUser").value = hd.user_id;
+  else document.getElementById("hdUser").value = stockUser || (currentUser ? currentUser.id : "");
   document.getElementById("hdNote").value = (hd && hd.note) ? hd.note : "";
   document.getElementById("hdErr").innerHTML="";
   document.getElementById("hdModal").classList.add("on"); }
@@ -1620,11 +1624,12 @@ async function saveHd(){
   const symbol=document.getElementById("hdSymbol").value.trim();
   const qty=parseInt(document.getElementById("hdQty").value)||0;
   const value=parseFloat((document.getElementById("hdValue").value||"").replace(/\./g,""));
+  const userId=parseInt(document.getElementById("hdUser").value);
   const notev=document.getElementById("hdNote").value.trim()||null;
-  if(!symbol||!value){ document.getElementById("hdErr").innerHTML=`<div class="err">Nhập mã và giá trị</div>`; return; }
+  if(!symbol||!value||!userId){ document.getElementById("hdErr").innerHTML=`<div class="err">Nhập mã, giá trị và chọn Chồng/Vợ</div>`; return; }
   try{
-    if(editingHdId){ await jput("/stocks/holdings/"+editingHdId,{symbol:symbol,quantity:qty,value:value,note:notev}); }
-    else { await jpost("/stocks/holdings",{user_id:stockUser,symbol:symbol,quantity:qty,value:value,note:notev}); }
+    if(editingHdId){ await jput("/stocks/holdings/"+editingHdId,{symbol:symbol,quantity:qty,value:value,user_id:userId,note:notev}); }
+    else { await jpost("/stocks/holdings",{user_id:userId,symbol:symbol,quantity:qty,value:value,note:notev}); }
     closeHd(); render();
   }catch(e){ document.getElementById("hdErr").innerHTML=`<div class="err">${e.message}</div>`; }
 }
@@ -2326,6 +2331,14 @@ async function saveAs(){
 async function deleteAs(){ if(!editingAsId) return; if(!confirm("Xóa khoản tài sản này?")) return;
   try{ await jdelete("/assets/"+editingAsId); closeAs(); render(); }catch(e){ document.getElementById("asErr").innerHTML=`<div class="err">${e.message}</div>`; } }
 async function copyPrev(){ try{ await jpost(`/assets/copy-previous?year=${year}&month=${month}`); render(); }catch(e){ alert(e.message); } }
+// Nut "Tong hop lai": chu dong tinh lai 4 muc he thong cho TOAN BO cac
+// thang (khong chi thang dang xem) - phong khi vua sua so lieu thang truoc
+// nhung chua di xem qua tung thang sau de tu dong lam moi (xem
+// asset_service.recompute_all o backend).
+async function recomputeAssets(){
+  try{ await jpost(`/assets/recompute`); render(); }
+  catch(e){ alert("Không thể tổng hợp lại: " + e.message); }
+}
 
 // ---- Khoi dong ----
 function startApp(){ render(); }
