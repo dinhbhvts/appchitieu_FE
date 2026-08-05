@@ -515,6 +515,9 @@
     <input id="niIdIssuedPlace" placeholder="Nơi cấp CCCD" />
     <div class="sub" id="niDate2Label" style="margin:6px 0 2px">Ngày hết hạn / đến hạn kế tiếp</div>
     <input id="niDate2" type="date" />
+    <label id="niCompletedLabel" style="display:flex;align-items:center;gap:6px;font-size:13px;margin:2px 0 10px">
+      <input type="checkbox" id="niCompleted" style="width:auto" /> Đã hoàn thành
+    </label>
     <div class="flabel" id="niBirthCertNoLabel">Số giấy khai sinh</div>
     <input id="niBirthCertNo" placeholder="Số giấy khai sinh" />
     <div class="flabel" id="niHealthInsuranceNoLabel">Số thẻ BHYT</div>
@@ -591,7 +594,7 @@ const NI_BUILTIN_FIELDS = {
   personal_info:   {fullName:1, date1:1, remindBirthday:1, phone:1, idNumber:1,
                      idIssuedDate:1, idIssuedPlace:1, date2:1, birthCertNo:1,
                      healthInsuranceNo:1, address:1, hometown:1, profileName:1, attach:1},
-  task:            {info:1, date2:1},
+  task:            {info:1, date2:1, completed:1},
   note:            {},
   child_milestone: {date1:1},
 };
@@ -2322,11 +2325,22 @@ async function refreshNiResults(){
   const c = document.getElementById("niResultsBody");
   if(!c) return; // kiem tra lai vi vua await xong, co the da chuyen man khac
 
+  // Rieng nhac viec (task): viec sap den han len dau, viec da hoan thanh
+  // xuong cuoi - sort ON dinh (stable) nen chi can tra ve 0 cho moi cap
+  // KHONG phai 2 task cung so sanh, giu nguyen thu tu type/title API da
+  // sap san cho moi loai khac.
+  niItems = niItems.slice().sort((a, b) => {
+    if(a.type !== "task" || b.type !== "task") return 0;
+    if(!!a.is_completed !== !!b.is_completed) return a.is_completed ? 1 : -1;
+    const da = a.date2 || "9999-12-31", db_ = b.date2 || "9999-12-31";
+    return da < db_ ? -1 : da > db_ ? 1 : 0;
+  });
+
   let html = `<div class="card">`;
   if(niItems.length===0){
     html += `<div class="sub">Không tìm thấy mục nào</div>`;
   }else{
-    // Nhom theo loai de de nhin, giu nguyen thu tu API tra ve (theo type, title).
+    // Nhom theo loai de de nhin, giu nguyen thu tu vua sap xep o tren.
     let lastType = null;
     for(const it of niItems){
       if(it.type !== lastType){
@@ -2335,20 +2349,46 @@ async function refreshNiResults(){
         lastType = it.type;
       }
       const meta = niMetaLine(it);
-      html += `<div class="tx" style="cursor:pointer" onclick="editNi(${it.id})">
-        <div><div class="desc">${it.title}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>
-        <span class="editbtn">✎</span></div>`;
+      if(it.type === "task"){
+        // Tickbox rieng, khong bao trong <label> de bam vao tieu de mo sua
+        // chu khong tick nham checkbox.
+        html += `<div class="tx" style="align-items:center;gap:8px">
+          <input type="checkbox" style="width:auto;flex-shrink:0" ${it.is_completed?'checked':''} onclick="toggleNiTaskDone(${it.id}, this.checked)" />
+          <div style="flex:1;min-width:0;cursor:pointer;${it.is_completed?'opacity:.55':''}" onclick="editNi(${it.id})">
+            <div class="desc" style="${it.is_completed?'text-decoration:line-through':''}">${it.title}</div>
+            ${meta?`<div class="meta">${meta}</div>`:''}
+          </div>
+          <span class="editbtn" onclick="editNi(${it.id})">✎</span></div>`;
+      }else{
+        html += `<div class="tx" style="cursor:pointer" onclick="editNi(${it.id})">
+          <div><div class="desc">${it.title}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>
+          <span class="editbtn">✎</span></div>`;
+      }
     }
   }
   html += `</div>`;
   c.innerHTML = html;
+}
+// Tick/bo tick "Da hoan thanh" thang tu danh sach, khong can mo modal sua -
+// PUT chi mot truong (backend cho cap nhat tung phan). Sau khi luu, ve lai
+// danh sach de cap nhat vi tri sap xep (viec xong roi xuong cuoi) va gach
+// ngang tieu de.
+async function toggleNiTaskDone(id, checked){
+  try{
+    await jput(`/notebook-items/${id}`, {is_completed: checked});
+    const it = niItems.find(x=>x.id===id);
+    if(it) it.is_completed = checked;
+  }catch(e){
+    alert("Không cập nhật được: " + e.message);
+  }
+  await refreshNiResults();
 }
 function niMetaLine(it){
   const parts = [];
   if(it.full_name) parts.push(it.full_name);
   if(it.relation) parts.push(it.relation);
   if(it.date1) parts.push(fmtDate(it.date1) + (it.date1_is_lunar?" (âm lịch)":""));
-  if(it.date2) parts.push("hết hạn " + fmtDate(it.date2));
+  if(it.date2) parts.push((it.type==="task" ? "hạn " : "hết hạn ") + fmtDate(it.date2));
   if(it.phone) parts.push(it.phone);
   if(it.amount) parts.push(vnd(it.amount)+" đ");
   return parts.join(" · ");
@@ -2380,6 +2420,7 @@ async function openNi(item){
   document.getElementById("niIdIssuedDate").value = item ? (item.id_issued_date||"") : "";
   document.getElementById("niIdIssuedPlace").value = item ? (item.id_issued_place||"") : "";
   document.getElementById("niDate2").value = item ? (item.date2||"") : "";
+  document.getElementById("niCompleted").checked = item ? !!item.is_completed : false;
   document.getElementById("niBirthCertNo").value = item ? (item.birth_cert_no||"") : "";
   document.getElementById("niHealthInsuranceNo").value = item ? (item.health_insurance_no||"") : "";
   document.getElementById("niHometown").value = item ? (item.hometown||"") : "";
@@ -2493,6 +2534,7 @@ function setNiType(v){
   show("niIdIssuedPlace", f.idIssuedPlace);
   show("niDate2Label", f.date2);
   show("niDate2", f.date2);
+  show("niCompletedLabel", f.completed);
   show("niBirthCertNo", f.birthCertNo);
   show("niHealthInsuranceNo", f.healthInsuranceNo);
   show("niHometown", f.hometown);
@@ -2556,6 +2598,7 @@ async function saveNi(){
     info: document.getElementById("niInfo").value.trim()||null,
     tags: document.getElementById("niTags").value.trim()||null,
     note: document.getElementById("niNote").value.trim()||null,
+    is_completed: document.getElementById("niCompleted").checked,
   };
   // "Ten ho so" chi gui luc TAO MOI - sua thi khong gui (bi khoa o UI, va
   // backend cung bo qua truong nay trong PUT du co gui hay khong).
