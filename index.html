@@ -4,6 +4,16 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Sổ tay — Xem trước giao diện</title>
+<!-- PWA: can cho ca 2 viec - "Them vao Man hinh chinh" (da huong dan trong
+     TRIEN_KHAI.md muc 4) VA thong bao day (Web Push, TRIEN_KHAI.md muc 7).
+     Tren iPhone, Apple CHI cho phep thong bao day voi mot web app da duoc
+     them vao Man hinh chinh va display:standalone - khong co file nay thi
+     tinh nang Bat thong bao se khong hoat dong duoc tren iPhone. -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#185FA5" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Sổ tay" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <!--
   BAN XEM TRUOC GIAO DIEN (chay trong trinh duyet).
   File nay KHONG phai app that (app that la Flutter), no chi giup ban NHIN va
@@ -687,7 +697,9 @@ async function jget(path){ return handleResp(await fetch(api()+path, {headers: a
 async function jpost(path, body){ return handleResp(await fetch(api()+path,{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),body:body?JSON.stringify(body):null})); }
 async function jput(path, body){ return handleResp(await fetch(api()+path,{method:"PUT",headers:authHeaders({"Content-Type":"application/json"}),body:JSON.stringify(body)})); }
 async function jpatch(path, body){ return handleResp(await fetch(api()+path,{method:"PATCH",headers:authHeaders({"Content-Type":"application/json"}),body:JSON.stringify(body)})); }
-async function jdelete(path){ return handleResp(await fetch(api()+path,{method:"DELETE",headers:authHeaders()})); }
+// body la tuy chon - hau het DELETE khong can, rieng huy dang ky thong bao
+// (unsubscribe) can gui kem endpoint trong body.
+async function jdelete(path, body){ return handleResp(await fetch(api()+path,{method:"DELETE",headers:authHeaders(body?{"Content-Type":"application/json"}:undefined),body:body?JSON.stringify(body):null})); }
 // Upload file (multipart) - KHONG tu dat Content-Type, trinh duyet tu them
 // boundary dung khi body la FormData.
 async function jupload(path, formData){ return handleResp(await fetch(api()+path,{method:"POST",headers:authHeaders(),body:formData})); }
@@ -2685,6 +2697,89 @@ document.querySelectorAll(".modal").forEach(m=>{
 // ==================== Nhom C: Quan ly nguoi dung ====================
 let changePassOldPass = "", changePassNewPass = "", changePassConfirmPass = "";
 let changePassShowOld = false, changePassShowNew = false, changePassShowConfirm = false;
+// ---- Thong bao nhac su kien sap toi (Web Push) ----
+// Dang ky/huy dang ky nam trong man "Cau hinh > Nguoi dung" (xem
+// renderQuanLyUser ben duoi) vi day la thiet lap RIENG CHO TUNG THIET BI
+// (moi dien thoai bat rieng), khong phai du lieu chung ca gia dinh.
+function isIosStandaloneRequired(){
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const standalone = window.navigator.standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches;
+  return isIos && !standalone;
+}
+function urlBase64ToUint8Array(base64String){
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for(let i=0; i<raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+async function pushSectionHtml(){
+  if(location.protocol !== "https:" && location.hostname !== "localhost"){
+    return `<div class="sub">Thông báo đẩy chỉ hoạt động trên địa chỉ https:// (bản xem trước mở trực tiếp từ file sẽ không bật được) - hãy thử trên bản đã đưa lên Vercel.</div>`;
+  }
+  if(!("serviceWorker" in navigator) || !("PushManager" in window)){
+    return `<div class="sub">Trình duyệt này không hỗ trợ thông báo đẩy.</div>`;
+  }
+  if(isIosStandaloneRequired()){
+    return `<div class="sub">Trên iPhone: mở Safari → bấm nút <b>Chia sẻ</b> → <b>Thêm vào Màn hình chính</b>, rồi mở lại app từ biểu tượng vừa tạo (không phải tab Safari) mới bật được thông báo - đây là giới hạn của Apple, không phải lỗi app.</div>`;
+  }
+  try{
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if(sub){
+      return `<div style="color:var(--green);margin-bottom:8px">✅ Đã bật thông báo trên thiết bị này</div><button class="ghost" style="width:100%" onclick="disablePush()">Tắt thông báo</button>`;
+    }
+    return `<button class="abtn" style="width:100%" onclick="enablePush()">🔔 Bật thông báo nhắc sự kiện</button>`;
+  }catch(e){
+    return `<div class="sub">Không kiểm tra được trạng thái thông báo: ${e.message}</div>`;
+  }
+}
+async function refreshPushSection(){
+  const el = document.getElementById("pushSection");
+  if(el) el.innerHTML = await pushSectionHtml();
+}
+async function enablePush(){
+  const el = document.getElementById("pushSection");
+  try{
+    const perm = await Notification.requestPermission();
+    if(perm !== "granted"){
+      el.innerHTML = `<div class="err">Bạn đã từ chối quyền thông báo. Vào cài đặt trình duyệt để cấp lại quyền cho trang này.</div>`;
+      return;
+    }
+    const reg = await navigator.serviceWorker.register("sw.js");
+    await navigator.serviceWorker.ready;
+    const vapid = await jget("/push/vapid-public-key");
+    if(!vapid.public_key){
+      el.innerHTML = `<div class="err">Máy chủ chưa cấu hình thông báo (thiếu VAPID key) - xem TRIEN_KHAI.md mục 7.</div>`;
+      return;
+    }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapid.public_key),
+    });
+    await jpost("/push/subscribe", Object.assign(sub.toJSON(), {user_agent: navigator.userAgent}));
+    await refreshPushSection();
+  }catch(e){
+    el.innerHTML = `<div class="err">Không bật được thông báo: ${e.message}</div>`;
+  }
+}
+async function disablePush(){
+  const el = document.getElementById("pushSection");
+  try{
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if(sub){
+      await jdelete("/push/subscribe", {endpoint: sub.endpoint});
+      await sub.unsubscribe();
+    }
+    await refreshPushSection();
+  }catch(e){
+    el.innerHTML = `<div class="err">Không tắt được thông báo: ${e.message}</div>`;
+  }
+}
+
 function renderQuanLyUser(body){
   let html = `<div style="padding:16px"><h3>Đổi Mật Khẩu</h3>`;
   html += `<div style="margin-bottom:12px">
@@ -2709,8 +2804,12 @@ function renderQuanLyUser(body){
     </div>
   </div>`;
   html += `<div id="cpErr"></div><button class="primary" style="width:100%;margin-top:8px" onclick="doChangePassword()">Đổi Mật Khẩu</button>`;
+  html += `<hr style="margin:24px 0"><h3>🔔 Thông báo</h3>
+    <div class="sub" style="margin-bottom:10px">Nhắc sinh nhật, ngày giỗ, việc cần làm... sắp tới trong vài ngày tới, ngay trên điện thoại. Bật riêng cho từng thiết bị.</div>
+    <div id="pushSection">Đang kiểm tra…</div>`;
   html += `<hr style="margin:24px 0"><h3>Khác</h3><button class="ghost" style="width:100%" onclick="doLogout()">Đăng xuất</button></div>`;
   body.innerHTML = html;
+  refreshPushSection();
 }
 async function doChangePassword(){
   const errDiv = document.getElementById("cpErr");
@@ -2753,6 +2852,14 @@ async function boot(){
     // Khong goi duoc may chu: van cho vao man dang nhap de doi dia chi.
     showLogin();
   }
+}
+// Dang ky service worker ngay tu dau (khong xin quyen thong bao o day) - can
+// thiet de nhung thiet bi da Bat thong bao o phien truoc van nhan duoc push
+// sau khi mo lai app/tai lai trang. Bo qua neu khong ho tro (vd mo file
+// preview.html truc tiep qua file://) hoac dang ky loi - khong lam gian doan
+// boot() phia tren.
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 boot();
 </script>

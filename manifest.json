@@ -1,0 +1,12 @@
+{
+  "name": "Sổ tay",
+  "short_name": "Sổ tay",
+  "description": "Sổ tay quản lý thu chi gia đình",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#185FA5",
+  "lang": "vi",
+  "icons": []
+}
