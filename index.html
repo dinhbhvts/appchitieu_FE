@@ -295,6 +295,8 @@
     <input id="hdQty" type="number" placeholder="Số lượng (số cổ phiếu)" />
     <input id="hdValue" type="number" placeholder="Giá trị hiện tại (số tiền)" />
     <select id="hdUser"></select>
+    <div id="hdCashInfo" style="display:none;font-size:12px;color:var(--muted);margin:2px 0 8px">Giá trị hiện tại = Giá trị khởi tạo bên dưới + tổng nạp/rút/mua/bán/cổ tức phát sinh - tự động tính, không sửa trực tiếp được.</div>
+    <input id="hdCashBase" type="number" placeholder="Giá trị khởi tạo (số dư tiền mặt sẵn có)" style="display:none" />
     <input id="hdNote" placeholder="Ghi chú (không bắt buộc)" />
     <div id="hdErr"></div>
     <button id="hdDelBtn" onclick="deleteHd()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
@@ -1739,21 +1741,24 @@ async function renderChungKhoan(c){
     </div>
     <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
       ${miniStat("Vốn đầu tư (nạp−rút)", s.invested_capital, "var(--accent)")}
+      ${miniStat("Tổng đang giữ", s.total_holdings_value||0, "var(--accent)")}
       ${miniStat("Cổ tức lũy kế (chỉ lưu trữ)", s.total_dividend||0, "#8B5CF6")}
       ${miniStat("Lãi/lỗ (giữ+rút−nạp)", s.total_realised_pl, s.total_realised_pl>=0?"var(--green)":"var(--red)")}
     </div></div>`;
 
-  // Danh muc dang giu - NHAP TAY (co so luong). Tab Tong: gop theo ma CK.
+  // Danh muc dang giu - NHAP TAY (co so luong), + dong "Tien mat" tu dong
+  // (is_cash, luon o dau danh sach - xem stock_repository.list_holdings).
+  // Tab Tong: gop theo ma CK.
   let items = stockHoldings;
   if(!canEdit){
     // Gop theo ma: cong so luong + gia tri cua ca chong va vo.
     const map = {};
     for(const hd of stockHoldings){
-      if(!map[hd.symbol]) map[hd.symbol] = {symbol:hd.symbol, quantity:0, value:0};
+      if(!map[hd.symbol]) map[hd.symbol] = {symbol:hd.symbol, quantity:0, value:0, is_cash:hd.is_cash};
       map[hd.symbol].quantity += Number(hd.quantity||0);
       map[hd.symbol].value += Number(hd.value||0);
     }
-    items = Object.values(map).sort((a,b)=>a.symbol.localeCompare(b.symbol));
+    items = Object.values(map).sort((a,b)=>(b.is_cash-a.is_cash) || a.symbol.localeCompare(b.symbol));
   }
   html += `<div class="sectitle">Danh mục đang giữ${canEdit?'':' (gộp Chồng+Vợ theo mã)'}</div><div class="card">`;
   if(items.length===0){
@@ -1763,8 +1768,9 @@ async function renderChungKhoan(c){
     for(const hd of items){ tot+=Number(hd.value);
       const edit = canEdit ? `<span class="editbtn" onclick="editHd(${hd.id})" title="Sửa">✎</span>` : '';
       const qtyMeta = hd.quantity ? `${vnd(hd.quantity)} cp · đơn giá ${vnd(hd.value/hd.quantity)}` : '';
-      const meta = [qtyMeta, hd.note].filter(Boolean).join(' · ');
-      html += `<div class="tx"><div><div class="desc">${hd.symbol}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>
+      const meta = hd.is_cash ? "Tự động tính từ nạp/rút/mua/bán/cổ tức" : [qtyMeta, hd.note].filter(Boolean).join(' · ');
+      const label = hd.is_cash ? `💵 ${hd.symbol}` : hd.symbol;
+      html += `<div class="tx"><div><div class="desc">${label}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>
         <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600">${vnd(hd.value)}</span>${edit}</div></div>`;
     }
     html += `<div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><span class="sub">Tổng đang giữ</span><span style="font-weight:600">${vnd(tot)} đ</span></div>`;
@@ -1953,28 +1959,45 @@ async function saveDv(){
 async function deleteDv(){ if(!editingDvId) return; if(!confirm("Xóa khoản cổ tức này?")) return;
   try{ await jdelete("/stocks/dividends/"+editingDvId); closeDv(); render(); }catch(e){ document.getElementById("dvErr").innerHTML=`<div class="err">${e.message}</div>`; } }
 
-// Form danh muc dang giu (nhap tay)
+// Form danh muc dang giu (nhap tay) - hoac Tien mat tu dong (chi sua duoc
+// "Gia tri khoi tao" + ghi chu, xem stock_service.CashHoldingLockedError).
 let editingHdId = null;
+let editingHdIsCash = false;
 function openHd(hd){
   editingHdId = (hd && hd.id) ? hd.id : null;
-  document.querySelector("#hdModal h3").textContent = editingHdId ? "Sửa khoản đang giữ" : "Khoản đang giữ";
-  document.getElementById("hdDelBtn").style.display = editingHdId ? "block" : "none";
+  editingHdIsCash = !!(hd && hd.is_cash);
+  document.querySelector("#hdModal h3").textContent = editingHdIsCash ? "Tiền mặt" : (editingHdId ? "Sửa khoản đang giữ" : "Khoản đang giữ");
+  document.getElementById("hdDelBtn").style.display = (editingHdId && !editingHdIsCash) ? "block" : "none";
+  show2("hdSymbol", !editingHdIsCash);
+  show2("hdQty", !editingHdIsCash);
+  show2("hdValue", !editingHdIsCash);
+  show2("hdUser", !editingHdIsCash);
+  show2("hdCashInfo", editingHdIsCash);
+  show2("hdCashBase", editingHdIsCash);
   document.getElementById("hdSymbol").value = hd ? hd.symbol : "";
   document.getElementById("hdQty").value = hd ? hd.quantity : "";
   document.getElementById("hdValue").value = hd ? hd.value : "";
+  document.getElementById("hdCashBase").value = hd ? hd.cash_base_value : "";
   document.getElementById("hdUser").innerHTML = users.map(u=>`<option value="${u.id}">${u.name}</option>`).join("");
   if(hd) document.getElementById("hdUser").value = hd.user_id;
   else document.getElementById("hdUser").value = stockUser || (currentUser ? currentUser.id : "");
   document.getElementById("hdNote").value = (hd && hd.note) ? hd.note : "";
   document.getElementById("hdErr").innerHTML="";
   document.getElementById("hdModal").classList.add("on"); }
+function show2(id, on){ document.getElementById(id).style.display = on ? "" : "none"; }
 function closeHd(){ document.getElementById("hdModal").classList.remove("on"); }
 async function saveHd(){
+  const notev=document.getElementById("hdNote").value.trim()||null;
+  if(editingHdIsCash){
+    const base=parseFloat((document.getElementById("hdCashBase").value||"").replace(/\./g,""))||0;
+    try{ await jput("/stocks/holdings/"+editingHdId,{cash_base_value:base,note:notev}); closeHd(); render(); }
+    catch(e){ document.getElementById("hdErr").innerHTML=`<div class="err">${e.message}</div>`; }
+    return;
+  }
   const symbol=document.getElementById("hdSymbol").value.trim();
   const qty=parseInt(document.getElementById("hdQty").value)||0;
   const value=parseFloat((document.getElementById("hdValue").value||"").replace(/\./g,""));
   const userId=parseInt(document.getElementById("hdUser").value);
-  const notev=document.getElementById("hdNote").value.trim()||null;
   if(!symbol||!value||!userId){ document.getElementById("hdErr").innerHTML=`<div class="err">Nhập mã, giá trị và chọn Chồng/Vợ</div>`; return; }
   try{
     if(editingHdId){ await jput("/stocks/holdings/"+editingHdId,{symbol:symbol,quantity:qty,value:value,user_id:userId,note:notev}); }
@@ -2105,7 +2128,8 @@ async function renderSavingsInfoCard(){
   try{ s = await jget(`/savings/summary?year=${year}`); }catch(e){ return ""; }
   const rateText = (s.avg_return_rate_pct===null || s.avg_return_rate_pct===undefined) ? "—" : `${s.avg_return_rate_pct}%`;
   return `<div class="card"><div class="sectitle" style="margin-top:0">Thông tin gửi tiết kiệm (năm ${year})</div>
-    ${rowLine("Tổng số tiền gửi từ trước (chưa tất toán)", s.active_amount_before_this_year, "var(--accent)")}
+    ${rowLine("Tổng đang gửi (hiện tại)", s.total_active_amount, "var(--accent)")}
+    ${rowLine("Tổng số tiền gửi từ trước (chưa tất toán)", s.active_amount_before_this_year, "var(--muted)")}
     ${rowLine("Gửi thêm trong năm", s.total_deposited_this_year, "var(--muted)")}
     ${rowLine("Tất toán trong năm", s.total_settled_amount_this_year, "var(--muted)")}
     ${rowLine("Lãi nhận trong năm", s.interest_received_this_year, "var(--green)")}
@@ -2141,7 +2165,7 @@ async function renderYearlyAssetsCard(){
   return html;
 }
 
-function rowLine(label, val, color){ return `<div class="row" style="padding:4px 0"><span>${label}</span><span style="color:${color};font-weight:600">${vnd(val)} đ</span></div>`; }
+function rowLine(label, val, color){ return `<div class="row" style="padding:4px 0;gap:8px"><span>${label}</span><span style="color:${color};font-weight:600;white-space:nowrap;flex-shrink:0">${vnd(val)} đ</span></div>`; }
 function fmtDate(iso){ const p=iso.split("-"); return `${p[2]}/${p[1]}/${p[0]}`; }
 
 // ==== Tab Cau hinh: Danh muc + So tay/Tien ich + Quan ly nguoi dung ====
