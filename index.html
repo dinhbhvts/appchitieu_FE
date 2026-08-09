@@ -295,8 +295,8 @@
     <input id="hdQty" type="number" placeholder="Số lượng (số cổ phiếu)" />
     <input id="hdValue" type="number" placeholder="Giá trị hiện tại (số tiền)" />
     <select id="hdUser"></select>
-    <div id="hdCashInfo" style="display:none;font-size:12px;color:var(--muted);margin:2px 0 8px">Giá trị hiện tại = Giá trị khởi tạo bên dưới + tổng nạp/rút/mua/bán/cổ tức phát sinh - tự động tính, không sửa trực tiếp được.</div>
-    <input id="hdCashBase" type="number" placeholder="Giá trị khởi tạo (số dư tiền mặt sẵn có)" style="display:none" />
+    <div id="hdCashInfo" style="display:none;font-size:12px;color:var(--muted);margin:2px 0 8px">Nhập đúng số dư tiền mặt thực tế đang có (đối chiếu với app công ty chứng khoán). Sau khi lưu, các khoản nạp/rút/mua/bán/cổ tức MỚI phát sinh sẽ tiếp tục tự động cộng/trừ vào con số này.</div>
+    <input id="hdCashBase" type="number" placeholder="Giá trị hiện tại (số dư tiền mặt thực tế)" style="display:none" />
     <input id="hdNote" placeholder="Ghi chú (không bắt buộc)" />
     <div id="hdErr"></div>
     <button id="hdDelBtn" onclick="deleteHd()" style="display:none;width:100%;background:var(--red-bg);color:var(--red);border:none;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;font-size:14px">Xóa khoản này</button>
@@ -921,6 +921,25 @@ const BOOT_QUOTES = [
   "Nhớ tiết kiệm tiền cho Bông đi chơi",
   "Phấn đấu mua nhà mới để thiết kế riêng cho Bông một phòng",
   "Bông học xong bài sớm thì tối nay cả nhà đi thể dục",
+  "Huế Như - Em ăn gì mà xinh thế",
+  "Huế Như - Có nhất thiết em phải xinh thế không?",
+  "Huế Như - Có phải em là cô gái của mùa thu",
+  "Huế Như - Cho anh xin số nhà và xin tên con em luôn :)",
+  "Huế Như - Em đẹp như nàng tiên đẹp lắm :)",
+  "Không biết Bông có đang học bài không nhỉ?",
+  "Nếu Bông được điểm 10 thì lại được đi quẩy ^_^",
+  "Huế Như - Em cười sẽ rất xinh đấy",
+  "Huế xinh - Chịu khó tập thể dục đi em ơi",
+  "Huế xinh - Cười lên đi em!",
+  "Bông xinh thích làm giáo viên",
+  "Bông xinh rất thích được đi bơi",
+  "Bông xinh rất thích nuôi mèo",
+  "Bông xinh rất thích nuôi sóc bay",
+  "Hôm nay Bông nấu ăn rất ngon",
+  "Bông lớn rồi. Con đã học bài tự giác hơn",
+  "Nhớ tiết kiệm tiền cho Bông đi chơi",
+  "Phấn đấu mua nhà mới để thiết kế riêng cho Bông một phòng",
+  "Bông thích nói chuyện nhẹ nhàng - Không được mắng con",
 ];
 const BOOT_TIPS = [
   "💡 Nên dành khoảng 10-20% thu nhập cho quỹ dự phòng.",
