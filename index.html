@@ -1465,7 +1465,7 @@ function editTx(id){ const t = monthTxs.find(x=>x.id===id); if(t) openTx(t); }
 
 // ---- Sub-tab "Gui tiet kiem" (trong Thu chi) ----
 let svStart = null, svEnd = null, svRangeOpen = false;
-let unsettledSavings = [], rangeSavings = [];
+let unsettledSavings = [], rangeSavings = [], settledRangeSavings = [];
 
 function toggleSvRange(){ svRangeOpen=!svRangeOpen; renderThuChi(document.getElementById("content")); }
 function applySvRange(){
@@ -1555,10 +1555,36 @@ async function renderTietKiem(){
     }
   }
   html += `</div>`;
+
+  // Card: cac khoan TAT TOAN trong khoang thoi gian tim kiem (theo
+  // settled_date - KHAC card tren loc theo start_date), dat cuoi cung theo
+  // yeu cau nguoi dung. Dung chung bo loc ngay o dau tab (mac dinh = thang
+  // dang xem).
+  let settledRanged = [];
+  try{ settledRanged = await jget(`/savings/settled?start=${s0}&end=${e0}`); }catch(e){}
+  settledRangeSavings = settledRanged;
+  html += `<div class="sectitle">Các khoản tất toán từ ${fmtDate(s0)} đến ${fmtDate(e0)}</div><div class="card">`;
+  if(settledRanged.length===0){
+    html += `<div class="sub">Không có khoản nào tất toán trong khoảng thời gian này</div>`;
+  }else{
+    for(const d of settledRanged){
+      const tint = `background:${userTint(d.user_id)};border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none`;
+      html += `<div class="tx" style="${tint}"><div><div class="desc">${d.name}</div>
+        <div class="meta">${fmtDate(d.start_date)} → Tất toán ${fmtDate(d.settled_date)}${d.bank?' · '+d.bank:''}</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="text-align:right">
+            <div style="font-weight:600">${vnd(d.amount)}</div>
+            <div class="meta" style="color:var(--green)">+${vnd(d.actual_interest||0)}</div>
+          </div>
+          <span class="editbtn" onclick="editSv(${d.id})" title="Sửa">✎</span>
+        </div></div>`;
+    }
+  }
+  html += `</div>`;
   return html;
 }
 function editSv(id){
-  const d = unsettledSavings.find(x=>x.id===id) || rangeSavings.find(x=>x.id===id);
+  const d = unsettledSavings.find(x=>x.id===id) || rangeSavings.find(x=>x.id===id) || settledRangeSavings.find(x=>x.id===id);
   if(d) openSv(d);
 }
 
