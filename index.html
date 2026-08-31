@@ -192,7 +192,11 @@
       <button id="btnThu" onclick="setType('income')">Thu</button>
       <button id="btnChuyen" onclick="setType('transfer')">Chuyển</button>
     </div>
-    <div id="txTransferHint" class="sub" style="display:none;margin-bottom:10px">Chồng chuyển cho vợ (không tính vào tổng thu/chi, chỉ dịch chuyển trong quỹ).</div>
+    <div id="txTransferHint" class="sub" style="display:none;margin-bottom:6px">Chuyển nội bộ giữa hai người (không tính vào tổng thu/chi, chỉ dịch chuyển trong quỹ).</div>
+    <select id="txTransferDir" style="display:none;margin-bottom:10px" onchange="onTransferDirChange()">
+      <option value="chong_vo">Chồng chuyển cho vợ</option>
+      <option value="vo_chong">Vợ chuyển cho chồng</option>
+    </select>
     <input id="txAmount" type="number" placeholder="Số tiền" />
     <input id="txContent" placeholder="Nội dung (vd: đi chợ)" />
     <div class="chips" id="txChips"></div>
@@ -2119,11 +2123,16 @@ async function renderBaoCao(c){
   html += `<div class="card"><div class="sectitle" style="margin-top:0">Theo từng người</div>`;
   for(const u of users){
     const su = await jget(`/reports/summary?${rng}&user_id=${u.id}`);
+    // Nhan "Chuyen cho X"/"X chuyen den" phai theo dung TEN NGUOI CON LAI -
+    // chuyen khoan gio la 2 chieu (khong con co dinh la chong->vo), xem
+    // TransactionType.transfer o backend.
+    const other = users.find(x=>x.id!==u.id);
+    const otherName = other ? other.name : "người kia";
     let block = `<div style="margin-bottom:10px"><div style="font-weight:600">${u.name}</div>`;
     block += rowLine("Thu", su.total_income, "var(--green)");
     block += rowLine("Chi", su.total_expense, "var(--red)");
-    if(su.transferred_out>0) block += rowLine("Chuyển cho vợ", su.transferred_out, "var(--muted)");
-    if(su.transferred_in>0) block += rowLine("Chồng chuyển", su.transferred_in, "var(--green)");
+    if(su.transferred_out>0) block += rowLine(`Chuyển cho ${otherName}`, su.transferred_out, "var(--muted)");
+    if(su.transferred_in>0) block += rowLine(`${otherName} chuyển đến`, su.transferred_in, "var(--green)");
     block += rowLine("Còn giữ (sau chuyển)", su.net_held, "var(--accent)");
     block += `</div>`;
     html += block;
@@ -2726,6 +2735,11 @@ function openTx(tx){
   // Mac dinh nguoi = nguoi dang giao dich (khi sua) hoac nguoi dang nhap (khi them).
   if(tx) us.value = tx.user_id; else if(currentUser) us.value = currentUser.id;
   setType(tx ? tx.type : (tcView==="thu" ? "income" : "expense"));
+  // Khi sua giao dich Chuyen: khoi phuc dung chieu da luu (setType() o tren
+  // vua ghi de bang chieu mac dinh theo nguoi dang nhap, can sua lai).
+  if(tx && tx.type==="transfer"){
+    document.getElementById("txTransferDir").value = (tx.user_id===chongUserId()) ? "chong_vo" : "vo_chong";
+  }
   // Khi sua: khoi phuc danh muc da chon.
   if(tx && tx.category_id){ chosenCat = tx.category_id; const el=document.getElementById("cat"+tx.category_id); if(el) el.classList.add("on"); }
   document.getElementById("txModal").classList.add("on");
@@ -2737,6 +2751,29 @@ async function deleteTx(){
   try{ await jdelete("/transactions/"+editingTxId); closeTx(); render(); }
   catch(e){ document.getElementById("txErr").innerHTML=`<div class="err">${e.message}</div>`; }
 }
+// Chuyen noi bo la 2 chieu: mac dinh nguoi dang nhap la nguoi CHUYEN DI,
+// nhung cho phep doi chieu truoc khi luu (vd chong nhap ho khoan vo chuyen).
+function defaultTransferDir(){
+  return (currentUser && currentUser.name==="Vợ") ? "vo_chong" : "chong_vo";
+}
+function transferDefaultContent(dir){
+  return dir==="vo_chong" ? "Chuyển cho chồng" : "Chuyển cho vợ";
+}
+function transferSenderUserId(dir){
+  const name = dir==="vo_chong" ? "Vợ" : "Chồng";
+  const u = users.find(x=>x.name===name);
+  return u ? u.id : chongUserId();
+}
+function onTransferDirChange(){
+  // Neu noi dung dang la text tu dong dien theo chieu cu (chua bi nguoi
+  // dung tu sua), cap nhat lai theo chieu vua chon.
+  const dir = document.getElementById("txTransferDir").value;
+  const contentEl = document.getElementById("txContent");
+  const otherDir = dir==="vo_chong" ? "chong_vo" : "vo_chong";
+  if(!contentEl.value || contentEl.value===transferDefaultContent(otherDir)){
+    contentEl.value = transferDefaultContent(dir);
+  }
+}
 function setType(t){
   txType=t; chosenCat=null;
   document.getElementById("btnChi").className = t==="expense"?"exp-on":"";
@@ -2744,17 +2781,20 @@ function setType(t){
   document.getElementById("btnChuyen").className = t==="transfer"?"inc-on":"";
   const box = document.getElementById("txChips");
   const hint = document.getElementById("txTransferHint");
+  const dirSel = document.getElementById("txTransferDir");
   const userSel = document.getElementById("txUser");
   const contentEl = document.getElementById("txContent");
   if(t==="transfer"){
-    // Chuyen noi bo: chong -> vo. Nguoi gui mac dinh la Chong, an chon nguoi.
-    box.innerHTML = ""; hint.style.display="block"; userSel.style.display="none";
-    if(!contentEl.value) contentEl.value="Chuyển cho vợ";
+    // Chuyen noi bo giua 2 nguoi (2 chieu, chon o dirSel) - khong tinh vao
+    // tong thu/chi, nen an chon nguoi (txUser) va dung dirSel thay the.
+    box.innerHTML = ""; hint.style.display="block"; dirSel.style.display=""; userSel.style.display="none";
+    dirSel.value = defaultTransferDir();
+    if(!contentEl.value) contentEl.value = transferDefaultContent(dirSel.value);
   }else{
-    hint.style.display="none"; userSel.style.display="";
-    // Roi tab Chuyen: neu noi dung van la text tu dong dien "Chuyển cho vợ"
-    // (chua bi nguoi dung sua), xoa di de khong dinh sang Thu/Chi.
-    if(contentEl.value === "Chuyển cho vợ") contentEl.value = "";
+    hint.style.display="none"; dirSel.style.display="none"; userSel.style.display="";
+    // Roi tab Chuyen: neu noi dung van la text tu dong dien (chua bi nguoi
+    // dung sua), xoa di de khong dinh sang Thu/Chi.
+    if(contentEl.value==="Chuyển cho vợ" || contentEl.value==="Chuyển cho chồng") contentEl.value = "";
     const kind = t==="income" ? "income" : "expense";
     const cs = categories.filter(c=>c.kind===kind||c.kind==="both");
     box.innerHTML = cs.map(c=>`<span class="chip" id="cat${c.id}" onclick="pickCat(${c.id})">${catIcon(c.name)} ${c.name}</span>`).join("");
@@ -2771,8 +2811,11 @@ function chongUserId(){ const u = users.find(x=>x.name==="Chồng"); return u ? 
 async function saveTx(){
   const amount = parseFloat((document.getElementById("txAmount").value||"").replace(/\./g,""));
   const content = document.getElementById("txContent").value.trim();
-  // Khoan chuyen luon do chong gui; cac loai khac lay nguoi tu dropdown.
-  const userId = txType==="transfer" ? chongUserId() : parseInt(document.getElementById("txUser").value);
+  // Khoan chuyen: nguoi gui lay theo chieu da chon o txTransferDir; cac loai
+  // khac lay nguoi tu dropdown.
+  const userId = txType==="transfer"
+    ? transferSenderUserId(document.getElementById("txTransferDir").value)
+    : parseInt(document.getElementById("txUser").value);
   if(!amount||amount<=0||!content){ document.getElementById("txErr").innerHTML=`<div class="err">Nhập số tiền và nội dung</div>`; return; }
   if(txType==="expense" && !chosenCat){ document.getElementById("txErr").innerHTML=`<div class="err">Chọn danh mục cho khoản chi</div>`; return; }
   const payload = {date:document.getElementById("txDate").value,type:txType,amount:amount,content:content,user_id:userId,category_id:txType==="transfer"?null:chosenCat,note:document.getElementById("txNote").value.trim()||null};
