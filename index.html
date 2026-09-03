@@ -1756,6 +1756,14 @@ const SYSTEM_ITEM_INFO = {
     title: "Chứng khoán chồng",
     desc: "Tổng giá trị hiện tại của các khoản đang giữ (mục \"Đang giữ\" trong tab Chứng khoán) của chồng."
   },
+  savings_opening: {
+    title: "Số dư đầu năm",
+    desc: "Tổng số tiền GỐC của các khoản gửi tiết kiệm mở TRƯỚC năm đang chọn và còn hiệu lực (chưa tất toán) tính đến thời điểm 01/01 năm đó - gồm cả những khoản sau đó bị tất toán ngay trong năm nay. Nhờ vậy đối chiếu đúng: Đang gửi hiện tại = Số dư đầu năm + Gửi thêm trong năm − Tất toán trong năm."
+  },
+  savings_rate: {
+    title: "Tỉ suất lợi nhuận trung bình/năm",
+    desc: "= Tổng lãi thực nhận trong năm ÷ Tổng (Số tiền gốc × Số ngày gửi thực tế / 365) của các khoản đã tất toán trong năm, nhân 100. Đây là lãi suất bình quân quy đổi theo năm (money-weighted), có tính đến thời gian gửi thực tế của từng khoản - nên không bị lệch khi các khoản có kỳ hạn (thời gian gửi) khác nhau, khác với cách tính lãi/tổng gốc tất toán đơn thuần trước đây."
+  },
 };
 function showSystemItemInfo(key){
   const info = SYSTEM_ITEM_INFO[key];
@@ -2202,16 +2210,17 @@ function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); rend
 async function renderSavingsInfoCard(){
   let s = {total_active_amount:0, total_deposited_this_year:0,
     total_settled_amount_this_year:0, interest_received_this_year:0, avg_return_rate_pct:null,
-    active_amount_before_this_year:0};
+    opening_balance_this_year:0};
   try{ s = await jget(`/savings/summary?year=${year}`); }catch(e){ return ""; }
   const rateText = (s.avg_return_rate_pct===null || s.avg_return_rate_pct===undefined) ? "—" : `${s.avg_return_rate_pct}%`;
+  const infoIcon = (key) => `<span class="editbtn" style="cursor:pointer" onclick="showSystemItemInfo('${key}')" title="Xem công thức tính">ⓘ</span>`;
   return `<div class="card"><div class="sectitle" style="margin-top:0">Thông tin gửi tiết kiệm (năm ${year})</div>
     ${rowLine("Tổng đang gửi (hiện tại)", s.total_active_amount, "var(--accent)")}
-    ${rowLine("Tổng số tiền gửi từ trước (chưa tất toán)", s.active_amount_before_this_year, "var(--muted)")}
+    ${rowLine(`Số dư đầu năm ${infoIcon('savings_opening')}`, s.opening_balance_this_year, "var(--muted)")}
     ${rowLine("Gửi thêm trong năm", s.total_deposited_this_year, "var(--muted)")}
     ${rowLine("Tất toán trong năm", s.total_settled_amount_this_year, "var(--muted)")}
     ${rowLine("Lãi nhận trong năm", s.interest_received_this_year, "var(--green)")}
-    <div class="row" style="padding:4px 0"><span>Tỉ suất lợi nhuận trung bình</span><span style="color:var(--green);font-weight:600">${rateText}</span></div>
+    <div class="row" style="padding:4px 0"><span>Tỉ suất lợi nhuận trung bình/năm ${infoIcon('savings_rate')}</span><span style="color:var(--green);font-weight:600">${rateText}</span></div>
   </div>`;
 }
 
