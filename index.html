@@ -99,9 +99,26 @@
      danh thuc mat 2-3 phut) - hien TRUOC man dang nhap de nguoi dung khong
      thay man hinh trang/dung im. z-index cao hon .login-overlay (50) vi hien
      truoc no trong boot(). */
-  .boot-overlay{position:fixed;inset:0;background:linear-gradient(160deg,#FFF6EE 0%,#FDEFF2 45%,#EAF3FB 100%);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;}
+  .boot-overlay{position:fixed;inset:0;background:linear-gradient(160deg,#FFF6EE 0%,#FDEFF2 45%,#EAF3FB 100%);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:20px;overflow-y:auto;}
   .boot-overlay.on{display:flex;}
-  .boot-card{max-width:340px;width:100%;text-align:center;background:#FFFFFFE0;border:1px solid var(--line);border-radius:20px;padding:26px 22px;box-shadow:0 12px 32px rgba(0,0,0,.08);}
+  /* margin:auto: can giua khi du cho, tu cuon khi man hinh thap (the tu vung
+     o cuoi lam the cao hon). */
+  .boot-card{max-width:340px;width:100%;margin:auto;text-align:center;background:#FFFFFFE0;border:1px solid var(--line);border-radius:20px;padding:26px 22px;box-shadow:0 12px 32px rgba(0,0,0,.08);}
+  /* The tu vung TOEIC tu luan phien o cuoi man cho (cham de sang tu tiep). */
+  .boot-vocab{margin-top:12px;text-align:left;background:#F3F8FD;border:1px solid #D6E6F5;border-radius:12px;padding:10px 12px 8px;cursor:pointer;user-select:none;}
+  .bv-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#4A7BA7;font-weight:600;margin-bottom:4px;gap:6px;}
+  .bv-topic{font-weight:500;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bv-main{transition:opacity .35s ease;}
+  .bv-main.fade{opacity:0;}
+  .bv-word{font-size:17px;font-weight:700;color:#1F4E79;}
+  .bv-pos{font-size:11.5px;font-weight:500;color:#6B8BA8;font-style:italic;margin-left:4px;}
+  .bv-speak{border:none;background:none;font-size:15px;cursor:pointer;padding:0 0 0 6px;vertical-align:middle;}
+  .bv-ipa{font-size:12px;color:#6B8BA8;margin-top:1px;}
+  .bv-vi{font-size:13px;color:var(--text);font-weight:600;margin-top:4px;}
+  .bv-ex{font-size:12px;color:#555;font-style:italic;line-height:1.4;margin-top:3px;}
+  .bv-foot{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--muted);margin-top:6px;gap:8px;}
+  .bv-timer{flex:1;height:3px;background:#DCE8F3;border-radius:3px;overflow:hidden;}
+  .bv-timer-bar{height:100%;width:0;background:#7FA8CF;}
   .boot-chibi{width:110px;height:110px;margin:0 auto 8px;animation:bootBounce 2.4s ease-in-out infinite;}
   .boot-chibi svg{width:100%;height:100%;display:block;}
   @keyframes bootBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -122,6 +139,15 @@
      muc / Danh muc tien ich / So tay) - de sau khi da nhap du lieu van biet
      truong do la gi (placeholder bien mat khi co gia tri). */
   .flabel{font-size:12px;color:var(--label);font-weight:600;margin:10px 0 4px;display:block;}
+  /* O nhap co nut copy (va nut mo link voi Trang web) ben phai. */
+  .copy-wrap{display:flex;gap:6px;align-items:flex-start;margin-bottom:10px;}
+  .copy-wrap > input,.copy-wrap > textarea{flex:1;min-width:0;margin:0 !important;}
+  .copy-btn{flex-shrink:0;border:1px solid var(--line);background:var(--card);border-radius:8px;min-width:38px;height:38px;cursor:pointer;font-size:15px;padding:0 8px;color:var(--accent);}
+  /* Dong thao tac nhanh (link/copy) tren danh sach Tien ich. */
+  .ni-quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .ni-quick a,.ni-quick span{font-size:12px;border:1px solid var(--line);border-radius:12px;padding:2px 8px;color:var(--accent);text-decoration:none;cursor:pointer;background:var(--card);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:rgba(40,40,40,.92);color:#fff;font-size:13px;padding:8px 14px;border-radius:18px;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .toast.on{opacity:1;}
   .flabel:first-child{margin-top:0;}
   /* Lich thang: luoi 7 cot, T2 dau tuan, so duong to + am nho, danh dau hom
      nay va cac ngay co su kien bang VIEN + NEN mau (de nhan biet hon cham
@@ -147,6 +173,14 @@
   .cal-cell.today{background:var(--accent-bg);border-color:var(--accent);}
   .cal-cell.today .d{color:var(--accent);}
   .cal-cell.empty{background:none;border-color:transparent;}
+  .cal-cell:not(.empty){cursor:pointer;}
+  /* O dang chon (cham/click) - dung box-shadow de khong de mat vien mau loai su kien. */
+  .cal-cell.sel{box-shadow:0 0 0 2px var(--text);}
+  /* Khung chi tiet ngay duoc chon ben duoi luoi lich - thay cho tooltip
+     (thuoc tinh title khong hien tren man hinh cam ung). */
+  .cal-day-detail{margin-top:10px;background:var(--bg);border-radius:10px;padding:8px 10px;font-size:12.5px;line-height:1.5;min-height:20px;}
+  .cal-day-detail .cd-date{font-weight:600;}
+  .cal-day-detail .cd-item{display:flex;align-items:center;gap:6px;}
   .cal-legend{display:flex;gap:12px;row-gap:6px;margin-top:10px;font-size:11px;color:var(--label);flex-wrap:wrap;}
   .cal-legend span{display:inline-flex;align-items:center;gap:4px;}
   .cal-dot{width:12px;height:9px;border-radius:4px;display:inline-block;}
@@ -225,6 +259,16 @@
     <div class="boot-divider"></div>
     <div class="boot-quote" id="bootQuote"></div>
     <div class="boot-tip" id="bootTip"></div>
+    <div class="boot-vocab" onclick="nextBootVocab()">
+      <div class="bv-head"><span>📘 Từ vựng TOEIC</span><span class="bv-topic" id="bvTopic"></span></div>
+      <div class="bv-main" id="bvMain">
+        <div><span class="bv-word" id="bvWord"></span><span class="bv-pos" id="bvPos"></span><button class="bv-speak" id="bvSpeak" onclick="event.stopPropagation();speakBootVocab()" title="Nghe phát âm">🔊</button></div>
+        <div class="bv-ipa" id="bvIpa"></div>
+        <div class="bv-vi" id="bvVi"></div>
+        <div class="bv-ex" id="bvEx"></div>
+      </div>
+      <div class="bv-foot"><div class="bv-timer"><div class="bv-timer-bar" id="bvTimerBar"></div></div><span>Chạm để xem từ tiếp</span></div>
+    </div>
   </div>
 </div>
 
@@ -483,6 +527,12 @@
     <input id="niTitle" placeholder="VD: Bố, Netflix, Xe Vision" />
     <div class="flabel" id="niSystemLabel">Hệ thống</div>
     <input id="niSystem" placeholder="VD: Netflix, Wifi FPT..." />
+    <div class="flabel" id="niWebsiteLabel">Trang web</div>
+    <div class="copy-wrap" id="niWebsite-wrap">
+      <input id="niWebsite" type="url" inputmode="url" autocapitalize="off" placeholder="VD: https://netflix.com" />
+      <button type="button" class="copy-btn" onclick="openNiWebsiteFromForm()" title="Mở trang web">↗</button>
+      <button type="button" class="copy-btn" onclick="copyFromInput('niWebsite')" title="Copy">📋</button>
+    </div>
     <div class="flabel" id="niFullNameLabel">Họ tên</div>
     <input id="niFullName" placeholder="Họ tên đầy đủ (khai sinh/CCCD)" />
     <div class="flabel" id="niRelationLabel">Quan hệ</div>
@@ -497,7 +547,8 @@
       <div class="flabel">Mật khẩu</div>
       <div id="niPasswordWrap" style="position:relative;display:flex;align-items:center">
         <input id="niPassword" type="password" placeholder="Mật khẩu" style="flex:1;padding-right:36px" />
-        <button type="button" onclick="toggleNiPassword()" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:6px;font-size:18px">👁️</button>
+        <button type="button" onclick="toggleNiPassword()" style="position:absolute;right:50px;background:none;border:none;cursor:pointer;padding:6px;font-size:18px">👁️</button>
+        <button type="button" class="copy-btn" style="margin-left:6px" onclick="copyFromInput('niPassword')" title="Copy mật khẩu">📋</button>
       </div>
     </div>
     <div class="sub" id="niDate1Label" style="margin:6px 0 2px">Ngày</div>
@@ -598,7 +649,8 @@ const NI_BUILTIN_FIELDS = {
   maintenance:     {date1:1, date2:1, recurrence:1, completed:1},
   warranty:        {date1:1, date2:1, amount:1},
   periodic:        {date1:1, date2:1, completed:1},
-  account:         {system:1, relation:1, username:1, password:1},
+  account:         {system:1, website:1, relation:1, username:1, password:1},
+  website:         {website:1, info:1},
   personal_info:   {fullName:1, date1:1, remindBirthday:1, phone:1, idNumber:1,
                      idIssuedDate:1, idIssuedPlace:1, date2:1, birthCertNo:1,
                      healthInsuranceNo:1, address:1, hometown:1, profileName:1, attach:1},
@@ -694,6 +746,10 @@ try { currentUser = JSON.parse(localStorage.getItem("vibeapp_user") || "null"); 
 const api = () => document.getElementById("server").value.replace(/\/$/, "");
 const vnd = n => Math.round(n).toLocaleString("vi-VN");
 const pad = n => String(n).padStart(2, "0");
+// Escape text before putting it into innerHTML / HTML attributes.
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
 const startDate = () => `${year}-${pad(month)}-01`;
 const endDate = () => { const d = new Date(year, month, 0); return `${year}-${pad(month)}-${pad(d.getDate())}`; };
 
@@ -990,6 +1046,381 @@ const BOOT_STAGES = [
   {at:40, text:"📦 Đang tải dữ liệu...", pct:70},
   {at:70, text:"✨ Sắp xong rồi, cảm ơn bạn đã kiên nhẫn...", pct:92},
 ];
+const TOEIC_TOPICS = ["Văn phòng", "Nhân sự & Tuyển dụng", "Tài chính & Ngân hàng", "Kế toán & Ngân sách", "Marketing & Bán hàng", "Mua sắm & Đặt hàng", "Hợp đồng & Pháp lý", "Họp & Hội nghị", "Du lịch & Công tác", "Nhà hàng & Ẩm thực", "Vận chuyển & Giao hàng", "Sản xuất & Nhà máy", "Công nghệ & Máy tính", "Nhà ở & Bất động sản", "Sức khỏe & Bảo hiểm", "Sự kiện & Giải trí", "Dịch vụ khách hàng", "Kinh doanh & Chiến lược", "Động từ & Tính từ hay gặp", "Trạng từ & Từ nối (Part 5)"];
+// [word, loai tu, IPA, nghia tieng Viet, vi du, chi so chu de trong TOEIC_TOPICS]
+const TOEIC_VOCAB = [
+  ["agenda", "n", "/əˈdʒendə/", "chương trình nghị sự", "Please review the agenda before the meeting.", 0],
+  ["memo", "n", "/ˈmemoʊ/", "bản ghi nhớ nội bộ", "The manager sent a memo about the new dress code.", 0],
+  ["deadline", "n", "/ˈdedlaɪn/", "hạn chót", "We must meet the deadline for the annual report.", 0],
+  ["supervisor", "n", "/ˈsuːpərvaɪzər/", "người giám sát, quản lý trực tiếp", "Ask your supervisor to approve the request.", 0],
+  ["colleague", "n", "/ˈkɑːliːɡ/", "đồng nghiệp", "She is having lunch with a colleague.", 0],
+  ["stationery", "n", "/ˈsteɪʃəneri/", "văn phòng phẩm", "The stationery order includes pens and envelopes.", 0],
+  ["photocopier", "n", "/ˈfoʊtoʊkɑːpiər/", "máy photocopy", "The photocopier on the third floor is out of order.", 0],
+  ["extension", "n", "/ɪkˈstenʃn/", "số máy lẻ; sự gia hạn", "You can reach me at extension 214.", 0],
+  ["reception", "n", "/rɪˈsepʃn/", "quầy lễ tân; tiệc chiêu đãi", "Visitors must sign in at reception.", 0],
+  ["workload", "n", "/ˈwɜːrkloʊd/", "khối lượng công việc", "The new assistant will reduce our workload.", 0],
+  ["delegate", "v", "/ˈdelɪɡeɪt/", "giao phó, ủy quyền", "Good managers delegate tasks effectively.", 0],
+  ["file", "v", "/faɪl/", "sắp xếp hồ sơ; nộp (đơn)", "Please file these invoices by date.", 0],
+  ["remind", "v", "/rɪˈmaɪnd/", "nhắc nhở", "Remind me to call the client at three.", 0],
+  ["postpone", "v", "/poʊstˈpoʊn/", "hoãn lại", "The training session was postponed until Friday.", 0],
+  ["cubicle", "n", "/ˈkjuːbɪkl/", "buồng làm việc nhỏ", "His cubicle is next to the window.", 0],
+  ["headquarters", "n", "/ˈhedkwɔːrtərz/", "trụ sở chính", "The company headquarters is in Singapore.", 0],
+  ["applicant", "n", "/ˈæplɪkənt/", "người nộp đơn, ứng viên", "Each applicant must submit a résumé.", 1],
+  ["candidate", "n", "/ˈkændɪdət/", "ứng cử viên", "She is the strongest candidate for the position.", 1],
+  ["qualification", "n", "/ˌkwɑːlɪfɪˈkeɪʃn/", "bằng cấp, trình độ", "Relevant qualifications are required.", 1],
+  ["recruit", "v", "/rɪˈkruːt/", "tuyển dụng", "We plan to recruit ten new engineers.", 1],
+  ["hire", "v", "/ˈhaɪər/", "thuê, tuyển", "The hotel hired extra staff for the summer.", 1],
+  ["promote", "v", "/prəˈmoʊt/", "thăng chức; quảng bá", "He was promoted to sales director.", 1],
+  ["resign", "v", "/rɪˈzaɪn/", "từ chức, xin nghỉ việc", "Ms. Lee resigned to start her own business.", 1],
+  ["retire", "v", "/rɪˈtaɪər/", "nghỉ hưu", "Mr. Park will retire at the end of the year.", 1],
+  ["payroll", "n", "/ˈpeɪroʊl/", "bảng lương", "The payroll department processes salaries monthly.", 1],
+  ["benefits", "n", "/ˈbenɪfɪts/", "phúc lợi", "The job offers excellent health benefits.", 1],
+  ["probation", "n", "/proʊˈbeɪʃn/", "thời gian thử việc", "New employees have a three-month probation period.", 1],
+  ["evaluation", "n", "/ɪˌvæljuˈeɪʃn/", "sự đánh giá", "Performance evaluations are held every June.", 1],
+  ["personnel", "n", "/ˌpɜːrsəˈnel/", "nhân sự", "All personnel must wear ID badges.", 1],
+  ["orientation", "n", "/ˌɔːriənˈteɪʃn/", "buổi định hướng cho nhân viên mới", "The orientation starts at 9 a.m. on Monday.", 1],
+  ["internship", "n", "/ˈɪntɜːrnʃɪp/", "kỳ thực tập", "She completed an internship at a law firm.", 1],
+  ["reference", "n", "/ˈrefrəns/", "người/thư giới thiệu; sự tham khảo", "Please provide two professional references.", 1],
+  ["eligible", "adj", "/ˈelɪdʒəbl/", "đủ điều kiện", "Full-time staff are eligible for a bonus.", 1],
+  ["experienced", "adj", "/ɪkˈspɪriənst/", "có kinh nghiệm", "We are looking for an experienced accountant.", 1],
+  ["deposit", "n, v", "/dɪˈpɑːzɪt/", "tiền gửi; tiền đặt cọc", "A deposit of 20 percent is required.", 2],
+  ["withdraw", "v", "/wɪðˈdrɔː/", "rút (tiền)", "You can withdraw cash at any branch.", 2],
+  ["balance", "n", "/ˈbæləns/", "số dư", "Check your account balance online.", 2],
+  ["loan", "n", "/loʊn/", "khoản vay", "The bank approved the small business loan.", 2],
+  ["interest rate", "n", "/ˈɪntrəst reɪt/", "lãi suất", "Interest rates are expected to rise.", 2],
+  ["mortgage", "n", "/ˈmɔːrɡɪdʒ/", "khoản vay thế chấp", "They took out a mortgage to buy a house.", 2],
+  ["transaction", "n", "/trænˈzækʃn/", "giao dịch", "Each transaction is recorded automatically.", 2],
+  ["statement", "n", "/ˈsteɪtmənt/", "bản sao kê; lời tuyên bố", "Your monthly statement is now available.", 2],
+  ["invest", "v", "/ɪnˈvest/", "đầu tư", "The firm invested heavily in new technology.", 2],
+  ["shareholder", "n", "/ˈʃerhoʊldər/", "cổ đông", "Shareholders will meet next Tuesday.", 2],
+  ["revenue", "n", "/ˈrevənuː/", "doanh thu", "Revenue grew by 12 percent last quarter.", 2],
+  ["profit", "n", "/ˈprɑːfɪt/", "lợi nhuận", "The company reported record profits.", 2],
+  ["asset", "n", "/ˈæset/", "tài sản", "The building is the company's largest asset.", 2],
+  ["currency", "n", "/ˈkɜːrənsi/", "tiền tệ", "You can exchange currency at the airport.", 2],
+  ["branch", "n", "/bræntʃ/", "chi nhánh", "The bank is opening a new branch downtown.", 2],
+  ["overdue", "adj", "/ˌoʊvərˈduː/", "quá hạn", "This payment is two weeks overdue.", 2],
+  ["fiscal", "adj", "/ˈfɪskl/", "(thuộc) tài khóa", "The fiscal year ends in March.", 2],
+  ["budget", "n", "/ˈbʌdʒɪt/", "ngân sách", "The project is within budget.", 3],
+  ["expense", "n", "/ɪkˈspens/", "chi phí", "Travel expenses will be reimbursed.", 3],
+  ["reimburse", "v", "/ˌriːɪmˈbɜːrs/", "hoàn trả (chi phí)", "The company will reimburse your taxi fare.", 3],
+  ["invoice", "n", "/ˈɪnvɔɪs/", "hóa đơn", "Please send the invoice to our accounting team.", 3],
+  ["receipt", "n", "/rɪˈsiːt/", "biên lai", "Keep your receipt for any returns.", 3],
+  ["audit", "n", "/ˈɔːdɪt/", "cuộc kiểm toán", "An external audit is conducted every year.", 3],
+  ["estimate", "n, v", "/ˈestɪmət/", "bản ước tính, báo giá; ước tính", "Can you give me an estimate for the repairs?", 3],
+  ["allocate", "v", "/ˈæləkeɪt/", "phân bổ", "Funds were allocated to the marketing team.", 3],
+  ["deduct", "v", "/dɪˈdʌkt/", "khấu trừ", "Taxes are deducted from your salary.", 3],
+  ["expenditure", "n", "/ɪkˈspendɪtʃər/", "khoản chi tiêu", "Capital expenditure increased this year.", 3],
+  ["spreadsheet", "n", "/ˈspredʃiːt/", "bảng tính", "Update the spreadsheet with the new figures.", 3],
+  ["quarterly", "adj", "/ˈkwɔːrtərli/", "hàng quý", "The quarterly report is due next week.", 3],
+  ["surplus", "n", "/ˈsɜːrpləs/", "thặng dư", "The department ended the year with a surplus.", 3],
+  ["deficit", "n", "/ˈdefɪsɪt/", "thâm hụt", "The city faces a budget deficit.", 3],
+  ["tax return", "n", "/ˈtæks rɪtɜːrn/", "tờ khai thuế", "File your tax return before April 15.", 3],
+  ["advertisement", "n", "/ˌædvərˈtaɪzmənt/", "quảng cáo", "The advertisement appeared in several magazines.", 4],
+  ["campaign", "n", "/kæmˈpeɪn/", "chiến dịch", "The campaign targets young professionals.", 4],
+  ["consumer", "n", "/kənˈsuːmər/", "người tiêu dùng", "Consumers are spending more online.", 4],
+  ["survey", "n", "/ˈsɜːrveɪ/", "cuộc khảo sát", "Please complete our customer survey.", 4],
+  ["competitor", "n", "/kəmˈpetɪtər/", "đối thủ cạnh tranh", "Our prices are lower than our competitors'.", 4],
+  ["launch", "v, n", "/lɔːntʃ/", "ra mắt; sự ra mắt", "The new model will launch in May.", 4],
+  ["brand", "n", "/brænd/", "thương hiệu", "The brand is popular among teenagers.", 4],
+  ["promotion", "n", "/prəˈmoʊʃn/", "chương trình khuyến mãi; sự thăng chức", "The store is running a holiday promotion.", 4],
+  ["market share", "n", "/ˈmɑːrkɪt ʃer/", "thị phần", "The company increased its market share.", 4],
+  ["target", "n, v", "/ˈtɑːrɡɪt/", "mục tiêu; nhắm tới", "We exceeded our sales target this month.", 4],
+  ["demonstrate", "v", "/ˈdemənstreɪt/", "trình diễn, chứng minh", "The sales rep will demonstrate the software.", 4],
+  ["feedback", "n", "/ˈfiːdbæk/", "ý kiến phản hồi", "Customer feedback has been very positive.", 4],
+  ["sample", "n", "/ˈsæmpl/", "mẫu thử", "Free samples are available at the counter.", 4],
+  ["commission", "n", "/kəˈmɪʃn/", "tiền hoa hồng", "Sales staff earn a commission on each sale.", 4],
+  ["endorse", "v", "/ɪnˈdɔːrs/", "ủng hộ, quảng bá (cho sản phẩm)", "A famous athlete endorses the product.", 4],
+  ["persuade", "v", "/pərˈsweɪd/", "thuyết phục", "She persuaded the client to sign the deal.", 4],
+  ["purchase", "n, v", "/ˈpɜːrtʃəs/", "món hàng đã mua; mua", "All purchases can be returned within 30 days.", 5],
+  ["order", "n, v", "/ˈɔːrdər/", "đơn hàng; đặt hàng", "Your order will ship tomorrow.", 5],
+  ["supplier", "n", "/səˈplaɪər/", "nhà cung cấp", "We are looking for a new supplier.", 5],
+  ["inventory", "n", "/ˈɪnvəntɔːri/", "hàng tồn kho", "The store takes inventory every month.", 5],
+  ["discount", "n", "/ˈdɪskaʊnt/", "sự giảm giá", "Members receive a 10 percent discount.", 5],
+  ["refund", "n, v", "/ˈriːfʌnd/", "khoản hoàn tiền; hoàn tiền", "You may request a full refund.", 5],
+  ["warranty", "n", "/ˈwɔːrənti/", "sự bảo hành", "The laptop comes with a two-year warranty.", 5],
+  ["out of stock", "adj", "/ˌaʊt əv ˈstɑːk/", "hết hàng", "That item is currently out of stock.", 5],
+  ["bulk", "n", "/bʌlk/", "số lượng lớn", "Buying in bulk lowers the unit cost.", 5],
+  ["catalog", "n", "/ˈkætəlɔːɡ/", "danh mục sản phẩm", "Our new catalog is available online.", 5],
+  ["merchandise", "n", "/ˈmɜːrtʃəndaɪs/", "hàng hóa", "All merchandise is 20 percent off.", 5],
+  ["quote", "n, v", "/kwoʊt/", "bảng báo giá; báo giá", "We received quotes from three vendors.", 5],
+  ["vendor", "n", "/ˈvendər/", "người bán, nhà cung cấp", "The vendor agreed to lower the price.", 5],
+  ["checkout", "n", "/ˈtʃekaʊt/", "quầy thanh toán", "Please pay at the checkout.", 5],
+  ["affordable", "adj", "/əˈfɔːrdəbl/", "giá cả phải chăng", "The hotel offers affordable rooms.", 5],
+  ["exchange", "v, n", "/ɪksˈtʃeɪndʒ/", "đổi (hàng); sự trao đổi", "You can exchange the shirt for a larger size.", 5],
+  ["contract", "n", "/ˈkɑːntrækt/", "hợp đồng", "Both parties signed the contract.", 6],
+  ["agreement", "n", "/əˈɡriːmənt/", "sự thỏa thuận", "They reached an agreement after long talks.", 6],
+  ["clause", "n", "/klɔːz/", "điều khoản", "Read the cancellation clause carefully.", 6],
+  ["negotiate", "v", "/nɪˈɡoʊʃieɪt/", "đàm phán", "We negotiated better terms with the landlord.", 6],
+  ["terms", "n", "/tɜːrmz/", "các điều khoản, điều kiện", "The terms of payment are 30 days.", 6],
+  ["comply", "v", "/kəmˈplaɪ/", "tuân thủ", "All factories must comply with safety rules.", 6],
+  ["regulation", "n", "/ˌreɡjuˈleɪʃn/", "quy định", "New regulations take effect next month.", 6],
+  ["expire", "v", "/ɪkˈspaɪər/", "hết hạn", "Your membership expires on June 30.", 6],
+  ["renew", "v", "/rɪˈnuː/", "gia hạn", "Please renew your license before it expires.", 6],
+  ["breach", "n", "/briːtʃ/", "sự vi phạm", "The supplier was in breach of contract.", 6],
+  ["liability", "n", "/ˌlaɪəˈbɪləti/", "trách nhiệm pháp lý", "The company accepts no liability for lost items.", 6],
+  ["confidential", "adj", "/ˌkɑːnfɪˈdenʃl/", "bảo mật", "This information is strictly confidential.", 6],
+  ["signature", "n", "/ˈsɪɡnətʃər/", "chữ ký", "We need your signature on page three.", 6],
+  ["binding", "adj", "/ˈbaɪndɪŋ/", "có tính ràng buộc", "The agreement is legally binding.", 6],
+  ["terminate", "v", "/ˈtɜːrmɪneɪt/", "chấm dứt", "Either party may terminate the contract.", 6],
+  ["authorize", "v", "/ˈɔːθəraɪz/", "ủy quyền, cho phép", "Only managers can authorize refunds.", 6],
+  ["attend", "v", "/əˈtend/", "tham dự", "About 200 people attended the conference.", 7],
+  ["conference", "n", "/ˈkɑːnfərəns/", "hội nghị", "The annual conference will be held in Tokyo.", 7],
+  ["presentation", "n", "/ˌpreznˈteɪʃn/", "bài thuyết trình", "Her presentation impressed the board.", 7],
+  ["minutes", "n", "/ˈmɪnɪts/", "biên bản cuộc họp", "Who is taking the minutes today?", 7],
+  ["chair", "v", "/tʃer/", "chủ trì", "The CEO will chair the meeting.", 7],
+  ["venue", "n", "/ˈvenjuː/", "địa điểm tổ chức", "The venue can hold 500 guests.", 7],
+  ["proposal", "n", "/prəˈpoʊzl/", "bản đề xuất", "The board approved the proposal.", 7],
+  ["consensus", "n", "/kənˈsensəs/", "sự đồng thuận", "The team reached a consensus quickly.", 7],
+  ["brainstorm", "v", "/ˈbreɪnstɔːrm/", "cùng động não, bàn ý tưởng", "Let's brainstorm ideas for the new logo.", 7],
+  ["participant", "n", "/pɑːrˈtɪsɪpənt/", "người tham gia", "Each participant will receive a certificate.", 7],
+  ["keynote", "n", "/ˈkiːnoʊt/", "bài phát biểu chính", "The keynote speech begins at 10 a.m.", 7],
+  ["register", "v", "/ˈredʒɪstər/", "đăng ký", "Register online to receive a discount.", 7],
+  ["reschedule", "v", "/ˌriːˈskedʒuːl/", "dời lịch", "Can we reschedule our call to Thursday?", 7],
+  ["adjourn", "v", "/əˈdʒɜːrn/", "tạm dừng, kết thúc (cuộc họp)", "The meeting was adjourned at noon.", 7],
+  ["handout", "n", "/ˈhændaʊt/", "tài liệu phát tay", "Handouts will be distributed at the door.", 7],
+  ["video conference", "n", "/ˈvɪdioʊ ˌkɑːnfərəns/", "cuộc họp trực tuyến", "We hold a video conference every Monday.", 7],
+  ["itinerary", "n", "/aɪˈtɪnəreri/", "lịch trình chuyến đi", "Your itinerary has been emailed to you.", 8],
+  ["reservation", "n", "/ˌrezərˈveɪʃn/", "sự đặt chỗ", "I'd like to make a reservation for two nights.", 8],
+  ["boarding pass", "n", "/ˈbɔːrdɪŋ pæs/", "thẻ lên máy bay", "Please show your boarding pass at the gate.", 8],
+  ["departure", "n", "/dɪˈpɑːrtʃər/", "sự khởi hành", "The departure has been delayed by an hour.", 8],
+  ["destination", "n", "/ˌdestɪˈneɪʃn/", "điểm đến", "Bali is a popular destination.", 8],
+  ["luggage", "n", "/ˈlʌɡɪdʒ/", "hành lý", "Each passenger may check one piece of luggage.", 8],
+  ["accommodation", "n", "/əˌkɑːməˈdeɪʃn/", "chỗ ở", "The price includes accommodation and meals.", 8],
+  ["fare", "n", "/fer/", "giá vé", "Bus fares will increase next month.", 8],
+  ["round-trip", "adj", "/ˌraʊnd ˈtrɪp/", "khứ hồi", "A round-trip ticket is cheaper.", 8],
+  ["layover", "n", "/ˈleɪoʊvər/", "chặng dừng quá cảnh", "We have a two-hour layover in Seoul.", 8],
+  ["customs", "n", "/ˈkʌstəmz/", "hải quan", "Declare these items at customs.", 8],
+  ["check in", "v", "/ˌtʃek ˈɪn/", "làm thủ tục (nhận phòng, lên máy bay)", "Guests can check in after 2 p.m.", 8],
+  ["aisle", "n", "/aɪl/", "lối đi giữa các hàng ghế", "Would you prefer a window or an aisle seat?", 8],
+  ["passport", "n", "/ˈpæspɔːrt/", "hộ chiếu", "Make sure your passport is valid.", 8],
+  ["delay", "n, v", "/dɪˈleɪ/", "sự trì hoãn; trì hoãn", "Heavy snow caused long delays.", 8],
+  ["business trip", "n", "/ˈbɪznəs trɪp/", "chuyến công tác", "He is away on a business trip to Hanoi.", 8],
+  ["cuisine", "n", "/kwɪˈziːn/", "ẩm thực", "The restaurant serves Italian cuisine.", 9],
+  ["appetizer", "n", "/ˈæpɪtaɪzər/", "món khai vị", "We ordered two appetizers to share.", 9],
+  ["beverage", "n", "/ˈbevərɪdʒ/", "đồ uống", "Beverages are not included in the price.", 9],
+  ["cater", "v", "/ˈkeɪtər/", "cung cấp đồ ăn (cho tiệc)", "A local company will cater the event.", 9],
+  ["chef", "n", "/ʃef/", "bếp trưởng, đầu bếp", "The chef recommends the grilled salmon.", 9],
+  ["bill", "n", "/bɪl/", "hóa đơn (nhà hàng)", "Could we have the bill, please?", 9],
+  ["tip", "n", "/tɪp/", "tiền boa", "A 10 percent tip is customary.", 9],
+  ["vegetarian", "adj", "/ˌvedʒəˈteriən/", "(món) chay", "Vegetarian options are available.", 9],
+  ["dessert", "n", "/dɪˈzɜːrt/", "món tráng miệng", "The dessert menu changes weekly.", 9],
+  ["ingredient", "n", "/ɪnˈɡriːdiənt/", "nguyên liệu", "We use only fresh ingredients.", 9],
+  ["book a table", "v", "/ˌbʊk ə ˈteɪbl/", "đặt bàn", "I'd like to book a table for four.", 9],
+  ["banquet", "n", "/ˈbæŋkwɪt/", "bữa tiệc lớn", "The awards banquet is on Saturday.", 9],
+  ["refreshments", "n", "/rɪˈfreʃmənts/", "đồ ăn nhẹ, đồ giải khát", "Refreshments will be served after the talk.", 9],
+  ["diner", "n", "/ˈdaɪnər/", "thực khách; quán ăn", "The diners enjoyed the live music.", 9],
+  ["shipment", "n", "/ˈʃɪpmənt/", "lô hàng", "The shipment arrived two days early.", 10],
+  ["deliver", "v", "/dɪˈlɪvər/", "giao hàng", "We deliver within 24 hours.", 10],
+  ["package", "n", "/ˈpækɪdʒ/", "bưu kiện", "A package was left at the front desk.", 10],
+  ["courier", "n", "/ˈkʊriər/", "dịch vụ chuyển phát, người đưa thư", "Send the documents by courier.", 10],
+  ["tracking number", "n", "/ˈtrækɪŋ ˌnʌmbər/", "mã vận đơn", "Use the tracking number to check the status.", 10],
+  ["warehouse", "n", "/ˈwerhaʊs/", "nhà kho", "The goods are stored in our warehouse.", 10],
+  ["freight", "n", "/freɪt/", "hàng hóa vận chuyển; cước phí", "Freight charges are extra.", 10],
+  ["dispatch", "v", "/dɪˈspætʃ/", "gửi đi", "Orders are dispatched the same day.", 10],
+  ["fragile", "adj", "/ˈfrædʒl/", "dễ vỡ", "Handle this box with care; it is fragile.", 10],
+  ["logistics", "n", "/ləˈdʒɪstɪks/", "hậu cần", "She manages logistics for the whole region.", 10],
+  ["expedite", "v", "/ˈekspədaɪt/", "xúc tiến, đẩy nhanh", "Can you expedite this order?", 10],
+  ["recipient", "n", "/rɪˈsɪpiənt/", "người nhận", "The recipient must sign for the parcel.", 10],
+  ["damaged", "adj", "/ˈdæmɪdʒd/", "bị hư hỏng", "Report any damaged items immediately.", 10],
+  ["distribution", "n", "/ˌdɪstrɪˈbjuːʃn/", "sự phân phối", "The new distribution center opens in May.", 10],
+  ["assemble", "v", "/əˈsembl/", "lắp ráp", "Workers assemble the parts by hand.", 11],
+  ["facility", "n", "/fəˈsɪləti/", "cơ sở, nhà xưởng", "The facility operates 24 hours a day.", 11],
+  ["equipment", "n", "/ɪˈkwɪpmənt/", "thiết bị", "All equipment must be inspected monthly.", 11],
+  ["inspection", "n", "/ɪnˈspekʃn/", "sự kiểm tra", "The safety inspection is scheduled for Monday.", 11],
+  ["production", "n", "/prəˈdʌkʃn/", "sự sản xuất", "Production will increase next quarter.", 11],
+  ["output", "n", "/ˈaʊtpʊt/", "sản lượng", "The plant doubled its output.", 11],
+  ["defect", "n", "/ˈdiːfekt/", "lỗi, khuyết tật", "Each unit is checked for defects.", 11],
+  ["quality control", "n", "/ˈkwɑːləti kənˌtroʊl/", "kiểm soát chất lượng", "Quality control is our top priority.", 11],
+  ["manufacture", "v", "/ˌmænjuˈfæktʃər/", "sản xuất (hàng loạt)", "The firm manufactures auto parts.", 11],
+  ["raw material", "n", "/ˌrɔː məˈtɪriəl/", "nguyên liệu thô", "The cost of raw materials has risen.", 11],
+  ["operate", "v", "/ˈɑːpəreɪt/", "vận hành", "Only trained staff may operate this machine.", 11],
+  ["maintenance", "n", "/ˈmeɪntənəns/", "sự bảo trì", "The elevator is closed for maintenance.", 11],
+  ["capacity", "n", "/kəˈpæsəti/", "công suất; sức chứa", "The factory is running at full capacity.", 11],
+  ["automate", "v", "/ˈɔːtəmeɪt/", "tự động hóa", "The packing process has been automated.", 11],
+  ["malfunction", "n, v", "/mælˈfʌŋkʃn/", "sự trục trặc; gặp trục trặc", "A malfunction stopped the assembly line.", 11],
+  ["install", "v", "/ɪnˈstɔːl/", "cài đặt, lắp đặt", "The technician will install the software.", 12],
+  ["update", "n, v", "/ˈʌpdeɪt/", "bản cập nhật; cập nhật", "Please update your password regularly.", 12],
+  ["device", "n", "/dɪˈvaɪs/", "thiết bị", "Turn off all electronic devices.", 12],
+  ["network", "n", "/ˈnetwɜːrk/", "mạng lưới, mạng", "The network will be down for an hour.", 12],
+  ["database", "n", "/ˈdeɪtəbeɪs/", "cơ sở dữ liệu", "Customer details are stored in a database.", 12],
+  ["upgrade", "v, n", "/ˌʌpˈɡreɪd/", "nâng cấp; sự nâng cấp", "We need to upgrade our computers.", 12],
+  ["technician", "n", "/tekˈnɪʃn/", "kỹ thuật viên", "A technician is fixing the printer.", 12],
+  ["access", "n, v", "/ˈækses/", "quyền truy cập; truy cập", "You need a password to access the file.", 12],
+  ["attachment", "n", "/əˈtætʃmənt/", "tệp đính kèm", "Please see the attachment for details.", 12],
+  ["backup", "n", "/ˈbækʌp/", "bản sao lưu", "Make a backup of all important files.", 12],
+  ["compatible", "adj", "/kəmˈpætəbl/", "tương thích", "The app is compatible with most phones.", 12],
+  ["troubleshoot", "v", "/ˈtrʌblʃuːt/", "xử lý sự cố", "IT staff will troubleshoot the problem.", 12],
+  ["download", "v", "/ˌdaʊnˈloʊd/", "tải xuống", "Download the form from our website.", 12],
+  ["user-friendly", "adj", "/ˌjuːzər ˈfrendli/", "dễ sử dụng", "The new system is very user-friendly.", 12],
+  ["innovative", "adj", "/ˈɪnəveɪtɪv/", "đổi mới, sáng tạo", "They are known for innovative designs.", 12],
+  ["tenant", "n", "/ˈtenənt/", "người thuê nhà", "Tenants must pay rent on the first of the month.", 13],
+  ["landlord", "n", "/ˈlændlɔːrd/", "chủ nhà (cho thuê)", "The landlord agreed to fix the heater.", 13],
+  ["lease", "n, v", "/liːs/", "hợp đồng thuê; cho thuê", "We signed a two-year lease.", 13],
+  ["rent", "n, v", "/rent/", "tiền thuê; thuê", "The rent includes water and electricity.", 13],
+  ["property", "n", "/ˈprɑːpərti/", "bất động sản, tài sản", "Property prices have risen sharply.", 13],
+  ["real estate agent", "n", "/ˈriːəl ɪˌsteɪt ˌeɪdʒənt/", "người môi giới bất động sản", "A real estate agent showed us the house.", 13],
+  ["renovate", "v", "/ˈrenəveɪt/", "cải tạo, sửa sang", "The lobby is being renovated.", 13],
+  ["utilities", "n", "/juːˈtɪlətiz/", "các dịch vụ điện, nước, gas", "Utilities are not included in the rent.", 13],
+  ["spacious", "adj", "/ˈspeɪʃəs/", "rộng rãi", "The apartment has a spacious kitchen.", 13],
+  ["furnished", "adj", "/ˈfɜːrnɪʃt/", "có sẵn nội thất", "They rented a fully furnished apartment.", 13],
+  ["residential", "adj", "/ˌrezɪˈdenʃl/", "(thuộc) khu dân cư", "This is a quiet residential area.", 13],
+  ["move in", "v", "/ˌmuːv ˈɪn/", "chuyển vào ở", "We can move in next week.", 13],
+  ["plumber", "n", "/ˈplʌmər/", "thợ sửa ống nước", "Call a plumber to fix the leak.", 13],
+  ["occupancy", "n", "/ˈɑːkjəpənsi/", "tỷ lệ lấp đầy; sự cư trú", "Hotel occupancy reached 90 percent.", 13],
+  ["appointment", "n", "/əˈpɔɪntmənt/", "cuộc hẹn", "I have a dental appointment at four.", 14],
+  ["prescription", "n", "/prɪˈskrɪpʃn/", "đơn thuốc", "The doctor gave me a prescription.", 14],
+  ["pharmacy", "n", "/ˈfɑːrməsi/", "hiệu thuốc", "The pharmacy is open until 9 p.m.", 14],
+  ["insurance", "n", "/ɪnˈʃʊrəns/", "bảo hiểm", "Does your insurance cover dental care?", 14],
+  ["coverage", "n", "/ˈkʌvərɪdʒ/", "phạm vi bảo hiểm", "The policy offers full coverage.", 14],
+  ["premium", "n", "/ˈpriːmiəm/", "phí bảo hiểm", "Insurance premiums are paid monthly.", 14],
+  ["claim", "n, v", "/kleɪm/", "yêu cầu bồi thường; yêu cầu", "She filed a claim after the accident.", 14],
+  ["policy", "n", "/ˈpɑːləsi/", "hợp đồng bảo hiểm; chính sách", "Read the policy carefully.", 14],
+  ["checkup", "n", "/ˈtʃekʌp/", "buổi khám sức khỏe tổng quát", "Employees get a free annual checkup.", 14],
+  ["symptom", "n", "/ˈsɪmptəm/", "triệu chứng", "Call a doctor if the symptoms continue.", 14],
+  ["clinic", "n", "/ˈklɪnɪk/", "phòng khám", "The clinic is closed on Sundays.", 14],
+  ["recover", "v", "/rɪˈkʌvər/", "hồi phục", "He is recovering from the flu.", 14],
+  ["sick leave", "n", "/ˈsɪk liːv/", "chế độ nghỉ ốm", "She is on sick leave this week.", 14],
+  ["wellness", "n", "/ˈwelnəs/", "sức khỏe toàn diện", "The company runs a wellness program.", 14],
+  ["exhibition", "n", "/ˌeksɪˈbɪʃn/", "cuộc triển lãm", "The art exhibition runs until May.", 15],
+  ["admission", "n", "/ədˈmɪʃn/", "phí vào cửa; sự cho vào", "Admission is free for children.", 15],
+  ["performance", "n", "/pərˈfɔːrməns/", "buổi biểu diễn; hiệu suất", "The evening performance starts at eight.", 15],
+  ["audience", "n", "/ˈɔːdiəns/", "khán giả", "The audience applauded loudly.", 15],
+  ["ticket", "n", "/ˈtɪkɪt/", "vé", "Tickets are available at the box office.", 15],
+  ["sponsor", "n, v", "/ˈspɑːnsər/", "nhà tài trợ; tài trợ", "A local bank sponsors the festival.", 15],
+  ["organize", "v", "/ˈɔːrɡənaɪz/", "tổ chức", "Who organized the company picnic?", 15],
+  ["celebrate", "v", "/ˈselɪbreɪt/", "kỷ niệm, ăn mừng", "We celebrated the firm's 20th anniversary.", 15],
+  ["anniversary", "n", "/ˌænɪˈvɜːrsəri/", "lễ kỷ niệm", "The store's anniversary sale starts today.", 15],
+  ["award", "n, v", "/əˈwɔːrd/", "giải thưởng; trao giải", "She won an award for her research.", 15],
+  ["fundraiser", "n", "/ˈfʌndreɪzər/", "sự kiện gây quỹ", "The charity fundraiser raised $50,000.", 15],
+  ["volunteer", "n, v", "/ˌvɑːlənˈtɪr/", "tình nguyện viên; tình nguyện", "Volunteers are needed for the marathon.", 15],
+  ["invitation", "n", "/ˌɪnvɪˈteɪʃn/", "lời mời", "Thank you for the invitation.", 15],
+  ["entry", "n", "/ˈentri/", "bài dự thi; sự vào", "Contest entries must be submitted by Friday.", 15],
+  ["inquiry", "n", "/ɪnˈkwaɪəri/", "yêu cầu thông tin, câu hỏi", "We respond to all inquiries within a day.", 16],
+  ["complaint", "n", "/kəmˈpleɪnt/", "lời phàn nàn, khiếu nại", "The manager handled the complaint politely.", 16],
+  ["apologize", "v", "/əˈpɑːlədʒaɪz/", "xin lỗi", "We apologize for the delay.", 16],
+  ["inconvenience", "n", "/ˌɪnkənˈviːniəns/", "sự bất tiện", "Sorry for any inconvenience caused.", 16],
+  ["assist", "v", "/əˈsɪst/", "hỗ trợ, giúp đỡ", "How may I assist you today?", 16],
+  ["satisfaction", "n", "/ˌsætɪsˈfækʃn/", "sự hài lòng", "Customer satisfaction is guaranteed.", 16],
+  ["resolve", "v", "/rɪˈzɑːlv/", "giải quyết", "The issue was resolved quickly.", 16],
+  ["representative", "n", "/ˌreprɪˈzentətɪv/", "người đại diện, nhân viên", "A representative will call you back.", 16],
+  ["courteous", "adj", "/ˈkɜːrtiəs/", "lịch sự, nhã nhặn", "The staff were courteous and helpful.", 16],
+  ["prompt", "adj", "/prɑːmpt/", "nhanh chóng, kịp thời", "Thank you for your prompt reply.", 16],
+  ["hotline", "n", "/ˈhɑːtlaɪn/", "đường dây nóng", "Call our 24-hour hotline for help.", 16],
+  ["replacement", "n", "/rɪˈpleɪsmənt/", "hàng thay thế; sự thay thế", "We will send a replacement at no charge.", 16],
+  ["loyal", "adj", "/ˈlɔɪəl/", "trung thành", "We reward our loyal customers.", 16],
+  ["membership", "n", "/ˈmembərʃɪp/", "tư cách hội viên", "Membership includes free parking.", 16],
+  ["merger", "n", "/ˈmɜːrdʒər/", "sự sáp nhập", "The merger created the country's largest bank.", 17],
+  ["acquire", "v", "/əˈkwaɪər/", "mua lại; đạt được", "The company acquired a small startup.", 17],
+  ["expand", "v", "/ɪkˈspænd/", "mở rộng", "We plan to expand into Asia.", 17],
+  ["subsidiary", "n", "/səbˈsɪdieri/", "công ty con", "The firm has subsidiaries in five countries.", 17],
+  ["strategy", "n", "/ˈstrætədʒi/", "chiến lược", "The new strategy focuses on online sales.", 17],
+  ["objective", "n", "/əbˈdʒektɪv/", "mục tiêu", "Our main objective is to cut costs.", 17],
+  ["implement", "v", "/ˈɪmplɪment/", "thực hiện, triển khai", "The plan will be implemented next year.", 17],
+  ["efficient", "adj", "/ɪˈfɪʃnt/", "hiệu quả", "The new process is more efficient.", 17],
+  ["productivity", "n", "/ˌproʊdʌkˈtɪvəti/", "năng suất", "Remote work improved productivity.", 17],
+  ["enterprise", "n", "/ˈentərpraɪz/", "doanh nghiệp", "Small enterprises need easier access to loans.", 17],
+  ["entrepreneur", "n", "/ˌɑːntrəprəˈnɜːr/", "doanh nhân (khởi nghiệp)", "She is a successful entrepreneur.", 17],
+  ["stakeholder", "n", "/ˈsteɪkhoʊldər/", "bên liên quan", "All stakeholders were invited to comment.", 17],
+  ["outsource", "v", "/ˈaʊtsɔːrs/", "thuê ngoài", "They outsource their customer support.", 17],
+  ["forecast", "n, v", "/ˈfɔːrkæst/", "dự báo", "Sales forecasts look promising.", 17],
+  ["downturn", "n", "/ˈdaʊntɜːrn/", "sự suy thoái", "Many firms struggled during the downturn.", 17],
+  ["collaborate", "v", "/kəˈlæbəreɪt/", "hợp tác", "The two teams collaborated on the project.", 17],
+  ["accommodate", "v", "/əˈkɑːmədeɪt/", "đáp ứng; có sức chứa", "The hall can accommodate 300 people.", 18],
+  ["anticipate", "v", "/ænˈtɪsɪpeɪt/", "dự đoán, lường trước", "We anticipate strong demand this summer.", 18],
+  ["confirm", "v", "/kənˈfɜːrm/", "xác nhận", "Please confirm your attendance by Friday.", 18],
+  ["submit", "v", "/səbˈmɪt/", "nộp, đệ trình", "Submit your report by 5 p.m.", 18],
+  ["approve", "v", "/əˈpruːv/", "phê duyệt", "The director approved the budget.", 18],
+  ["cancel", "v", "/ˈkænsl/", "hủy bỏ", "The concert was canceled due to rain.", 18],
+  ["require", "v", "/rɪˈkwaɪər/", "yêu cầu, đòi hỏi", "This job requires a driver's license.", 18],
+  ["provide", "v", "/prəˈvaɪd/", "cung cấp", "We provide free Wi-Fi for all guests.", 18],
+  ["ensure", "v", "/ɪnˈʃʊr/", "đảm bảo", "Please ensure all doors are locked.", 18],
+  ["indicate", "v", "/ˈɪndɪkeɪt/", "chỉ ra, cho thấy", "The survey indicates high satisfaction.", 18],
+  ["arrange", "v", "/əˈreɪndʒ/", "sắp xếp", "I'll arrange a meeting with the client.", 18],
+  ["distribute", "v", "/dɪˈstrɪbjuːt/", "phân phát", "Flyers were distributed to all residents.", 18],
+  ["available", "adj", "/əˈveɪləbl/", "có sẵn; rảnh", "Is Mr. Tan available this afternoon?", 18],
+  ["mandatory", "adj", "/ˈmændətɔːri/", "bắt buộc", "Attendance at the meeting is mandatory.", 18],
+  ["reliable", "adj", "/rɪˈlaɪəbl/", "đáng tin cậy", "We need a reliable delivery service.", 18],
+  ["substantial", "adj", "/səbˈstænʃl/", "đáng kể", "The company made a substantial profit.", 18],
+  ["tentative", "adj", "/ˈtentətɪv/", "tạm thời, dự kiến", "This is only a tentative schedule.", 18],
+  ["complimentary", "adj", "/ˌkɑːmplɪˈmentri/", "miễn phí (tặng kèm)", "Guests receive a complimentary breakfast.", 18],
+  ["outstanding", "adj", "/aʊtˈstændɪŋ/", "xuất sắc; chưa thanh toán", "The outstanding balance must be paid today.", 18],
+  ["comprehensive", "adj", "/ˌkɑːmprɪˈhensɪv/", "toàn diện", "We offer a comprehensive training program.", 18],
+  ["preliminary", "adj", "/prɪˈlɪmɪneri/", "sơ bộ", "The preliminary results are encouraging.", 18],
+  ["routine", "adj, n", "/ruːˈtiːn/", "thường lệ; thói quen", "This is just a routine inspection.", 18],
+  ["vacant", "adj", "/ˈveɪkənt/", "còn trống", "There are two vacant offices on this floor.", 18],
+  ["approximately", "adv", "/əˈprɑːksɪmətli/", "xấp xỉ, khoảng", "The trip takes approximately three hours.", 19],
+  ["immediately", "adv", "/ɪˈmiːdiətli/", "ngay lập tức", "Please contact us immediately.", 19],
+  ["previously", "adv", "/ˈpriːviəsli/", "trước đây", "She previously worked in Paris.", 19],
+  ["currently", "adv", "/ˈkɜːrəntli/", "hiện tại", "The position is currently vacant.", 19],
+  ["temporarily", "adv", "/ˌtempəˈrerəli/", "tạm thời", "The store is temporarily closed.", 19],
+  ["regularly", "adv", "/ˈreɡjələrli/", "thường xuyên, đều đặn", "Back up your data regularly.", 19],
+  ["nearly", "adv", "/ˈnɪrli/", "gần như", "Nearly all the seats were taken.", 19],
+  ["promptly", "adv", "/ˈprɑːmptli/", "ngay, đúng giờ", "The meeting will start promptly at nine.", 19],
+  ["consequently", "adv", "/ˈkɑːnsɪkwentli/", "do đó, vì vậy", "Demand fell; consequently, prices dropped.", 19],
+  ["otherwise", "adv", "/ˈʌðərwaɪz/", "nếu không thì", "Save your work; otherwise, you may lose it.", 19],
+  ["unless", "conj", "/ənˈles/", "trừ khi", "You cannot enter unless you have a pass.", 19],
+  ["although", "conj", "/ɔːlˈðoʊ/", "mặc dù", "Although it rained, the event was a success.", 19],
+  ["whereas", "conj", "/ˌwerˈæz/", "trong khi (đối lập)", "Sales rose in Asia, whereas they fell in Europe.", 19],
+  ["due to", "prep", "/ˈduː tuː/", "do, bởi vì", "The flight was canceled due to fog.", 19],
+  ["in addition to", "prep", "/ɪn əˈdɪʃn tuː/", "ngoài ... ra", "In addition to a salary, you'll receive a bonus.", 19],
+  ["regarding", "prep", "/rɪˈɡɑːrdɪŋ/", "liên quan đến, về việc", "I'm calling regarding your application.", 19],
+  ["prior to", "prep", "/ˈpraɪər tuː/", "trước khi", "Please arrive 15 minutes prior to the interview.", 19],
+  ["throughout", "prep", "/θruːˈaʊt/", "suốt, khắp", "The museum is open throughout the year.", 19]
+];
+
+// ---- Tu vung TOEIC tu luan phien o cuoi man cho ----
+// Du lieu tinh san phia client (khong can may chu) - ~300 tu theo cac chu de
+// hay gap trong de TOEIC. Tron ngau nhien, di het 1 vong moi lap lai (khong
+// trung tu lien tiep). Tu dong sang tu moi sau BOOT_VOCAB_MS, cham vao the de
+// sang ngay. Nut 🔊 dung Web Speech API (neu trinh duyet ho tro).
+const BOOT_VOCAB_MS = 8000;
+let bootVocabOrder = [], bootVocabPos = 0, bootVocabHandle = null;
+function shuffledIndexes(n){
+  const a = [...Array(n).keys()];
+  for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function renderBootVocab(){
+  const w = TOEIC_VOCAB[bootVocabOrder[bootVocabPos]];
+  document.getElementById("bvWord").textContent = w[0];
+  document.getElementById("bvPos").textContent = "(" + w[1] + ")";
+  document.getElementById("bvIpa").textContent = w[2];
+  document.getElementById("bvVi").textContent = w[3];
+  document.getElementById("bvEx").textContent = "“" + w[4] + "”";
+  document.getElementById("bvTopic").textContent = TOEIC_TOPICS[w[5]] + " · " + (bootVocabPos+1) + "/" + bootVocabOrder.length;
+  const bar = document.getElementById("bvTimerBar");
+  bar.style.transition = "none"; bar.style.width = "0";
+  void bar.offsetWidth;   // ep trinh duyet ve lai de animation chay lai tu 0
+  bar.style.transition = `width ${BOOT_VOCAB_MS-400}ms linear`; bar.style.width = "100%";
+}
+function scheduleBootVocab(){
+  clearTimeout(bootVocabHandle);
+  bootVocabHandle = setTimeout(nextBootVocab, BOOT_VOCAB_MS);
+}
+function nextBootVocab(){
+  bootVocabPos++;
+  if(bootVocabPos >= bootVocabOrder.length){ bootVocabOrder = shuffledIndexes(TOEIC_VOCAB.length); bootVocabPos = 0; }
+  const main = document.getElementById("bvMain");
+  main.classList.add("fade");
+  setTimeout(()=>{ renderBootVocab(); main.classList.remove("fade"); }, 350);
+  scheduleBootVocab();
+}
+function startBootVocab(){
+  bootVocabOrder = shuffledIndexes(TOEIC_VOCAB.length); bootVocabPos = 0;
+  document.getElementById("bvSpeak").style.display = ("speechSynthesis" in window) ? "" : "none";
+  renderBootVocab();
+  scheduleBootVocab();
+}
+function stopBootVocab(){
+  clearTimeout(bootVocabHandle);
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+}
+function speakBootVocab(){
+  if(!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(document.getElementById("bvWord").textContent);
+  u.lang = "en-US"; u.rate = 0.9;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
 let bootTimerHandle = null, bootStartTs = 0;
 function timeGreeting(){
   const h = new Date().getHours();
@@ -1040,6 +1471,7 @@ function showBootLoading(){
   updateBootStage();
   clearInterval(bootTimerHandle);
   bootTimerHandle = setInterval(updateBootStage, 1000);
+  startBootVocab();
 }
 function updateBootStage(){
   const elapsed = (Date.now()-bootStartTs)/1000;
@@ -1050,6 +1482,7 @@ function updateBootStage(){
 }
 function hideBootLoading(){
   clearInterval(bootTimerHandle);
+  stopBootVocab();
   document.getElementById("bootLoading").classList.remove("on");
 }
 
@@ -1352,7 +1785,24 @@ const CAL_CAT_DOT_COLOR = {
   anniversary: "var(--hl-anniv)", task: "var(--hl-task)",
 };
 const CAL_PRIORITY = ["birthday", "anniversary", "task", "holiday"];
+let lunarCalDayInfo = {};   // date ISO -> {lunar, items:[{cat,text}]} cua thang dang xem
+function showCalDay(iso){
+  const info = lunarCalDayInfo[iso];
+  const box = document.getElementById("calDayDetail");
+  if(!info || !box) return;
+  document.querySelectorAll("#lunarCalBody .cal-cell.sel").forEach(el => el.classList.remove("sel"));
+  const cell = document.querySelector(`#lunarCalBody .cal-cell[data-date="${iso}"]`);
+  if(cell) cell.classList.add("sel");
+  const [y, m, d] = iso.split("-").map(Number);
+  const wd = ["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"][new Date(y, m-1, d).getDay()];
+  let html = `<div class="cd-date">${wd}, ${pad(d)}/${pad(m)}/${y} · Âm lịch ${info.lunar}</div>`;
+  html += info.items.length
+    ? info.items.map(it => `<div class="cd-item"><i class="cal-dot-sm" style="background:${CAL_CAT_DOT_COLOR[it.cat] || "var(--muted)"}"></i><span>${escapeHtml(it.text)}</span></div>`).join("")
+    : `<div class="sub">Không có sự kiện.</div>`;
+  box.innerHTML = html;
+}
 async function loadLunarCal(){
+  lunarCalDayInfo = {};
   document.getElementById("lunarCalTitle").textContent = `Tháng ${lunarCalMonth}/${lunarCalYear}`;
   const body = document.getElementById("lunarCalBody");
   body.innerHTML = `<div class="sub">Đang tải...</div>`;
@@ -1393,17 +1843,26 @@ async function loadLunarCal(){
       if(primary && !isToday) cls.push(CAL_CAT_CLASS[primary]);
       if(isToday) cls.push("today");
       const titleParts = catKeys.map(k => cats[k]);
+      // Luu lai de hien khung chi tiet khi cham vao ngay (xem showCalDay) -
+      // tooltip title chi hien khi re chuot tren may tinh, khong hien tren
+      // dien thoai.
+      lunarCalDayInfo[r.date] = {
+        lunar: `${r.lunar_day}/${r.lunar_month}${r.is_leap ? " (nhuận)" : ""}`,
+        items: catKeys.map(k => ({cat: k, text: cats[k]})),
+      };
       const dotsHtml = secondary.length
         ? `<div class="dots">${secondary.map(k => `<i class="cal-dot-sm" style="background:${CAL_CAT_DOT_COLOR[k]}"></i>`).join("")}</div>`
         : "";
-      html += `<div class="${cls.join(" ")}"${titleParts.length ? ` title="${titleParts.join("\n")}"` : ""}>
+      html += `<div class="${cls.join(" ")}" data-date="${r.date}" onclick="showCalDay('${r.date}')"${titleParts.length ? ` title="${escapeHtml(titleParts.join("\n"))}"` : ""}>
         <div class="d">${dayNum}</div>
         <div class="l">${r.lunar_day}/${r.lunar_month}${r.is_leap ? "N" : ""}</div>
         ${dotsHtml}
       </div>`;
     });
-    html += `</div>`;
+    html += `</div><div class="cal-day-detail" id="calDayDetail"><span class="sub">Chạm vào một ngày để xem chi tiết (ngày lễ, sinh nhật, ngày giỗ, nhắc việc).</span></div>`;
     body.innerHTML = html;
+    // Mo dung thang hien tai -> tu hien chi tiet hom nay.
+    if(lunarCalDayInfo[todayIso]) showCalDay(todayIso);
   }catch(e){
     body.innerHTML = `<div class="err">${e.message}</div>`;
   }
@@ -2483,7 +2942,7 @@ async function refreshNiResults(){
           <span class="editbtn">✎</span></div>`;
       }else{
         html += `<div class="tx" style="cursor:pointer" onclick="editNi(${it.id})">
-          <div><div class="desc">${it.title}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>
+          <div style="min-width:0"><div class="desc">${it.title}</div>${meta?`<div class="meta">${meta}</div>`:''}${niQuickActions(it)}</div>
           <span class="editbtn">✎</span></div>`;
       }
     }
@@ -2516,6 +2975,81 @@ function niMetaLine(it){
   if(it.amount) parts.push(vnd(it.amount)+" đ");
   return parts.join(" · ");
 }
+// Dong thao tac nhanh tren danh sach Tien ich: mo link Trang web + copy cac
+// truong hay can dan sang app khac (ten dang nhap, mat khau, trang web).
+// Moi nut deu stopPropagation de khong mo form sua cua dong.
+function niQuickActions(it){
+  const btns = [];
+  if(it.website){
+    btns.push(`<a href="${escapeHtml(normalizeUrl(it.website) || "#")}" target="_blank" rel="noopener" onclick="event.stopPropagation();${normalizeUrl(it.website) ? "" : "event.preventDefault();showToast('Link không hợp lệ');"}">🔗 ${escapeHtml(it.website)}</a>`);
+    btns.push(`<span onclick="event.stopPropagation();copyNiField(${it.id},'website')">📋 Link</span>`);
+  }
+  if(it.username) btns.push(`<span onclick="event.stopPropagation();copyNiField(${it.id},'username')">📋 Tên ĐN</span>`);
+  if(it.password) btns.push(`<span onclick="event.stopPropagation();copyNiField(${it.id},'password')">📋 Mật khẩu</span>`);
+  return btns.length ? `<div class="ni-quick">${btns.join("")}</div>` : "";
+}
+function copyNiField(id, field){
+  const it = niItems.find(x => x.id === id);
+  copyText(it ? it[field] : "");
+}
+// ---- Copy / mo link dung chung ----
+async function copyText(text){
+  if(!text){ showToast("Chưa có dữ liệu để copy"); return; }
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    // Fallback cho trinh duyet cu / trang khong phai https.
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); }catch(_){}
+    document.body.removeChild(ta);
+  }
+  showToast("Đã copy");
+}
+function copyFromInput(id){ copyText(document.getElementById(id).value); }
+let toastTimer = null;
+function showToast(msg){
+  let el = document.getElementById("toast");
+  if(!el){ el = document.createElement("div"); el.id = "toast"; el.className = "toast"; document.body.appendChild(el); }
+  el.textContent = msg; el.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("on"), 1500);
+}
+// Chi cho mo http/https - them "https://" neu nguoi dung go thieu
+// (vd "netflix.com"); moi scheme khac (javascript:, data:...) bi chan.
+function normalizeUrl(u){
+  u = (u || "").trim();
+  if(!u) return "";
+  if(/^https?:\/\//i.test(u)) return u;
+  if(/^[a-z][a-z0-9+.-]*:/i.test(u)) return "";
+  return "https://" + u;
+}
+function openUrl(u){
+  const url = normalizeUrl(u);
+  if(!url){ showToast("Link không hợp lệ"); return; }
+  window.open(url, "_blank", "noopener");
+}
+function openNiWebsiteFromForm(){ openUrl(document.getElementById("niWebsite").value); }
+// Them nut copy ben phai cac o nhap hay can copy (chay 1 lan luc tai trang).
+// O nhap duoc boc trong .copy-wrap - setNiType an/hien ca khoi boc nay.
+const NI_COPYABLE_INPUTS = ["niUsername", "niFullName", "niPhone", "niAddress",
+  "niIdNumber", "niBirthCertNo", "niHealthInsuranceNo", "niInfo"];
+function initNiCopyButtons(){
+  NI_COPYABLE_INPUTS.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el || el.parentElement.classList.contains("copy-wrap")) return;
+    const wrap = document.createElement("div");
+    wrap.className = "copy-wrap";
+    el.parentElement.insertBefore(wrap, el);
+    wrap.appendChild(el);
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "copy-btn"; btn.title = "Copy"; btn.textContent = "📋";
+    btn.onclick = () => copyFromInput(id);
+    wrap.appendChild(btn);
+  });
+}
+initNiCopyButtons();
 // Ngay ISO hom nay (khong gio), dung de so sanh voi date2 (Han bao hanh).
 function todayIso(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 function editNi(id){ const it = niItems.find(x=>x.id===id); if(it) openNi(it); }
@@ -2529,6 +3063,7 @@ async function openNi(item){
     `<span class="chip" id="niType-${t.key}" onclick="setNiType('${t.key}')">${t.icon||'🏷️'} ${t.name}</span>`).join("");
   document.getElementById("niTitle").value = item ? item.title : "";
   document.getElementById("niSystem").value = item ? (item.system||"") : "";
+  document.getElementById("niWebsite").value = item ? (item.website||"") : "";
   document.getElementById("niFullName").value = item ? (item.full_name||"") : "";
   document.getElementById("niRelation").value = item ? (item.relation||"") : "";
   document.getElementById("niPhone").value = item ? (item.phone||"") : "";
@@ -2638,10 +3173,13 @@ function setNiType(v){
   // moi truong duoc them nhan gan day deu dat id theo dung quy uoc nay nen
   // khong can goi rieng cho tung cai.
   const show = (id, on) => {
-    const el=document.getElementById(id); if(el) el.style.display = on ? "" : "none";
+    const el=document.getElementById(id);
+    // O nhap co nut copy nam trong .copy-wrap -> an/hien ca khoi boc.
+    if(el){ const tgt = el.parentElement.classList.contains("copy-wrap") ? el.parentElement : el; tgt.style.display = on ? "" : "none"; }
     const lbl=document.getElementById(id+"Label"); if(lbl) lbl.style.display = on ? "" : "none";
   };
   show("niSystem", f.system);
+  show("niWebsite", f.website);
   show("niFullName", f.fullName);
   show("niRelation", f.relation);
   show("niPhone", f.phone);
@@ -2688,9 +3226,12 @@ function setNiType(v){
   };
   document.getElementById("niDate2Label").textContent =
     date2Labels[v] || "Ngày hết hạn / đến hạn kế tiếp";
-  // Truong "Thong tin" doi nghia thanh "Cong viec" cho loai Nhac viec.
-  document.getElementById("niInfoLabel").textContent = v === "task" ? "Công việc" : "Thông tin";
-  document.getElementById("niInfo").placeholder = v === "task" ? "Công việc cần làm" : "Thông tin";
+  // Truong "Thong tin" doi nghia thanh "Cong viec" cho loai Nhac viec,
+  // "Mo ta" cho loai Trang web.
+  const infoLabels = { task: ["Công việc", "Công việc cần làm"], website: ["Mô tả", "Trang web này dùng để làm gì"] };
+  const [infoLbl, infoPh] = infoLabels[v] || ["Thông tin", "Thông tin"];
+  document.getElementById("niInfoLabel").textContent = infoLbl;
+  document.getElementById("niInfo").placeholder = infoPh;
   // Truong "Quan he" doi nghia thanh "Nguoi dung" cho loai Tai khoan.
   document.getElementById("niRelationLabel").textContent = v === "account" ? "Người dùng" : "Quan hệ";
   const relInput = document.getElementById("niRelation");
@@ -2706,6 +3247,7 @@ async function saveNi(){
   const payload = {
     type: niType, title,
     system: document.getElementById("niSystem").value.trim()||null,
+    website: document.getElementById("niWebsite").value.trim()||null,
     full_name: document.getElementById("niFullName").value.trim()||null,
     relation: document.getElementById("niRelation").value.trim()||null,
     phone: document.getElementById("niPhone").value.trim()||null,
