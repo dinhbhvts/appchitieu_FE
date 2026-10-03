@@ -120,6 +120,43 @@
   .bv-foot{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--muted);margin-top:6px;gap:8px;}
   .bv-timer{flex:1;height:3px;background:#DCE8F3;border-radius:3px;overflow:hidden;}
   .bv-timer-bar{height:100%;width:0;background:#7FA8CF;}
+  /* Hang nut duoi the tu vung: Xem danh sach tu + Hoc cung Mimi (link ngoai).
+     Cao 44px cho de cham bang 1 tay. */
+  .boot-actions{display:flex;gap:8px;margin-top:10px;}
+  .boot-actions > *{flex:1;min-height:44px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;box-sizing:border-box;padding:6px 4px;line-height:1.2;white-space:nowrap;}
+  .boot-actions > .boot-btn-mimi{flex:1.25;}
+  .boot-btn-list{background:#fff;border:1px solid #BFD6EC;color:#1F4E79;}
+  .boot-btn-mimi{background:linear-gradient(135deg,#FFB38A,#F78CA2);border:none;color:#fff;box-shadow:0 4px 12px rgba(247,140,162,.35);}
+  .boot-btn-mimi .ext{font-size:11px;opacity:.9;}
+  .boot-actions-note{font-size:10.5px;color:var(--muted);margin-top:5px;}
+  /* Danh sach tu vung TOEIC (mo tu man cho) - lop phu RIENG, z-index tren man
+     cho (60) va man dang nhap (50): may chu khoi dong xong van KHONG dong
+     danh sach dang xem, chi hien thong bao "san sang" o dau. */
+  .vl-overlay{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.35);display:none;justify-content:center;align-items:flex-end;}
+  .vl-overlay.on{display:flex;}
+  .vl-sheet{background:var(--bg);width:100%;max-width:460px;height:92dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden;}
+  .vl-head{background:var(--card);padding:12px 14px 10px;border-bottom:1px solid var(--line);}
+  .vl-title{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .vl-title b{font-size:16px;color:#1F4E79;}
+  .vl-close{border:none;background:var(--bg);width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;flex-shrink:0;}
+  .vl-ready{display:none;margin-top:8px;font-size:12px;color:var(--green);background:var(--green-bg);border-radius:8px;padding:6px 10px;}
+  .vl-ready.on{display:block;}
+  .vl-filters{display:flex;gap:8px;margin-top:10px;}
+  .vl-filters input,.vl-filters select{margin:0;font-size:14px;}
+  .vl-filters input{flex:1.3;min-width:0;}
+  .vl-filters select{flex:1;min-width:0;}
+  .vl-count{font-size:11.5px;color:var(--muted);margin-top:6px;}
+  .vl-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 14px calc(14px + env(safe-area-inset-bottom));}
+  .vl-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:8px;}
+  .vl-item .w{font-size:15.5px;font-weight:700;color:#1F4E79;}
+  .vl-item .p{font-size:11px;color:#6B8BA8;font-style:italic;margin-left:4px;}
+  .vl-item .i{font-size:11.5px;color:#6B8BA8;}
+  .vl-item .m{font-size:13px;font-weight:600;margin-top:2px;}
+  .vl-item .e{font-size:12px;color:#555;font-style:italic;margin-top:2px;line-height:1.4;}
+  .vl-item .t{font-size:10.5px;color:var(--muted);font-weight:400;}
+  .vl-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .vl-speak{border:1px solid #D6E6F5;background:#F3F8FD;border-radius:50%;width:36px;height:36px;flex-shrink:0;font-size:15px;cursor:pointer;}
+  .vl-more{text-align:center;font-size:12px;color:var(--muted);padding:8px 0;}
   .boot-chibi{width:110px;height:110px;margin:0 auto 8px;animation:bootBounce 2.4s ease-in-out infinite;}
   .boot-chibi svg{width:100%;height:100%;display:block;}
   @keyframes bootBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -136,6 +173,21 @@
   .logout{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;}
   h3{font-size:15px;margin:6px 0 10px;}
   .sectitle{font-size:12px;color:var(--muted);margin:14px 0 6px;}
+  /* Tien ich: khoi tim kiem + bo loc GHIM o dinh khi cuon (chi danh sach ben
+     duoi truot). Nen trung mau nen trang de du lieu cuon "chui" xuong duoi. */
+  .ni-sticky{position:sticky;top:0;z-index:6;background:var(--bg);margin:0 -14px 4px;padding:8px 14px 6px;transition:box-shadow .2s;}
+  .ni-sticky.stuck{box-shadow:0 6px 10px -8px rgba(0,0,0,.25);}
+  .ni-searchrow{display:flex;gap:8px;align-items:center;}
+  .ni-searchrow input{margin:0;flex:1;min-width:0;}
+  .ni-filter-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13px;color:var(--text);cursor:pointer;position:relative;}
+  .ni-filter-btn.open{background:var(--accent-bg);border-color:var(--accent-bg);color:var(--accent);}
+  .ni-filter-btn .caret{font-size:10px;transition:transform .2s;}
+  .ni-filter-btn.open .caret{transform:rotate(180deg);}
+  .ni-filter-btn .dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--accent);}
+  .ni-type-panel{margin-top:8px;max-height:40dvh;overflow-y:auto;}
+  .ni-type-panel .chips{margin-bottom:2px;}
+  .ni-active-filter{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;padding:5px 6px 5px 12px;border-radius:20px;background:var(--accent-bg);color:var(--accent);}
+  .ni-active-filter button{border:none;background:none;color:var(--accent);font-size:14px;line-height:1;cursor:pointer;padding:0 4px;}
   /* Nhan co dinh phia tren moi truong nhap trong cac form (Cau hinh > Danh
      muc / Danh muc tien ich / So tay) - de sau khi da nhap du lieu van biet
      truong do la gi (placeholder bien mat khi co gia tri). */
@@ -271,6 +323,27 @@
       </div>
       <div class="bv-foot"><div class="bv-timer"><div class="bv-timer-bar" id="bvTimerBar"></div></div><span>Chạm để xem từ tiếp</span></div>
     </div>
+    <div class="boot-actions">
+      <button type="button" class="boot-btn-list" onclick="openVocabList()">📋 Danh sách từ</button>
+      <a class="boot-btn-mimi" href="https://dinhbhvts.github.io/mimi_pet_BE/" target="_blank" rel="noopener">🐾 Học cùng Mimi <span class="ext">↗</span></a>
+    </div>
+    <div class="boot-actions-note">Mimi mở ở tab mới · app vẫn tiếp tục khởi động</div>
+  </div>
+</div>
+
+<!-- Danh sach tu vung TOEIC - mo tu nut "Danh sach tu" o man cho -->
+<div class="vl-overlay" id="vocabList" onclick="if(event.target===this)closeVocabList()">
+  <div class="vl-sheet">
+    <div class="vl-head">
+      <div class="vl-title"><b>📘 Từ vựng TOEIC</b><button type="button" class="vl-close" onclick="closeVocabList()" title="Đóng">✕</button></div>
+      <div class="vl-ready" id="vlReady">✅ Máy chủ đã sẵn sàng – đóng danh sách để vào app.</div>
+      <div class="vl-filters">
+        <input id="vlSearch" type="search" placeholder="🔍 Tìm từ hoặc nghĩa..." oninput="onVocabListSearch()" />
+        <select id="vlTopic" onchange="renderVocabList()"></select>
+      </div>
+      <div class="vl-count" id="vlCount"></div>
+    </div>
+    <div class="vl-body" id="vlBody"></div>
   </div>
 </div>
 
@@ -2100,11 +2173,395 @@ const TOEIC_VOCAB = [
   ["time zone", "n", "/ˈtaɪm zoʊn/", "múi giờ", "Our clients are in a different time zone.", 26],
   ["on short notice", "adv", "/ɑːn ˌʃɔːrt ˈnoʊtɪs/", "gấp, báo trước ít", "Thanks for coming on short notice.", 26],
   ["extend", "v", "/ɪkˈstend/", "gia hạn, kéo dài", "The deadline was extended by a week.", 26],
-  ["in a timely manner", "adv", "/ɪn ə ˈtaɪmli ˌmænər/", "kịp thời", "Please respond in a timely manner.", 26]
+  ["in a timely manner", "adv", "/ɪn ə ˈtaɪmli ˌmænər/", "kịp thời", "Please respond in a timely manner.", 26],
+  // --- Bo sung 2026-10-03: +383 tu (uu tien cac chu de it tu) ---
+  ["fax", "n", "/fæks/", "máy fax, bản fax", "Please send the signed form by fax.", 0],
+  ["intercom", "n", "/ˈɪntərkɑːm/", "hệ thống liên lạc nội bộ", "The receptionist called me over the intercom.", 0],
+  ["storage room", "n", "/ˈstɔːrɪdʒ ruːm/", "phòng kho", "Extra paper is kept in the storage room.", 0],
+  ["clipboard", "n", "/ˈklɪpbɔːrd/", "bìa kẹp hồ sơ", "The inspector carried a clipboard.", 0],
+  ["shredder", "n", "/ˈʃredər/", "máy hủy giấy", "Put confidential papers in the shredder.", 0],
+  ["sticky note", "n", "/ˈstɪki noʊt/", "giấy ghi chú dán", "She left a sticky note on my monitor.", 0],
+  ["work schedule", "n", "/wɝːk ˈskedʒuːl/", "lịch làm việc", "The new work schedule starts on Monday.", 0],
+  ["open-plan office", "n", "/ˌoʊpən plæn ˈɑːfɪs/", "văn phòng không gian mở", "Our team moved to an open-plan office.", 0],
+  ["coworker", "n", "/ˈkoʊˌwɝːkər/", "đồng nghiệp", "My coworker covered my shift yesterday.", 0],
+  ["time sheet", "n", "/ˈtaɪm ʃiːt/", "bảng chấm công", "Submit your time sheet every Friday.", 0],
+  ["errand", "n", "/ˈerənd/", "việc vặt, việc chạy đi làm", "He went out to run a few errands.", 0],
+  ["clock in", "v", "/klɑːk ɪn/", "chấm công vào", "Employees must clock in before 8:30.", 0],
+  ["onboarding", "n", "/ˈɑːnˌbɔːrdɪŋ/", "quy trình hội nhập nhân viên mới", "Onboarding takes about two weeks.", 1],
+  ["job title", "n", "/ˈdʒɑːb ˌtaɪtl/", "chức danh", "Please list your job title on the form.", 1],
+  ["headhunter", "n", "/ˈhedˌhʌntər/", "người săn đầu người", "A headhunter contacted her about the role.", 1],
+  ["employee handbook", "n", "/ɪmˈplɔɪiː ˈhændbʊk/", "sổ tay nhân viên", "The dress code is in the employee handbook.", 1],
+  ["work experience", "n", "/wɝːk ɪkˈspɪriəns/", "kinh nghiệm làm việc", "Applicants need two years of work experience.", 1],
+  ["letter of recommendation", "n", "/ˈletər əv ˌrekəmenˈdeɪʃən/", "thư giới thiệu", "Please attach a letter of recommendation.", 1],
+  ["compensation package", "n", "/ˌkɑːmpenˈseɪʃən ˈpækɪdʒ/", "gói đãi ngộ", "The compensation package includes health insurance.", 1],
+  ["turnover", "n", "/ˈtɝːnˌoʊvər/", "tỉ lệ nghỉ việc; doanh thu", "High staff turnover is costly.", 1],
+  ["staffing", "n", "/ˈstæfɪŋ/", "việc bố trí nhân sự", "Staffing levels are low this summer.", 1],
+  ["exit interview", "n", "/ˈeksɪt ˌɪntərvjuː/", "phỏng vấn nghỉ việc", "HR conducts an exit interview with every leaver.", 1],
+  ["aptitude", "n", "/ˈæptɪtuːd/", "năng khiếu, năng lực", "Candidates take an aptitude test.", 1],
+  ["cash flow", "n", "/ˈkæʃ floʊ/", "dòng tiền", "The company has a healthy cash flow.", 2],
+  ["bank statement", "n", "/ˈbæŋk ˌsteɪtmənt/", "sao kê ngân hàng", "Check your bank statement each month.", 2],
+  ["credit card", "n", "/ˈkredɪt kɑːrd/", "thẻ tín dụng", "We accept all major credit cards.", 2],
+  ["bond", "n", "/bɑːnd/", "trái phiếu", "He invested in government bonds.", 2],
+  ["shareholder meeting", "n", "/ˈʃerˌhoʊldər ˈmiːtɪŋ/", "đại hội cổ đông", "The shareholder meeting is held in April.", 2],
+  ["valuation", "n", "/ˌvæljuˈeɪʃən/", "sự định giá", "The firm's valuation doubled this year.", 2],
+  ["financing", "n", "/ˈfaɪnænsɪŋ/", "nguồn tài trợ vốn", "We secured financing for the new plant.", 2],
+  ["accrue", "v", "/əˈkruː/", "tích lũy (lãi)", "Interest accrues on a daily basis.", 2],
+  ["creditor", "n", "/ˈkredɪtər/", "chủ nợ", "The company paid all its creditors.", 2],
+  ["fee", "n", "/fiː/", "phí", "There is no fee for online transfers.", 2],
+  ["repay", "v", "/rɪˈpeɪ/", "trả nợ, hoàn trả", "The loan must be repaid within five years.", 2],
+  ["cash", "v", "/kæʃ/", "đổi (séc) ra tiền mặt", "You can cash the check at any branch.", 2],
+  ["cost estimate", "n", "/ˈkɔːst ˌestɪmət/", "dự toán chi phí", "The contractor sent a cost estimate.", 3],
+  ["expense report", "n", "/ɪkˈspens rɪˌpɔːrt/", "báo cáo chi phí", "Submit your expense report with receipts.", 3],
+  ["budget cut", "n", "/ˈbʌdʒɪt kʌt/", "cắt giảm ngân sách", "Budget cuts delayed the project.", 3],
+  ["payable", "adj", "/ˈpeɪəbəl/", "phải trả", "The invoice is payable within 30 days.", 3],
+  ["itemize", "v", "/ˈaɪtəmaɪz/", "liệt kê từng khoản", "Please itemize all travel expenses.", 3],
+  ["auditor", "n", "/ˈɔːdɪtər/", "kiểm toán viên", "The auditors will visit next week.", 3],
+  ["discrepancy", "n", "/dɪˈskrepənsi/", "sự chênh lệch, không khớp", "There is a discrepancy in the totals.", 3],
+  ["projected", "adj", "/prəˈdʒektɪd/", "dự kiến, ước tính", "Projected costs rose by 5 percent.", 3],
+  ["cost overrun", "n", "/ˈkɔːst ˌoʊvərʌn/", "vượt chi phí", "The cost overrun was reported to the board.", 3],
+  ["write off", "v", "/raɪt ˈɔːf/", "xóa sổ (khoản nợ)", "The bad debt was written off.", 3],
+  ["financial year", "n", "/faɪˈnænʃəl jɪr/", "năm tài chính", "Our financial year ends in March.", 3],
+  ["year-end", "adj", "/ˌjɪr ˈend/", "cuối năm", "The year-end report is almost finished.", 3],
+  ["customer base", "n", "/ˈkʌstəmər beɪs/", "tập khách hàng", "We want to grow our customer base.", 4],
+  ["advertising agency", "n", "/ˈædvərtaɪzɪŋ ˌeɪdʒənsi/", "công ty quảng cáo", "We hired an advertising agency.", 4],
+  ["niche", "n", "/nɪtʃ/", "thị trường ngách", "The company found a profitable niche.", 4],
+  ["rebrand", "v", "/riːˈbrænd/", "tái định vị thương hiệu", "The store was rebranded last year.", 4],
+  ["sales figures", "n", "/ˈseɪlz ˌfɪɡjərz/", "số liệu bán hàng", "Sales figures improved in the third quarter.", 4],
+  ["upsell", "v", "/ˈʌpsel/", "bán thêm sản phẩm cao cấp hơn", "Staff are trained to upsell.", 4],
+  ["giveaway", "n", "/ˈɡɪvəweɪ/", "quà tặng miễn phí", "The giveaway attracted many visitors.", 4],
+  ["market trend", "n", "/ˈmɑːrkɪt trend/", "xu hướng thị trường", "We study market trends closely.", 4],
+  ["best-seller", "n", "/ˌbestˈselər/", "sản phẩm bán chạy nhất", "This model is our best-seller.", 4],
+  ["sales target", "n", "/ˈseɪlz ˌtɑːrɡɪt/", "chỉ tiêu doanh số", "The team exceeded its sales target.", 4],
+  ["online store", "n", "/ˌɑːnlaɪn ˈstɔːr/", "cửa hàng trực tuyến", "Our online store is open 24 hours.", 4],
+  ["free trial", "n", "/ˌfriː ˈtraɪəl/", "dùng thử miễn phí", "Sign up for a 30-day free trial.", 4],
+  ["return policy", "n", "/rɪˈtɝːn ˌpɑːləsi/", "chính sách đổi trả", "Please read our return policy.", 5],
+  ["price list", "n", "/ˈpraɪs lɪst/", "bảng giá", "The updated price list is attached.", 5],
+  ["order number", "n", "/ˈɔːrdər ˌnʌmbər/", "mã đơn hàng", "Please quote your order number.", 5],
+  ["in bulk", "adv", "/ɪn ˈbʌlk/", "số lượng lớn", "Buying in bulk saves money.", 5],
+  ["shopping cart", "n", "/ˈʃɑːpɪŋ kɑːrt/", "giỏ hàng", "Add the item to your shopping cart.", 5],
+  ["store credit", "n", "/ˈstɔːr ˌkredɪt/", "tín dụng mua hàng tại cửa hàng", "We offer store credit instead of cash refunds.", 5],
+  ["bargain", "n", "/ˈbɑːrɡən/", "món hời", "The sofa was a real bargain.", 5],
+  ["markdown", "n", "/ˈmɑːrkdaʊn/", "sự giảm giá", "Winter coats have a 40% markdown.", 5],
+  ["haggle", "v", "/ˈhæɡəl/", "mặc cả", "Tourists often haggle at the market.", 5],
+  ["pre-order", "v", "/ˌpriːˈɔːrdər/", "đặt hàng trước", "You can pre-order the new phone today.", 5],
+  ["order confirmation", "n", "/ˈɔːrdər ˌkɑːnfərˈmeɪʃən/", "xác nhận đơn hàng", "An order confirmation was emailed to you.", 5],
+  ["sold separately", "adj", "/soʊld ˈsepərətli/", "bán riêng", "Batteries are sold separately.", 5],
+  ["fine print", "n", "/ˈfaɪn prɪnt/", "điều khoản chữ nhỏ", "Always read the fine print.", 6],
+  ["non-disclosure agreement", "n", "/ˌnɑːn dɪsˈkloʊʒər əˌɡriːmənt/", "thỏa thuận bảo mật", "Visitors must sign a non-disclosure agreement.", 6],
+  ["addendum", "n", "/əˈdendəm/", "phụ lục (hợp đồng)", "An addendum was added to the contract.", 6],
+  ["compliance", "n", "/kəmˈplaɪəns/", "sự tuân thủ", "The factory is in compliance with safety rules.", 6],
+  ["legal advice", "n", "/ˌliːɡəl ədˈvaɪs/", "tư vấn pháp lý", "Seek legal advice before signing.", 6],
+  ["terms and conditions", "n", "/ˌtɝːmz ən kənˈdɪʃənz/", "điều khoản và điều kiện", "Please accept the terms and conditions.", 6],
+  ["jurisdiction", "n", "/ˌdʒʊrɪsˈdɪkʃən/", "thẩm quyền xét xử", "The case is outside our jurisdiction.", 6],
+  ["counterpart", "n", "/ˈkaʊntərpɑːrt/", "đối tác tương ứng; bản đối chiếu", "She met her counterpart from the other firm.", 6],
+  ["arbitration", "n", "/ˌɑːrbɪˈtreɪʃən/", "trọng tài (giải quyết tranh chấp)", "The dispute went to arbitration.", 6],
+  ["revoke", "v", "/rɪˈvoʊk/", "thu hồi, hủy bỏ", "His license was revoked.", 6],
+  ["effective date", "n", "/ɪˈfektɪv deɪt/", "ngày có hiệu lực", "The effective date is January 1.", 6],
+  ["legally", "adv", "/ˈliːɡəli/", "về mặt pháp lý", "The contract is legally binding.", 6],
+  ["take minutes", "v", "/teɪk ˈmɪnɪts/", "ghi biên bản", "Who will take minutes today?", 7],
+  ["round table", "n", "/ˌraʊnd ˈteɪbəl/", "hội nghị bàn tròn", "Experts joined a round table on energy.", 7],
+  ["moderator", "n", "/ˈmɑːdəreɪtər/", "người điều phối", "The moderator introduced each speaker.", 7],
+  ["on the agenda", "adv", "/ɑːn ði əˈdʒendə/", "có trong chương trình họp", "Budget is the first item on the agenda.", 7],
+  ["plenary session", "n", "/ˈpliːnəri ˌseʃən/", "phiên họp toàn thể", "The plenary session starts at nine.", 7],
+  ["webinar", "n", "/ˈwebɪnɑːr/", "hội thảo trực tuyến", "Join our free webinar on Friday.", 7],
+  ["debrief", "v", "/diːˈbriːf/", "họp tổng kết (sau sự kiện)", "The team debriefed after the launch.", 7],
+  ["sign-in sheet", "n", "/ˈsaɪn ɪn ʃiːt/", "danh sách ký tên tham dự", "Please fill in the sign-in sheet.", 7],
+  ["time limit", "n", "/ˈtaɪm ˌlɪmɪt/", "giới hạn thời gian", "Each speaker has a ten-minute time limit.", 7],
+  ["raise a question", "v", "/reɪz ə ˈkwestʃən/", "nêu câu hỏi", "Several people raised questions about costs.", 7],
+  ["wrap up", "v", "/ræp ˈʌp/", "kết thúc, tổng kết", "Let's wrap up the meeting.", 7],
+  ["convention center", "n", "/kənˈvenʃən ˌsentər/", "trung tâm hội nghị", "The expo is at the convention center.", 7],
+  ["check-in counter", "n", "/ˈtʃek ɪn ˌkaʊntər/", "quầy làm thủ tục", "Go to check-in counter 12.", 8],
+  ["travel itinerary", "n", "/ˈtrævəl aɪˌtɪnəreri/", "lịch trình chuyến đi", "Your travel itinerary has been updated.", 8],
+  ["economy class", "n", "/ɪˈkɑːnəmi klæs/", "hạng phổ thông", "Staff fly economy class on short trips.", 8],
+  ["hostel", "n", "/ˈhɑːstəl/", "nhà nghỉ bình dân", "Students often stay in hostels.", 8],
+  ["suitcase", "n", "/ˈsuːtkeɪs/", "va li", "My suitcase was lost in transit.", 8],
+  ["security check", "n", "/sɪˈkjʊrəti tʃek/", "kiểm tra an ninh", "Allow extra time for the security check.", 8],
+  ["travel insurance", "n", "/ˈtrævəl ɪnˌʃʊrəns/", "bảo hiểm du lịch", "Buy travel insurance before you leave.", 8],
+  ["non-stop", "adj", "/ˌnɑːnˈstɑːp/", "bay thẳng, không dừng", "There is a non-stop flight to Tokyo.", 8],
+  ["cancellation", "n", "/ˌkænsəˈleɪʃən/", "sự hủy (đặt chỗ)", "Cancellations must be made 24 hours ahead.", 8],
+  ["guided tour", "n", "/ˌɡaɪdɪd ˈtʊr/", "tour có hướng dẫn viên", "We took a guided tour of the old town.", 8],
+  ["concierge", "n", "/ˌkɑːnsiˈerʒ/", "nhân viên hỗ trợ khách (khách sạn)", "Ask the concierge for restaurant tips.", 8],
+  ["reservation desk", "n", "/ˌrezərˈveɪʃən desk/", "quầy đặt bàn", "Check in at the reservation desk.", 9],
+  ["main course", "n", "/ˈmeɪn kɔːrs/", "món chính", "I'll have the fish for the main course.", 9],
+  ["set menu", "n", "/ˈset ˌmenjuː/", "thực đơn cố định", "The set menu includes dessert.", 9],
+  ["dietary restriction", "n", "/ˈdaɪəteri rɪˌstrɪkʃən/", "chế độ ăn kiêng hạn chế", "Please tell us about any dietary restrictions.", 9],
+  ["food court", "n", "/ˈfuːd kɔːrt/", "khu ẩm thực", "We had lunch at the food court.", 9],
+  ["kitchen staff", "n", "/ˈkɪtʃən stæf/", "nhân viên bếp", "The kitchen staff arrive at 6 a.m.", 9],
+  ["tablecloth", "n", "/ˈteɪbəlklɔːθ/", "khăn trải bàn", "The waiter changed the tablecloth.", 9],
+  ["doggy bag", "n", "/ˈdɔːɡi bæɡ/", "túi đựng đồ ăn thừa mang về", "Could I have a doggy bag, please?", 9],
+  ["house special", "n", "/ˌhaʊs ˈspeʃəl/", "món đặc biệt của quán", "Try the house special tonight.", 9],
+  ["well done", "adj", "/ˌwel ˈdʌn/", "chín kỹ (thịt)", "I'd like my steak well done.", 9],
+  ["snack", "n", "/snæk/", "đồ ăn nhẹ", "Snacks will be served at the break.", 9],
+  ["grill", "v", "/ɡrɪl/", "nướng (vỉ)", "The chef grilled the salmon.", 9],
+  ["courier service", "n", "/ˈkʊriər ˌsɝːvɪs/", "dịch vụ chuyển phát", "We use a courier service for documents.", 10],
+  ["delivery note", "n", "/dɪˈlɪvəri noʊt/", "phiếu giao hàng", "Sign the delivery note on arrival.", 10],
+  ["shipping address", "n", "/ˈʃɪpɪŋ əˌdres/", "địa chỉ giao hàng", "Please confirm your shipping address.", 10],
+  ["express mail", "n", "/ɪkˈspres meɪl/", "thư chuyển phát nhanh", "Send the contract by express mail.", 10],
+  ["pallet", "n", "/ˈpælɪt/", "pa-lét (kệ kê hàng)", "The boxes were stacked on a pallet.", 10],
+  ["tracking", "n", "/ˈtrækɪŋ/", "việc theo dõi đơn hàng", "Online tracking is available.", 10],
+  ["ship", "v", "/ʃɪp/", "gửi hàng", "Your order will ship tomorrow.", 10],
+  ["door-to-door", "adj", "/ˌdɔːr tə ˈdɔːr/", "giao tận nơi", "We offer door-to-door delivery.", 10],
+  ["cash on delivery", "n", "/ˌkæʃ ɑːn dɪˈlɪvəri/", "thanh toán khi nhận hàng", "Cash on delivery costs extra.", 10],
+  ["freight charges", "n", "/ˈfreɪt ˌtʃɑːrdʒɪz/", "phí vận chuyển hàng hóa", "Freight charges are paid by the buyer.", 10],
+  ["return label", "n", "/rɪˈtɝːn ˌleɪbəl/", "nhãn gửi trả hàng", "Print the return label and attach it.", 10],
+  ["outbound", "adj", "/ˈaʊtbaʊnd/", "chiều đi (hàng xuất)", "Outbound shipments leave at noon.", 10],
+  ["factory floor", "n", "/ˈfæktəri flɔːr/", "xưởng sản xuất", "Visitors may not enter the factory floor.", 11],
+  ["production line", "n", "/prəˈdʌkʃən laɪn/", "dây chuyền sản xuất", "A new production line was installed.", 11],
+  ["safety goggles", "n", "/ˈseɪfti ˌɡɑːɡəlz/", "kính bảo hộ", "Wear safety goggles at all times.", 11],
+  ["hard hat", "n", "/ˈhɑːrd hæt/", "mũ bảo hộ", "Hard hats are required on site.", 11],
+  ["downtime", "n", "/ˈdaʊntaɪm/", "thời gian ngừng máy", "We reduced machine downtime by 20%.", 11],
+  ["manufacturing", "n", "/ˌmænjəˈfæktʃərɪŋ/", "ngành sản xuất", "Manufacturing costs have risen.", 11],
+  ["overhaul", "v", "/ˌoʊvərˈhɔːl/", "đại tu", "The engines are overhauled every year.", 11],
+  ["warehouse worker", "n", "/ˈwerhaʊs ˌwɝːkər/", "công nhân kho", "Warehouse workers start at 7 a.m.", 11],
+  ["defective product", "n", "/dɪˈfektɪv ˈprɑːdʌkt/", "sản phẩm lỗi", "Defective products are removed from the line.", 11],
+  ["operating instructions", "n", "/ˈɑːpəreɪtɪŋ ɪnˌstrʌkʃənz/", "hướng dẫn vận hành", "Read the operating instructions first.", 11],
+  ["in operation", "adj", "/ɪn ˌɑːpəˈreɪʃən/", "đang hoạt động", "The new plant is now in operation.", 11],
+  ["keyboard", "n", "/ˈkiːbɔːrd/", "bàn phím", "The keyboard is not working.", 12],
+  ["laptop", "n", "/ˈlæptɑːp/", "máy tính xách tay", "Bring your laptop to the training.", 12],
+  ["software update", "n", "/ˈsɔːftwer ˌʌpdeɪt/", "bản cập nhật phần mềm", "Install the software update tonight.", 12],
+  ["help desk ticket", "n", "/ˈhelp desk ˌtɪkɪt/", "phiếu yêu cầu hỗ trợ IT", "Open a help desk ticket for the error.", 12],
+  ["data entry", "n", "/ˈdeɪtə ˌentri/", "nhập liệu", "The job involves a lot of data entry.", 12],
+  ["file sharing", "n", "/ˈfaɪl ˌʃerɪŋ/", "chia sẻ tệp", "Use the approved file sharing platform.", 12],
+  ["username", "n", "/ˈjuːzərneɪm/", "tên đăng nhập", "Enter your username and password.", 12],
+  ["touch screen", "n", "/ˈtʌtʃ skriːn/", "màn hình cảm ứng", "The kiosk has a touch screen.", 12],
+  ["shut down", "v", "/ʃʌt ˈdaʊn/", "tắt máy", "Please shut down your computer before leaving.", 12],
+  ["tech support", "n", "/ˈtek səˌpɔːrt/", "hỗ trợ kỹ thuật", "Call tech support if the problem continues.", 12],
+  ["floor plan", "n", "/ˈflɔːr plæn/", "sơ đồ mặt bằng", "Look at the floor plan of the apartment.", 13],
+  ["studio apartment", "n", "/ˈstuːdioʊ əˌpɑːrtmənt/", "căn hộ một phòng", "She rents a studio apartment downtown.", 13],
+  ["homeowner", "n", "/ˈhoʊmˌoʊnər/", "chủ nhà", "Homeowners pay property tax.", 13],
+  ["open house", "n", "/ˌoʊpən ˈhaʊs/", "buổi xem nhà mở cửa", "The agent is holding an open house on Sunday.", 13],
+  ["rental", "n", "/ˈrentəl/", "nhà/đồ cho thuê", "Rentals near the station are expensive.", 13],
+  ["monthly rent", "n", "/ˈmʌnθli rent/", "tiền thuê hằng tháng", "The monthly rent includes water.", 13],
+  ["unfurnished", "adj", "/ʌnˈfɝːnɪʃt/", "không có nội thất", "The flat is unfurnished.", 13],
+  ["balcony", "n", "/ˈbælkəni/", "ban công", "The room has a balcony with a view.", 13],
+  ["renovated", "adj", "/ˈrenəveɪtɪd/", "đã được cải tạo", "The kitchen was recently renovated.", 13],
+  ["property tax", "n", "/ˈprɑːpərti tæks/", "thuế bất động sản", "Property tax is due in April.", 13],
+  ["building permit", "n", "/ˈbɪldɪŋ ˌpɝːmɪt/", "giấy phép xây dựng", "We are waiting for the building permit.", 13],
+  ["estate", "n", "/ɪˈsteɪt/", "khu đất, tài sản", "The estate includes a large garden.", 13],
+  ["medical checkup", "n", "/ˈmedɪkəl ˈtʃekʌp/", "khám sức khỏe", "Staff get a free medical checkup yearly.", 14],
+  ["first aid", "n", "/ˌfɝːst ˈeɪd/", "sơ cứu", "Two employees are trained in first aid.", 14],
+  ["waiting room", "n", "/ˈweɪtɪŋ ruːm/", "phòng chờ", "Please have a seat in the waiting room.", 14],
+  ["refill", "n", "/ˈriːfɪl/", "lần lấy thêm thuốc (theo đơn)", "Your prescription has two refills left.", 14],
+  ["policyholder", "n", "/ˈpɑːləsiˌhoʊldər/", "người mua bảo hiểm", "The policyholder must sign the form.", 14],
+  ["co-payment", "n", "/ˌkoʊˈpeɪmənt/", "phần đồng chi trả", "The co-payment is ten dollars per visit.", 14],
+  ["specialist", "n", "/ˈspeʃəlɪst/", "bác sĩ chuyên khoa", "She was referred to a specialist.", 14],
+  ["hospitalize", "v", "/ˈhɑːspɪtəlaɪz/", "nhập viện", "He was hospitalized for three days.", 14],
+  ["dental checkup", "n", "/ˈdentəl ˈtʃekʌp/", "khám răng", "Book a dental checkup every six months.", 14],
+  ["over-the-counter", "adj", "/ˌoʊvər ðə ˈkaʊntər/", "(thuốc) không cần kê đơn", "This is an over-the-counter medicine.", 14],
+  ["health care", "n", "/ˈhelθ ker/", "chăm sóc sức khỏe", "Health care costs keep rising.", 14],
+  ["recovery", "n", "/rɪˈkʌvəri/", "sự hồi phục", "We wish you a quick recovery.", 14],
+  ["live music", "n", "/ˌlaɪv ˈmjuːzɪk/", "nhạc sống", "The café has live music on Fridays.", 15],
+  ["theater", "n", "/ˈθiːətər/", "nhà hát", "We have tickets to the theater tonight.", 15],
+  ["opening ceremony", "n", "/ˈoʊpənɪŋ ˌserəmoʊni/", "lễ khai mạc", "The mayor spoke at the opening ceremony.", 15],
+  ["guest list", "n", "/ˈɡest lɪst/", "danh sách khách mời", "Your name is on the guest list.", 15],
+  ["RSVP", "v", "/ˌɑːr es viː ˈpiː/", "phản hồi lời mời", "Please RSVP by Friday.", 15],
+  ["auditorium", "n", "/ˌɔːdɪˈtɔːriəm/", "khán phòng", "The auditorium seats 800 people.", 15],
+  ["art exhibit", "n", "/ˈɑːrt ɪɡˌzɪbɪt/", "triển lãm nghệ thuật", "The art exhibit runs until May.", 15],
+  ["raffle", "n", "/ˈræfəl/", "xổ số bốc thăm", "Raffle tickets are five dollars each.", 15],
+  ["orchestra", "n", "/ˈɔːrkɪstrə/", "dàn nhạc", "The orchestra played Mozart.", 15],
+  ["box seat", "n", "/ˈbɑːks siːt/", "ghế lô", "They had box seats at the game.", 15],
+  ["outdoor event", "n", "/ˌaʊtdɔːr ɪˈvent/", "sự kiện ngoài trời", "The outdoor event was canceled due to rain.", 15],
+  ["encore", "n", "/ˈɑːnkɔːr/", "biểu diễn thêm (theo yêu cầu khán giả)", "The band played two encores.", 15],
+  ["call center", "n", "/ˈkɔːl ˌsentər/", "tổng đài chăm sóc khách hàng", "The call center is open 24/7.", 16],
+  ["service charge", "n", "/ˈsɝːvɪs tʃɑːrdʒ/", "phí dịch vụ", "A 10% service charge is added.", 16],
+  ["customer satisfaction", "n", "/ˈkʌstəmər ˌsætɪsˈfækʃən/", "sự hài lòng của khách hàng", "Customer satisfaction is our priority.", 16],
+  ["frequently asked questions", "n", "/ˈfriːkwəntli æskt ˈkwestʃənz/", "câu hỏi thường gặp", "See our frequently asked questions online.", 16],
+  ["live chat", "n", "/ˈlaɪv tʃæt/", "trò chuyện trực tuyến", "Use live chat for quick help.", 16],
+  ["store manager", "n", "/ˈstɔːr ˌmænɪdʒər/", "quản lý cửa hàng", "I'd like to speak to the store manager.", 16],
+  ["warranty claim", "n", "/ˈwɔːrənti kleɪm/", "yêu cầu bảo hành", "File a warranty claim online.", 16],
+  ["waiting time", "n", "/ˈweɪtɪŋ taɪm/", "thời gian chờ", "The average waiting time is two minutes.", 16],
+  ["goodwill", "n", "/ˌɡʊdˈwɪl/", "thiện chí", "We offered a voucher as a goodwill gesture.", 16],
+  ["personalized", "adj", "/ˈpɝːsənəlaɪzd/", "được cá nhân hóa", "We provide personalized service.", 16],
+  ["hassle-free", "adj", "/ˈhæsəl friː/", "không rắc rối", "Enjoy hassle-free returns.", 16],
+  ["unsatisfactory", "adj", "/ˌʌnsætɪsˈfæktəri/", "không đạt yêu cầu", "The repair was unsatisfactory.", 16],
+  ["business plan", "n", "/ˈbɪznəs plæn/", "kế hoạch kinh doanh", "Investors asked for a business plan.", 17],
+  ["start-up", "n", "/ˈstɑːrt ʌp/", "công ty khởi nghiệp", "She works for a tech start-up.", 17],
+  ["break even", "v", "/breɪk ˈiːvən/", "hòa vốn", "The store broke even in its first year.", 17],
+  ["long-term", "adj", "/ˌlɔːŋ ˈtɝːm/", "dài hạn", "We need a long-term strategy.", 17],
+  ["short-term", "adj", "/ˌʃɔːrt ˈtɝːm/", "ngắn hạn", "Short-term profits rose sharply.", 17],
+  ["bottom line", "n", "/ˌbɑːtəm ˈlaɪn/", "lợi nhuận ròng; điều cốt lõi", "The new policy improved our bottom line.", 17],
+  ["SWOT analysis", "n", "/ˈswɑːt əˌnæləsɪs/", "phân tích SWOT", "The team did a SWOT analysis.", 17],
+  ["market entry", "n", "/ˌmɑːrkɪt ˈentri/", "thâm nhập thị trường", "Market entry will take a year.", 17],
+  ["core business", "n", "/ˌkɔːr ˈbɪznəs/", "hoạt động kinh doanh cốt lõi", "We will focus on our core business.", 17],
+  ["scale up", "v", "/skeɪl ˈʌp/", "mở rộng quy mô", "We plan to scale up production.", 17],
+  ["leadership", "n", "/ˈliːdərʃɪp/", "khả năng/ban lãnh đạo", "Under her leadership, sales doubled.", 17],
+  ["clarify", "v", "/ˈklerəfaɪ/", "làm rõ", "Could you clarify the last point?", 18],
+  ["finalize", "v", "/ˈfaɪnəlaɪz/", "hoàn tất", "We will finalize the plan tomorrow.", 18],
+  ["highlight", "v", "/ˈhaɪlaɪt/", "nêu bật", "The report highlights three risks.", 18],
+  ["attain", "v", "/əˈteɪn/", "đạt được", "She attained her sales goal.", 18],
+  ["consolidate", "v", "/kənˈsɑːlɪdeɪt/", "hợp nhất, củng cố", "We consolidated two offices into one.", 18],
+  ["qualified", "adj", "/ˈkwɑːlɪfaɪd/", "đủ tiêu chuẩn", "We hired a qualified engineer.", 18],
+  ["detailed", "adj", "/ˈdiːteɪld/", "chi tiết", "Please send a detailed proposal.", 18],
+  ["hesitant", "adj", "/ˈhezɪtənt/", "do dự", "Clients were hesitant to sign.", 18],
+  ["impressive", "adj", "/ɪmˈpresɪv/", "ấn tượng", "The results were impressive.", 18],
+  ["dedicated", "adj", "/ˈdedɪkeɪtɪd/", "tận tụy", "Our staff are dedicated professionals.", 18],
+  ["meanwhile", "adv", "/ˈmiːnwaɪl/", "trong khi đó", "Meanwhile, sales in Asia grew.", 19],
+  ["moreover", "adv", "/mɔːrˈoʊvər/", "hơn nữa", "Moreover, the plan saves time.", 19],
+  ["thus", "adv", "/ðʌs/", "do đó", "Costs fell; thus, profits rose.", 19],
+  ["hence", "adv", "/hens/", "vì vậy", "The road was closed, hence the delay.", 19],
+  ["likewise", "adv", "/ˈlaɪkwaɪz/", "tương tự", "Likewise, the second test passed.", 19],
+  ["in particular", "adv", "/ɪn pərˈtɪkjələr/", "đặc biệt là", "We liked the design in particular.", 19],
+  ["as a result", "adv", "/æz ə rɪˈzʌlt/", "kết quả là", "As a result, the event was postponed.", 19],
+  ["in contrast", "adv", "/ɪn ˈkɑːntræst/", "ngược lại", "In contrast, costs remained stable.", 19],
+  ["in the meantime", "adv", "/ɪn ðə ˈmiːntaɪm/", "trong lúc chờ đợi", "In the meantime, please use the other printer.", 19],
+  ["beforehand", "adv", "/bɪˈfɔːrhænd/", "trước đó", "Please read the report beforehand.", 19],
+  ["eventually", "adv", "/ɪˈventʃuəli/", "cuối cùng", "The project was eventually approved.", 19],
+  ["namely", "adv", "/ˈneɪmli/", "cụ thể là", "Two offices, namely Hanoi and Da Nang, will close.", 19],
+  ["owing to", "prep", "/ˈoʊɪŋ tuː/", "do, bởi vì", "Owing to bad weather, the flight was delayed.", 19],
+  ["in light of", "prep", "/ɪn ˈlaɪt əv/", "xét đến, dựa trên", "In light of the results, we changed the plan.", 19],
+  ["with regard to", "prep", "/wɪð rɪˈɡɑːrd tuː/", "liên quan đến", "With regard to your request, we agree.", 19],
+  ["by means of", "prep", "/baɪ ˈmiːnz əv/", "bằng cách", "Payment is made by means of bank transfer.", 19],
+  ["carry", "v", "/ˈkæri/", "mang, xách", "A man is carrying a box up the stairs.", 20],
+  ["climb", "v", "/klaɪm/", "leo, trèo", "A worker is climbing a ladder.", 20],
+  ["lift", "v", "/lɪft/", "nhấc lên", "She's lifting a suitcase into the car.", 20],
+  ["tow", "v", "/toʊ/", "kéo (xe)", "A car is being towed away.", 20],
+  ["park", "v", "/pɑːrk/", "đỗ xe", "Some vehicles are parked along the street.", 20],
+  ["sip", "v", "/sɪp/", "nhấp (đồ uống)", "A man is sipping from a mug.", 20],
+  ["ladder", "n", "/ˈlædər/", "cái thang", "A ladder is leaning against the wall.", 20],
+  ["wheelbarrow", "n", "/ˈwiːlˌberoʊ/", "xe cút kít", "A worker is pushing a wheelbarrow.", 20],
+  ["fountain", "n", "/ˈfaʊntən/", "đài phun nước", "People are sitting near a fountain.", 20],
+  ["bench", "n", "/bentʃ/", "ghế dài", "A bench is unoccupied.", 20],
+  ["potted plant", "n", "/ˌpɑːtɪd ˈplænt/", "cây trồng chậu", "Potted plants line the walkway.", 20],
+  ["rack", "n", "/ræk/", "giá, kệ", "Clothes are hanging on a rack.", 20],
+  ["unoccupied", "adj", "/ʌnˈɑːkjəpaɪd/", "không có người ngồi, trống", "Some seats are unoccupied.", 20],
+  ["crowded", "adj", "/ˈkraʊdɪd/", "đông đúc", "The platform is crowded with travelers.", 20],
+  ["side by side", "adv", "/ˌsaɪd baɪ ˈsaɪd/", "cạnh nhau", "Two bicycles are parked side by side.", 20],
+  ["in a row", "adv", "/ɪn ə ˈroʊ/", "thành hàng", "Cars are parked in a row.", 20],
+  ["set the table", "v", "/set ðə ˈteɪbəl/", "dọn bàn ăn", "A waiter is setting the table.", 20],
+  ["trim", "v", "/trɪm/", "cắt tỉa", "A gardener is trimming some bushes.", 20],
+  ["vacuum", "v", "/ˈvækjuːm/", "hút bụi", "A man is vacuuming the carpet.", 20],
+  ["greenhouse gas", "n", "/ˈɡriːnhaʊs ɡæs/", "khí nhà kính", "Factories must reduce greenhouse gas emissions.", 21],
+  ["wind turbine", "n", "/ˈwɪnd ˌtɝːbaɪn/", "tua-bin gió", "Wind turbines were built along the coast.", 21],
+  ["fossil fuel", "n", "/ˈfɑːsəl ˌfjuːəl/", "nhiên liệu hóa thạch", "We are moving away from fossil fuels.", 21],
+  ["electricity", "n", "/ɪˌlekˈtrɪsəti/", "điện", "Turn off lights to save electricity.", 21],
+  ["conservation", "n", "/ˌkɑːnsərˈveɪʃən/", "sự bảo tồn", "Water conservation is important in summer.", 21],
+  ["deforestation", "n", "/diːˌfɔːrɪˈsteɪʃən/", "nạn phá rừng", "Deforestation threatens wildlife.", 21],
+  ["recycling bin", "n", "/riːˈsaɪklɪŋ bɪn/", "thùng rác tái chế", "Put cans in the recycling bin.", 21],
+  ["landfill", "n", "/ˈlændfɪl/", "bãi chôn lấp rác", "Less waste goes to landfill now.", 21],
+  ["natural resources", "n", "/ˌnætʃərəl ˈriːsɔːrsɪz/", "tài nguyên thiên nhiên", "We must protect natural resources.", 21],
+  ["energy consumption", "n", "/ˈenərdʒi kənˌsʌmpʃən/", "mức tiêu thụ năng lượng", "Energy consumption fell by 15%.", 21],
+  ["environmental impact", "n", "/ɪnˌvaɪrənˈmentəl ˈɪmpækt/", "tác động môi trường", "An environmental impact study is required.", 21],
+  ["green", "adj", "/ɡriːn/", "thân thiện môi trường", "The company has a green building policy.", 21],
+  ["air quality", "n", "/ˈer ˌkwɑːləti/", "chất lượng không khí", "Air quality is poor today.", 21],
+  ["hybrid car", "n", "/ˈhaɪbrɪd kɑːr/", "xe hybrid", "Several staff drive hybrid cars.", 21],
+  ["save energy", "v", "/seɪv ˈenərdʒi/", "tiết kiệm năng lượng", "LED lights help save energy.", 21],
+  ["water supply", "n", "/ˈwɔːtər səˌplaɪ/", "nguồn cấp nước", "The water supply will be cut off tomorrow.", 21],
+  ["ecosystem", "n", "/ˈiːkoʊˌsɪstəm/", "hệ sinh thái", "Pollution harms the local ecosystem.", 21],
+  ["training session", "n", "/ˈtreɪnɪŋ ˌseʃən/", "buổi đào tạo", "The training session lasts two hours.", 22],
+  ["workshop leader", "n", "/ˈwɝːkʃɑːp ˌliːdər/", "người hướng dẫn hội thảo", "The workshop leader handed out materials.", 22],
+  ["enrollment", "n", "/ɪnˈroʊlmənt/", "sự ghi danh", "Enrollment closes on June 1.", 22],
+  ["online course", "n", "/ˌɑːnlaɪn ˈkɔːrs/", "khóa học trực tuyến", "She took an online course in accounting.", 22],
+  ["textbook", "n", "/ˈtekstbʊk/", "sách giáo khoa", "The textbook is included in the fee.", 22],
+  ["faculty", "n", "/ˈfækəlti/", "đội ngũ giảng viên; khoa", "The faculty meets every Monday.", 22],
+  ["academic", "adj", "/ˌækəˈdemɪk/", "thuộc học thuật", "He has a strong academic record.", 22],
+  ["coursework", "n", "/ˈkɔːrswɝːk/", "bài tập trong khóa học", "Coursework counts for 40% of the grade.", 22],
+  ["deadline for registration", "n", "/ˈdedlaɪn fər ˌredʒɪˈstreɪʃən/", "hạn đăng ký", "The deadline for registration is Friday.", 22],
+  ["qualify", "v", "/ˈkwɑːlɪfaɪ/", "đủ điều kiện; đạt chuẩn", "You qualify for a student discount.", 22],
+  ["vocational", "adj", "/voʊˈkeɪʃənəl/", "thuộc nghề nghiệp", "He attended a vocational school.", 22],
+  ["refresher course", "n", "/rɪˈfreʃər kɔːrs/", "khóa bồi dưỡng lại", "Nurses take a refresher course every year.", 22],
+  ["e-learning", "n", "/ˈiː ˌlɝːnɪŋ/", "học trực tuyến", "The company uses e-learning for safety training.", 22],
+  ["mentorship", "n", "/ˈmentɔːrʃɪp/", "chương trình kèm cặp", "New hires join a mentorship program.", 22],
+  ["exam", "n", "/ɪɡˈzæm/", "kỳ thi", "The final exam is in December.", 22],
+  ["grade", "n", "/ɡreɪd/", "điểm số", "She got the highest grade in the class.", 22],
+  ["alumni", "n", "/əˈlʌmnaɪ/", "cựu sinh viên", "Alumni are invited to the reunion.", 22],
+  ["certified", "adj", "/ˈsɝːtɪfaɪd/", "được chứng nhận", "He is a certified accountant.", 22],
+  ["publisher", "n", "/ˈpʌblɪʃər/", "nhà xuất bản", "The publisher accepted her novel.", 23],
+  ["print run", "n", "/ˈprɪnt rʌn/", "số lượng in mỗi đợt", "The first print run sold out.", 23],
+  ["proofreader", "n", "/ˈpruːfˌriːdər/", "người đọc soát bản in", "The proofreader found several errors.", 23],
+  ["deadline for submission", "n", "/ˈdedlaɪn fər səbˈmɪʃən/", "hạn nộp bài", "The deadline for submission is May 3.", 23],
+  ["magazine", "n", "/ˌmæɡəˈziːn/", "tạp chí", "The magazine is published monthly.", 23],
+  ["feature article", "n", "/ˈfiːtʃər ˌɑːrtɪkəl/", "bài viết chuyên đề", "The feature article is about green energy.", 23],
+  ["press", "n", "/pres/", "báo chí", "The news was released to the press.", 23],
+  ["reporter", "n", "/rɪˈpɔːrtər/", "phóng viên", "Reporters waited outside the building.", 23],
+  ["subscriber", "n", "/səbˈskraɪbər/", "người đăng ký (báo, kênh)", "The newsletter has 10,000 subscribers.", 23],
+  ["layout", "n", "/ˈleɪaʊt/", "bố cục trang", "The designer changed the page layout.", 23],
+  ["caption", "n", "/ˈkæpʃən/", "chú thích ảnh", "Add a caption under each photo.", 23],
+  ["bestseller list", "n", "/ˌbestˈselər lɪst/", "danh sách sách bán chạy", "Her book is on the bestseller list.", 23],
+  ["social media", "n", "/ˌsoʊʃəl ˈmiːdiə/", "mạng xã hội", "We promote events on social media.", 23],
+  ["anchor", "n", "/ˈæŋkər/", "người dẫn chương trình thời sự", "The news anchor read the headlines.", 23],
+  ["in print", "adj", "/ɪn ˈprɪnt/", "còn được in/phát hành", "The guide is no longer in print.", 23],
+  ["royalty", "n", "/ˈrɔɪəlti/", "tiền bản quyền", "Authors receive royalties on each sale.", 23],
+  ["look over", "v", "/lʊk ˈoʊvər/", "xem qua, rà soát", "Could you look over my report?", 24],
+  ["follow through", "v", "/ˌfɑːloʊ ˈθruː/", "làm đến nơi đến chốn", "He always follows through on his promises.", 24],
+  ["hold off", "v", "/hoʊld ˈɔːf/", "trì hoãn", "Let's hold off on hiring until June.", 24],
+  ["phase out", "v", "/feɪz ˈaʊt/", "loại bỏ dần", "The old model is being phased out.", 24],
+  ["step down", "v", "/step ˈdaʊn/", "từ chức", "The CEO will step down next year.", 24],
+  ["take on", "v", "/teɪk ˈɑːn/", "đảm nhận", "She took on extra responsibilities.", 24],
+  ["turn in", "v", "/tɝːn ˈɪn/", "nộp", "Turn in your forms by Friday.", 24],
+  ["put together", "v", "/pʊt təˈɡeðər/", "tập hợp, soạn ra", "I'll put together a list of options.", 24],
+  ["cut down on", "v", "/kʌt ˈdaʊn ɑːn/", "cắt giảm", "We need to cut down on paper use.", 24],
+  ["catch up on", "v", "/kætʃ ˈʌp ɑːn/", "làm bù, cập nhật", "I need to catch up on my emails.", 24],
+  ["live up to", "v", "/lɪv ˈʌp tuː/", "đáp ứng (kỳ vọng)", "The hotel lived up to our expectations.", 24],
+  ["run into", "v", "/rʌn ˈɪntuː/", "gặp phải; tình cờ gặp", "We ran into some technical problems.", 24],
+  ["go ahead", "v", "/ɡoʊ əˈhed/", "tiến hành", "The board let the project go ahead.", 24],
+  ["drop by", "v", "/drɑːp ˈbaɪ/", "ghé qua", "Feel free to drop by my office.", 24],
+  ["get through", "v", "/ɡet ˈθruː/", "liên lạc được; vượt qua", "I couldn't get through to the help desk.", 24],
+  ["narrow down", "v", "/ˌneroʊ ˈdaʊn/", "thu hẹp (lựa chọn)", "We narrowed down the list to three candidates.", 24],
+  ["account for", "v", "/əˈkaʊnt fɔːr/", "chiếm (tỉ lệ); giải thích", "Online sales account for 30% of revenue.", 24],
+  ["stand out", "v", "/stænd ˈaʊt/", "nổi bật", "Her application stood out from the rest.", 24],
+  ["fall behind", "v", "/fɔːl bɪˈhaɪnd/", "bị tụt lại, chậm tiến độ", "We fell behind on the project.", 24],
+  ["keep up with", "v", "/kiːp ˈʌp wɪð/", "theo kịp", "It's hard to keep up with demand.", 24],
+  ["attached", "adj", "/əˈtætʃt/", "được đính kèm", "Please see the attached file.", 25],
+  ["enclosed", "adj", "/ɪnˈkloʊzd/", "được gửi kèm (trong thư)", "Enclosed is a copy of the invoice.", 25],
+  ["bcc", "n", "/ˌbiː siː ˈsiː/", "gửi bản sao ẩn", "I put the manager in bcc.", 25],
+  ["reply all", "v", "/rɪˌplaɪ ˈɔːl/", "trả lời tất cả", "Please don't reply all to this message.", 25],
+  ["signature block", "n", "/ˈsɪɡnətʃər blɑːk/", "chữ ký cuối email", "Add your phone number to your signature block.", 25],
+  ["mailing list", "n", "/ˈmeɪlɪŋ lɪst/", "danh sách gửi thư", "Join our mailing list for updates.", 25],
+  ["unsubscribe", "v", "/ˌʌnsəbˈskraɪb/", "hủy đăng ký nhận thư", "Click here to unsubscribe.", 25],
+  ["auto-reply", "n", "/ˈɔːtoʊ rɪˌplaɪ/", "thư trả lời tự động", "I got an auto-reply saying she was on leave.", 25],
+  ["look forward to hearing from you", "phr", "/lʊk ˈfɔːrwərd tə ˈhɪrɪŋ frəm juː/", "mong nhận được phản hồi", "We look forward to hearing from you soon.", 25],
+  ["Dear Sir or Madam", "phr", "/dɪr ˌsɝː ɔːr ˈmædəm/", "Kính gửi Quý ông/bà", "Dear Sir or Madam, I am writing to apply.", 25],
+  ["to whom it may concern", "phr", "/tə ˈhuːm ɪt meɪ kənˈsɝːn/", "kính gửi các bên liên quan", "The letter began 'To whom it may concern'.", 25],
+  ["as requested", "adv", "/æz rɪˈkwestɪd/", "theo yêu cầu", "As requested, I've attached the report.", 25],
+  ["extension number", "n", "/ɪkˈstenʃən ˌnʌmbər/", "số máy lẻ", "My extension number is 245.", 25],
+  ["speakerphone", "n", "/ˈspiːkərfoʊn/", "loa ngoài điện thoại", "Let's put the call on speakerphone.", 25],
+  ["missed call", "n", "/ˌmɪst ˈkɔːl/", "cuộc gọi nhỡ", "I have three missed calls from the client.", 25],
+  ["return a call", "v", "/rɪˌtɝːn ə ˈkɔːl/", "gọi lại", "Please return my call when you can.", 25],
+  ["put through", "v", "/pʊt ˈθruː/", "nối máy", "I'll put you through to Sales.", 25],
+  ["hang up", "v", "/hæŋ ˈʌp/", "cúp máy", "Please don't hang up.", 25],
+  ["bad connection", "n", "/ˌbæd kəˈnekʃən/", "đường truyền kém", "Sorry, we have a bad connection.", 25],
+  ["text message", "n", "/ˈtekst ˌmesɪdʒ/", "tin nhắn văn bản", "You'll get a text message with the code.", 25],
+  ["email address", "n", "/ˈiːmeɪl əˌdres/", "địa chỉ email", "Please confirm your email address.", 25],
+  ["phone number", "n", "/ˈfoʊn ˌnʌmbər/", "số điện thoại", "Leave your phone number with the receptionist.", 25],
+  ["switchboard", "n", "/ˈswɪtʃbɔːrd/", "tổng đài", "Call the switchboard and ask for HR.", 25],
+  ["get in touch", "v", "/ɡet ɪn ˈtʌtʃ/", "liên lạc", "I'll get in touch next week.", 25],
+  ["reach", "v", "/riːtʃ/", "liên lạc được với", "You can reach me at this number.", 25],
+  ["at your earliest convenience", "adv", "/æt jər ˌɝːliəst kənˈviːniəns/", "sớm nhất khi có thể", "Please reply at your earliest convenience.", 25],
+  ["kind regards", "phr", "/ˌkaɪnd rɪˈɡɑːrdz/", "trân trọng (cuối thư)", "Kind regards, Linda", 25],
+  ["follow-up email", "n", "/ˈfɑːloʊ ʌp ˌiːmeɪl/", "email nhắc/theo dõi", "Send a follow-up email after the meeting.", 25],
+  ["deadline extension", "n", "/ˈdedlaɪn ɪkˌstenʃən/", "gia hạn thời hạn", "We asked for a deadline extension.", 26],
+  ["on schedule", "adv", "/ɑːn ˈskedʒuːl/", "đúng tiến độ", "The project is on schedule.", 26],
+  ["business hours", "n", "/ˈbɪznəs ˌaʊərz/", "giờ làm việc", "Call us during business hours.", 26],
+  ["opening hours", "n", "/ˈoʊpənɪŋ ˌaʊərz/", "giờ mở cửa", "Opening hours are 9 a.m. to 6 p.m.", 26],
+  ["closing time", "n", "/ˈkloʊzɪŋ taɪm/", "giờ đóng cửa", "Closing time is 10 p.m. on weekends.", 26],
+  ["calendar", "n", "/ˈkæləndər/", "lịch", "I've added the meeting to my calendar.", 26],
+  ["timeline", "n", "/ˈtaɪmlaɪn/", "mốc thời gian, tiến độ", "The timeline for the project is tight.", 26],
+  ["due date", "n", "/ˈduː deɪt/", "ngày đến hạn", "The due date for payment is June 30.", 26],
+  ["weekday", "n", "/ˈwiːkdeɪ/", "ngày trong tuần (T2–T6)", "The office is open on weekdays.", 26],
+  ["public holiday", "n", "/ˌpʌblɪk ˈhɑːlədeɪ/", "ngày lễ", "The bank is closed on public holidays.", 26],
+  ["time off", "n", "/ˌtaɪm ˈɔːf/", "thời gian nghỉ", "She took time off to travel.", 26],
+  ["from now on", "adv", "/frəm ˈnaʊ ɑːn/", "từ nay trở đi", "From now on, meetings start at nine.", 26],
+  ["at the latest", "adv", "/æt ðə ˈleɪtɪst/", "chậm nhất là", "Send it by Friday at the latest.", 26],
+  ["so far", "adv", "/soʊ ˈfɑːr/", "cho đến nay", "So far, sales have been good.", 26],
+  ["in the long run", "adv", "/ɪn ðə ˈlɔːŋ rʌn/", "về lâu dài", "It will save money in the long run.", 26],
+  ["up to date", "adj", "/ˌʌp tə ˈdeɪt/", "cập nhật mới nhất", "Keep your records up to date.", 26],
+  ["overnight", "adv", "/ˌoʊvərˈnaɪt/", "qua đêm", "The servers will be updated overnight.", 26],
+  ["quarter", "n", "/ˈkwɔːrtər/", "quý (3 tháng)", "Profits rose in the second quarter.", 26],
+  ["semiannual", "adj", "/ˌsemiˈænjuəl/", "nửa năm một lần", "We hold a semiannual review.", 26],
+  ["daily", "adj", "/ˈdeɪli/", "hằng ngày", "The manager sends a daily update.", 26],
+  ["weekly", "adj", "/ˈwiːkli/", "hằng tuần", "We have a weekly team meeting.", 26],
+  ["monthly", "adj", "/ˈmʌnθli/", "hằng tháng", "Monthly reports are due on the 5th.", 26],
+  ["time-consuming", "adj", "/ˈtaɪm kənˌsuːmɪŋ/", "tốn thời gian", "Data entry is time-consuming.", 26],
+  ["countdown", "n", "/ˈkaʊntdaʊn/", "đếm ngược", "The countdown to the launch has begun.", 26],
+  ["reminder", "n", "/rɪˈmaɪndər/", "lời nhắc", "I'll send a reminder the day before.", 26],
+  ["last-minute", "adj", "/ˌlæst ˈmɪnɪt/", "phút chót", "There were some last-minute changes.", 26],
+  ["punctuality", "n", "/ˌpʌŋktʃuˈæləti/", "sự đúng giờ", "Punctuality is important here.", 26],
+  ["time frame", "n", "/ˈtaɪm freɪm/", "khung thời gian", "What is the time frame for delivery?", 26],
+  ["schedule", "v", "/ˈskedʒuːl/", "lên lịch", "The interview is scheduled for 3 p.m.", 26]
 ];
 
 // ---- Tu vung TOEIC tu luan phien o cuoi man cho ----
-// Du lieu tinh san phia client (khong can may chu) - ~1000 tu theo cac chu de
+// Du lieu tinh san phia client (khong can may chu) - ~1400 tu theo cac chu de
 // hay gap trong de TOEIC. Tron ngau nhien, di het 1 vong moi lap lai (khong
 // trung tu lien tiep). Tu dong sang tu moi sau BOOT_VOCAB_MS, cham vao the de
 // sang ngay. Nut 🔊 dung Web Speech API (neu trinh duyet ho tro).
@@ -2150,9 +2607,94 @@ function stopBootVocab(){
   clearTimeout(bootVocabHandle);
   if("speechSynthesis" in window) speechSynthesis.cancel();
 }
-function speakBootVocab(){
-  if(!("speechSynthesis" in window)) return;
-  const u = new SpeechSynthesisUtterance(document.getElementById("bvWord").textContent);
+function speakBootVocab(){ speakText(document.getElementById("bvWord").textContent); }
+// ---- Danh sach tu vung TOEIC (mo tu man cho) ----
+// Loc theo chu de (select - 27 chu de, dung chip se qua dai) + tim theo tu
+// hoac nghia (khong dau cung khop: "hop dong" -> "hợp đồng"). Danh sach dai
+// (~1400 dong) nen ve theo tung dot VL_PAGE dong, cuon gan cuoi moi ve tiep.
+const VL_PAGE = 60;
+const MIMI_ENGLISH_URL = "https://dinhbhvts.github.io/mimi_pet_BE/";
+// true = danh sach dang mo TU MAN CHO (khi do moi can bao "may chu da san
+// sang"); mo tu Cau hinh thi khong hien dong bao do.
+let vlFromBoot = false;
+let vlFiltered = [], vlShown = 0, vlSearchHandle = null;
+function vlNormalize(t){
+  return (t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
+}
+function openVocabList(){
+  const sel = document.getElementById("vlTopic");
+  if(!sel.options.length){
+    const counts = TOEIC_TOPICS.map(()=>0);
+    TOEIC_VOCAB.forEach(w=>counts[w[5]]++);
+    sel.innerHTML = `<option value="">Tất cả (${TOEIC_VOCAB.length})</option>` +
+      TOEIC_TOPICS.map((t,i)=>`<option value="${i}">${escapeHtml(t)} (${counts[i]})</option>`).join("");
+  }
+  // Dang xem danh sach thi dung tu dong doi tu o the ben duoi (mo lai khi dong).
+  clearTimeout(bootVocabHandle);
+  vlFromBoot = document.getElementById("bootLoading").classList.contains("on");
+  document.getElementById("vlReady").classList.remove("on");
+  document.getElementById("vocabList").classList.add("on");
+  renderVocabList();
+}
+function closeVocabList(){
+  document.getElementById("vocabList").classList.remove("on");
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  if(document.getElementById("bootLoading").classList.contains("on")) scheduleBootVocab();
+}
+function onVocabListSearch(){
+  clearTimeout(vlSearchHandle);
+  vlSearchHandle = setTimeout(renderVocabList, 200);
+}
+function renderVocabList(){
+  const q = vlNormalize(document.getElementById("vlSearch").value.trim());
+  const topic = document.getElementById("vlTopic").value;
+  vlFiltered = [];
+  TOEIC_VOCAB.forEach((w,i)=>{
+    if(topic !== "" && w[5] !== Number(topic)) return;
+    if(q && !vlNormalize(w[0]).includes(q) && !vlNormalize(w[3]).includes(q)) return;
+    vlFiltered.push(i);
+  });
+  // Co tu khoa: tu bat dau bang tu khoa len dau, roi theo ABC.
+  vlFiltered.sort((a,b)=>{
+    const wa = TOEIC_VOCAB[a][0].toLowerCase(), wb = TOEIC_VOCAB[b][0].toLowerCase();
+    if(q){ const sa = vlNormalize(wa).startsWith(q), sb = vlNormalize(wb).startsWith(q); if(sa!==sb) return sa?-1:1; }
+    return wa.localeCompare(wb);
+  });
+  document.getElementById("vlCount").textContent = `${vlFiltered.length} từ`;
+  const body = document.getElementById("vlBody");
+  body.innerHTML = vlFiltered.length ? "" : `<div class="vl-more">Không tìm thấy từ nào.</div>`;
+  body.scrollTop = 0;
+  vlShown = 0;
+  appendVocabListPage();
+}
+function appendVocabListPage(){
+  const body = document.getElementById("vlBody");
+  const old = document.getElementById("vlMore"); if(old) old.remove();
+  const canSpeak = "speechSynthesis" in window;
+  const html = vlFiltered.slice(vlShown, vlShown+VL_PAGE).map(i=>{
+    const w = TOEIC_VOCAB[i];
+    return `<div class="vl-item"><div class="vl-row"><div style="min-width:0">
+        <span class="w">${escapeHtml(w[0])}</span><span class="p">(${escapeHtml(w[1])})</span> <span class="i">${escapeHtml(w[2])}</span></div>
+        ${canSpeak?`<button type="button" class="vl-speak" onclick="speakText(TOEIC_VOCAB[${i}][0])" title="Nghe phát âm">🔊</button>`:""}</div>
+      <div class="m">${escapeHtml(w[3])} <span class="t">· ${escapeHtml(TOEIC_TOPICS[w[5]])}</span></div>
+      <div class="e">“${escapeHtml(w[4])}”</div></div>`;
+  }).join("");
+  body.insertAdjacentHTML("beforeend", html);
+  vlShown += VL_PAGE;
+  if(vlShown < vlFiltered.length){
+    body.insertAdjacentHTML("beforeend", `<div class="vl-more" id="vlMore">Đang tải thêm…</div>`);
+    const more = document.getElementById("vlMore");
+    if("IntersectionObserver" in window){
+      const ob = new IntersectionObserver(([e])=>{ if(e.isIntersecting){ ob.disconnect(); appendVocabListPage(); } }, {root: body, rootMargin: "300px"});
+      ob.observe(more);
+    }else{
+      more.textContent = "Xem thêm"; more.style.cursor = "pointer"; more.onclick = appendVocabListPage;
+    }
+  }
+}
+function speakText(text){
+  if(!("speechSynthesis" in window) || !text) return;
+  const u = new SpeechSynthesisUtterance(text);
   u.lang = "en-US"; u.rate = 0.9;
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
@@ -2219,6 +2761,10 @@ function hideBootLoading(){
   clearInterval(bootTimerHandle);
   stopBootVocab();
   document.getElementById("bootLoading").classList.remove("on");
+  // Danh sach tu vung dang mo: giu nguyen (khong cat ngang luc dang doc),
+  // chi bao may chu da san sang.
+  const vr = document.getElementById("vlReady");
+  if(vr && vlFromBoot && document.getElementById("vocabList").classList.contains("on")) vr.classList.add("on");
 }
 
 // ---- Dang nhap / dang xuat ----
@@ -3596,7 +4142,7 @@ async function saveCat(){
 
 // ---- Nhom B: So tay / Tien ich ----
 let niItems = [];
-function setNiTypeFilter(v){ niTypeFilter=v; renderTienIch(document.getElementById("content").lastChild); }
+function setNiTypeFilter(v){ niTypeFilter=v; niTypePanelOpen=false; renderTienIch(document.getElementById("content").lastChild); }
 // Go 1 ky tu roi mat focus (phai bam lai o tim kiem): truoc day moi lan go
 // phim goi renderTienIch() ghi de toan bo body.innerHTML, pha huy va tao lai
 // chinh o input dang go -> mat focus + con tro. Sua bang cach: chi ve
@@ -3609,15 +4155,57 @@ function onNiSearchInput(v){
   clearTimeout(niSearchDebounce);
   niSearchDebounce = setTimeout(refreshNiResults, 300);
 }
+// Bo loc loai tien ich: MAC DINH THU GON (so loai da nhieu, hien het chiem
+// gan nua man hinh). Nut "Loại ▾" ben phai o tim kiem mo/dong bang chip; chon
+// 1 loai thi tu thu gon lai va hien 1 nhan "Đang xem: <loai> ✕" de biet dang
+// loc gi + bo loc nhanh. Trang thai mo/dong chi giu trong phien (bien JS).
+let niTypePanelOpen = false;
 async function renderTienIch(body){
   await loadNiTypes(false); // chi lay loai dang hien (an loai da bi an trong Cau hinh)
-  let html = `<input id="niSearchBox" placeholder="🔍 Tìm kiếm (vd: xe, mẹ, wifi...)" value="${niSearchQ.replace(/"/g,'&quot;')}" oninput="onNiSearchInput(this.value)" style="margin-bottom:8px" />`;
   const allChip = `<button class="chip ${niTypeFilter===''?'on':''}" onclick="setNiTypeFilter('')">Tất cả</button>`;
   const typeChips = niTypesCache.map(t=>`<button class="chip ${niTypeFilter===t.key?'on':''}" onclick="setNiTypeFilter('${t.key}')">${t.icon||'🏷️'} ${t.name}</button>`).join("");
-  html += `<div class="chips" style="margin-bottom:10px">${allChip}${typeChips}</div>`;
+  let html = `<div class="ni-sticky" id="niSticky">
+    <div class="ni-searchrow">
+      <input id="niSearchBox" type="search" placeholder="🔍 Tìm kiếm (vd: xe, mẹ, wifi...)" value="${niSearchQ.replace(/"/g,'&quot;')}" oninput="onNiSearchInput(this.value)" />
+      <button type="button" id="niFilterBtn" class="ni-filter-btn${niTypePanelOpen?' open':''}" onclick="toggleNiTypePanel()" aria-expanded="${niTypePanelOpen}" title="Lọc theo loại">
+        🏷️ Loại <span class="caret">▼</span>${niTypeFilter?'<span class="dot"></span>':''}
+      </button>
+    </div>
+    <div class="ni-type-panel" id="niTypePanel" style="display:${niTypePanelOpen?'block':'none'}"><div class="chips">${allChip}${typeChips}</div></div>
+    <div id="niActiveFilter">${niActiveFilterHtml()}</div>
+  </div>`;
   html += `<div id="niResultsBody"><div class="card"><div class="sub">Đang tải…</div></div></div>`;
   body.innerHTML = html;
+  watchNiSticky();
   await refreshNiResults();
+}
+function niActiveFilterHtml(){
+  if(!niTypeFilter || niTypePanelOpen) return "";
+  const info = niTypeInfo(niTypeFilter);
+  return `<span class="ni-active-filter">Đang xem: ${info.icon} ${escapeHtml(info.label)}<button type="button" onclick="setNiTypeFilter('')" title="Bỏ lọc">✕</button></span>`;
+}
+function toggleNiTypePanel(){
+  niTypePanelOpen = !niTypePanelOpen;
+  const panel = document.getElementById("niTypePanel");
+  const btn = document.getElementById("niFilterBtn");
+  if(panel) panel.style.display = niTypePanelOpen ? "block" : "none";
+  if(btn){ btn.classList.toggle("open", niTypePanelOpen); btn.setAttribute("aria-expanded", niTypePanelOpen); }
+  const af = document.getElementById("niActiveFilter");
+  if(af) af.innerHTML = niActiveFilterHtml();
+}
+// Do bong nhe duoi khoi tim kiem khi no da "dinh" o dinh man hinh (dang cuon),
+// de phan biet voi danh sach truot ben duoi. Dung 1 phan tu canh (sentinel)
+// ngay truoc khoi sticky + IntersectionObserver - khong lang nghe scroll.
+let niStickyObserver = null;
+function watchNiSticky(){
+  const el = document.getElementById("niSticky");
+  if(!el || !("IntersectionObserver" in window)) return;
+  if(niStickyObserver) niStickyObserver.disconnect();
+  const sentinel = document.createElement("div");
+  sentinel.style.height = "1px";
+  el.parentElement.insertBefore(sentinel, el);
+  niStickyObserver = new IntersectionObserver(([e]) => el.classList.toggle("stuck", !e.isIntersecting));
+  niStickyObserver.observe(sentinel);
 }
 async function refreshNiResults(){
   const container = document.getElementById("niResultsBody");
@@ -4328,6 +4916,16 @@ function renderQuanLyUser(body){
   html += `<hr style="margin:24px 0"><h3>🔔 Thông báo</h3>
     <div class="sub" style="margin-bottom:10px">Nhắc sinh nhật, ngày giỗ, việc cần làm... sắp tới trong vài ngày tới, ngay trên điện thoại. Bật riêng cho từng thiết bị.</div>
     <div id="pushSection">Đang kiểm tra…</div>`;
+  // Cho vao co dinh cho Danh sach tu vung + Mimi (man cho chi hien lau khi
+  // may chu dang ngu, nen khong the chi dat 2 nut nay o do). Dung lai dung
+  // hang nut .boot-actions cua man cho cho dong bo giao dien.
+  html += `<hr style="margin:24px 0"><h3>📘 Từ vựng &amp; Mimi</h3>
+    <div class="sub" style="margin-bottom:2px">${TOEIC_VOCAB.length.toLocaleString("vi-VN")} từ TOEIC · ${TOEIC_TOPICS.length} chủ đề · tra cứu theo từ, nghĩa hoặc chủ đề.</div>
+    <div class="boot-actions">
+      <button type="button" class="boot-btn-list" onclick="openVocabList()">📋 Danh sách từ</button>
+      <a class="boot-btn-mimi" href="${MIMI_ENGLISH_URL}" target="_blank" rel="noopener">🐾 Học cùng Mimi <span class="ext">↗</span></a>
+    </div>
+    <div class="boot-actions-note">Mimi mở ở tab mới</div>`;
   html += `<hr style="margin:24px 0"><h3>Khác</h3><button class="ghost" style="width:100%" onclick="doLogout()">Đăng xuất</button></div>`;
   body.innerHTML = html;
   refreshPushSection();
