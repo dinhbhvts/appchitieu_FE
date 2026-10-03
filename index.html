@@ -34,6 +34,7 @@
     --hl-birthday:#E11D48; --hl-birthday-bg:#FDECEF;
     --hl-anniv:#7C3AED; --hl-anniv-bg:#F1EAFE;
     --hl-task:#0D9488; --hl-task-bg:#E3F6F4;
+    --hl-special:#65A30D; --hl-special-bg:#EFF8E1;
     /* Mau chu dam hon --muted, dung cho chu nho nhung PHAI doc duoc ro rang
        (vd: ngay am lich tren lich thang, nhan truong nhap lieu). */
     --label:#475569;
@@ -168,6 +169,7 @@
   .cal-cell.hl-birthday{background:var(--hl-birthday-bg);border-color:var(--hl-birthday);}
   .cal-cell.hl-anniv{background:var(--hl-anniv-bg);border-color:var(--hl-anniv);}
   .cal-cell.hl-task{background:var(--hl-task-bg);border-color:var(--hl-task);}
+  .cal-cell.hl-special{background:var(--hl-special-bg);border-color:var(--hl-special);}
   /* .today dat SAU cac .hl-* de luon thang khi 1 ngay vua la hom nay vua co
      su kien (cung do specificity, thu tu CSS quyet dinh). */
   .cal-cell.today{background:var(--accent-bg);border-color:var(--accent);}
@@ -452,6 +454,7 @@
       <span><i class="cal-dot" style="background:var(--hl-holiday-bg);border:1.5px solid var(--hl-holiday)"></i>Lễ, Tết</span>
       <span><i class="cal-dot" style="background:var(--hl-birthday-bg);border:1.5px solid var(--hl-birthday)"></i>Sinh nhật</span>
       <span><i class="cal-dot" style="background:var(--hl-anniv-bg);border:1.5px solid var(--hl-anniv)"></i>Ngày giỗ</span>
+      <span><i class="cal-dot" style="background:var(--hl-special-bg);border:1.5px solid var(--hl-special)"></i>Ngày kỉ niệm</span>
       <span><i class="cal-dot" style="background:var(--hl-task-bg);border:1.5px solid var(--hl-task)"></i>Nhắc việc</span>
     </div>
     <button class="ghost" style="width:100%;margin-top:10px" onclick="closeLunarCal()">Đóng</button>
@@ -525,6 +528,17 @@
     <div class="chips" id="niTypeChips" style="margin-bottom:10px"></div>
     <div class="flabel" id="niTitleLabel">Tiêu đề</div>
     <input id="niTitle" placeholder="VD: Bố, Netflix, Xe Vision" />
+    <div class="flabel" id="niDocTypeLabel">Loại hồ sơ</div>
+    <input id="niDocType" list="niDocTypeList" placeholder="VD: Sổ đỏ, Hợp đồng, Bằng cấp..." />
+    <datalist id="niDocTypeList">
+      <option value="Sổ đỏ / Sổ hồng"></option><option value="Hợp đồng"></option>
+      <option value="Bằng cấp / Chứng chỉ"></option><option value="Giấy tờ xe"></option>
+      <option value="Bảo hiểm"></option><option value="Hộ khẩu / Cư trú"></option>
+      <option value="Hộ chiếu"></option><option value="Sổ tiết kiệm"></option>
+      <option value="Hồ sơ sức khỏe"></option><option value="Khác"></option>
+    </datalist>
+    <div class="flabel" id="niDocNoLabel">Số giấy tờ</div>
+    <input id="niDocNo" placeholder="Số sổ / số hợp đồng / số văn bằng..." />
     <div class="flabel" id="niSystemLabel">Hệ thống</div>
     <input id="niSystem" placeholder="VD: Netflix, Wifi FPT..." />
     <div class="flabel" id="niWebsiteLabel">Trang web</div>
@@ -594,7 +608,7 @@
     <div class="flabel" id="niProfileNameLabel">Tên hồ sơ</div>
     <input id="niProfileName" placeholder="VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive" />
     <div id="niProfileNameNote" class="sub" style="margin:0 0 10px;font-size:11px;display:none">
-      Tự tạo 1 thư mục riêng trên Drive để chứa file đính kèm của người này. Không thể đổi sau khi lưu.
+      Tự tạo 1 thư mục riêng trên Drive để chứa file đính kèm của mục này. Không thể đổi sau khi lưu. Lưu xong mở lại mục để thêm file đính kèm.
     </div>
     <div id="niAttachSection" style="display:none">
       <div class="sub" style="margin:14px 0 6px">Hồ sơ đính kèm</div>
@@ -651,6 +665,8 @@ const NI_BUILTIN_FIELDS = {
   periodic:        {date1:1, date2:1, completed:1},
   account:         {system:1, website:1, relation:1, username:1, password:1},
   website:         {website:1, info:1},
+  special_day:     {date1:1, lunar:1},
+  document:        {docType:1, docNo:1, info:1, date1:1, profileName:1, attach:1},
   personal_info:   {fullName:1, date1:1, remindBirthday:1, phone:1, idNumber:1,
                      idIssuedDate:1, idIssuedPlace:1, date2:1, birthCertNo:1,
                      healthInsuranceNo:1, address:1, hometown:1, profileName:1, attach:1},
@@ -2363,7 +2379,11 @@ async function renderDashboard(c){
         // mỗi tên thường gọi (đặc biệt khi nguồn là Thông tin cá nhân).
         const isBirthday = r.item.type === "birthday" ||
           (r.item.type === "personal_info" && r.item.remind_birthday);
-        const desc = isBirthday ? `🎂 Sinh nhật ${r.item.title}` : `${info.icon} ${r.item.title}`;
+        let desc = isBirthday ? `🎂 Sinh nhật ${r.item.title}` : `${info.icon} ${r.item.title}`;
+        if(r.item.type === "special_day"){
+          const n = niYearsSince(r.item, r.occurs_on);
+          desc = `💝 Kỉ niệm ${r.item.title}${n >= 1 ? ` (${n} năm)` : ""}`;
+        }
         const when = r.days_until===0 ? "Hôm nay" : r.days_until===1 ? "Ngày mai" : `còn ${r.days_until} ngày`;
         html += `<div class="tx" style="cursor:pointer" onclick='goToTienIch(${JSON.stringify(r.item)})'>
           <div><div class="desc">${desc}</div><div class="meta">${info.label}${r.item.relation?" · "+r.item.relation:""} · ${fmtDate(r.occurs_on)}</div></div>
@@ -2497,13 +2517,13 @@ function lunarHolidayLabel(solarMonth, solarDay, lunarMonth, lunarDay){
 // Nhan hien thi + lop CSS vien/nen cho tung loai su kien tren lich thang.
 // Neu 1 ngay co nhieu loai, loai dung dau danh sach uu tien duoc hien bang
 // vien+nen (de nhan biet nhat), cac loai con lai hien them bang cham nho.
-const CAL_CAT_LABEL = { birthday: "Sinh nhật", anniversary: "Ngày giỗ", task: "Nhắc việc" };
-const CAL_CAT_CLASS = { holiday: "hl-holiday", birthday: "hl-birthday", anniversary: "hl-anniv", task: "hl-task" };
+const CAL_CAT_LABEL = { birthday: "Sinh nhật", anniversary: "Ngày giỗ", special_day: "Ngày kỉ niệm", task: "Nhắc việc" };
+const CAL_CAT_CLASS = { holiday: "hl-holiday", birthday: "hl-birthday", anniversary: "hl-anniv", special_day: "hl-special", task: "hl-task" };
 const CAL_CAT_DOT_COLOR = {
   holiday: "var(--hl-holiday)", birthday: "var(--hl-birthday)",
-  anniversary: "var(--hl-anniv)", task: "var(--hl-task)",
+  anniversary: "var(--hl-anniv)", special_day: "var(--hl-special)", task: "var(--hl-task)",
 };
-const CAL_PRIORITY = ["birthday", "anniversary", "task", "holiday"];
+const CAL_PRIORITY = ["birthday", "anniversary", "special_day", "task", "holiday"];
 let lunarCalDayInfo = {};   // date ISO -> {lunar, items:[{cat,text}]} cua thang dang xem
 function showCalDay(iso){
   const info = lunarCalDayInfo[iso];
@@ -2578,7 +2598,7 @@ async function loadLunarCal(){
         ${dotsHtml}
       </div>`;
     });
-    html += `</div><div class="cal-day-detail" id="calDayDetail"><span class="sub">Chạm vào một ngày để xem chi tiết (ngày lễ, sinh nhật, ngày giỗ, nhắc việc).</span></div>`;
+    html += `</div><div class="cal-day-detail" id="calDayDetail"><span class="sub">Chạm vào một ngày để xem chi tiết (ngày lễ, sinh nhật, ngày giỗ, ngày kỉ niệm, nhắc việc).</span></div>`;
     body.innerHTML = html;
     // Mo dung thang hien tai -> tu hien chi tiet hom nay.
     if(lunarCalDayInfo[todayIso]) showCalDay(todayIso);
@@ -3684,11 +3704,34 @@ async function toggleNiTaskDone(id, checked){
   await refreshNiResults();
 }
 const NI_DATE2_PREFIX = { task:"hạn ", warranty:"hạn BH ", periodic:"hạn tới ", maintenance:"hạn tới " };
+// So nam ky niem tinh den lan lap ke tiep (vd "10 năm"), dung cho Ngay ki
+// niem. occursIso = ngay xay ra (duong lich); neu khong truyen thi lay lan
+// lap ke tiep tinh tu hom nay theo ngay/thang duong cua date1. Ngay am lich
+// chi lay xap xi theo nam (du de hien thi).
+function niYearsSince(it, occursIso){
+  if(!it.date1) return 0;
+  const y0 = parseInt(it.date1.slice(0,4));
+  let y;
+  if(occursIso){ y = parseInt(occursIso.slice(0,4)); }
+  else{
+    const t = todayIso(); y = parseInt(t.slice(0,4));
+    if(it.date1.slice(5) < t.slice(5)) y += 1;
+  }
+  return y - y0;
+}
 function niMetaLine(it){
   const parts = [];
+  if(it.type === "document"){
+    if(it.document_type) parts.push(it.document_type);
+    if(it.document_no) parts.push("Số " + it.document_no);
+  }
   if(it.full_name) parts.push(it.full_name);
   if(it.relation) parts.push(it.relation);
   if(it.date1) parts.push(fmtDate(it.date1) + (it.date1_is_lunar?" (âm lịch)":""));
+  if(it.type === "special_day" && it.date1){
+    const n = niYearsSince(it);
+    if(n >= 1) parts.push(`sắp tròn ${n} năm`);
+  }
   if(it.date2) parts.push((NI_DATE2_PREFIX[it.type] || "hết hạn ") + fmtDate(it.date2));
   if(it.phone) parts.push(it.phone);
   if(it.amount) parts.push(vnd(it.amount)+" đ");
@@ -3753,7 +3796,7 @@ function openNiWebsiteFromForm(){ openUrl(document.getElementById("niWebsite").v
 // Them nut copy ben phai cac o nhap hay can copy (chay 1 lan luc tai trang).
 // O nhap duoc boc trong .copy-wrap - setNiType an/hien ca khoi boc nay.
 const NI_COPYABLE_INPUTS = ["niUsername", "niFullName", "niPhone", "niAddress",
-  "niIdNumber", "niBirthCertNo", "niHealthInsuranceNo", "niInfo"];
+  "niIdNumber", "niBirthCertNo", "niHealthInsuranceNo", "niInfo", "niDocNo"];
 function initNiCopyButtons(){
   NI_COPYABLE_INPUTS.forEach(id => {
     const el = document.getElementById(id);
@@ -3803,6 +3846,8 @@ async function openNi(item){
   document.getElementById("niBirthCertNo").value = item ? (item.birth_cert_no||"") : "";
   document.getElementById("niHealthInsuranceNo").value = item ? (item.health_insurance_no||"") : "";
   document.getElementById("niHometown").value = item ? (item.hometown||"") : "";
+  document.getElementById("niDocType").value = item ? (item.document_type||"") : "";
+  document.getElementById("niDocNo").value = item ? (item.document_no||"") : "";
   document.getElementById("niRecurrence").value = item ? (item.recurrence_days||"") : "";
   document.getElementById("niAmount").value = item ? (item.amount||"") : "";
   document.getElementById("niInfo").value = item ? (item.info||"") : "";
@@ -3897,6 +3942,8 @@ function setNiType(v){
     if(el){ const tgt = el.parentElement.classList.contains("copy-wrap") ? el.parentElement : el; tgt.style.display = on ? "" : "none"; }
     const lbl=document.getElementById(id+"Label"); if(lbl) lbl.style.display = on ? "" : "none";
   };
+  show("niDocType", f.docType);
+  show("niDocNo", f.docNo);
   show("niSystem", f.system);
   show("niWebsite", f.website);
   show("niFullName", f.fullName);
@@ -3926,6 +3973,9 @@ function setNiType(v){
   show("niProfileName", f.profileName);
   show("niProfileNameLabel", f.profileName);
   document.getElementById("niProfileNameNote").style.display = f.profileName ? "block" : "none";
+  document.getElementById("niProfileName").placeholder = v === "document"
+    ? "VD: Sổ đỏ nhà Yên Lạc - dùng đặt tên thư mục trên Google Drive"
+    : "VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive";
   // "Ten ho so" chi nhap duoc luc TAO MOI - khi sua, khoa lai (readonly) de
   // khong bao gio lech voi ten thu muc da tao that tren Drive (backend cung
   // bo qua truong nay khi PUT, day chi la khoa o UI cho ro rang).
@@ -3937,6 +3987,7 @@ function setNiType(v){
     birthday:"Ngày sinh", anniversary:"Ngày mất", service:"Ngày lắp đặt / bắt đầu",
     maintenance:"Lần gần nhất", child_milestone:"Ngày", personal_info:"Ngày sinh",
     warranty:"Ngày mua", periodic:"Ngày thực hiện",
+    special_day:"Ngày kỉ niệm (nhắc hằng năm)", document:"Ngày",
   };
   document.getElementById("niDate1Label").textContent = date1Labels[v] || "Ngày";
   const date2Labels = {
@@ -3947,7 +3998,8 @@ function setNiType(v){
     date2Labels[v] || "Ngày hết hạn / đến hạn kế tiếp";
   // Truong "Thong tin" doi nghia thanh "Cong viec" cho loai Nhac viec,
   // "Mo ta" cho loai Trang web.
-  const infoLabels = { task: ["Công việc", "Công việc cần làm"], website: ["Mô tả", "Trang web này dùng để làm gì"] };
+  const infoLabels = { task: ["Công việc", "Công việc cần làm"], website: ["Mô tả", "Trang web này dùng để làm gì"],
+    document: ["Nội dung", "Nội dung chính của hồ sơ"] };
   const [infoLbl, infoPh] = infoLabels[v] || ["Thông tin", "Thông tin"];
   document.getElementById("niInfoLabel").textContent = infoLbl;
   document.getElementById("niInfo").placeholder = infoPh;
@@ -3983,6 +4035,8 @@ async function saveNi(){
     birth_cert_no: document.getElementById("niBirthCertNo").value.trim()||null,
     health_insurance_no: document.getElementById("niHealthInsuranceNo").value.trim()||null,
     hometown: document.getElementById("niHometown").value.trim()||null,
+    document_type: document.getElementById("niDocType").value.trim()||null,
+    document_no: document.getElementById("niDocNo").value.trim()||null,
     recurrence_days: num("niRecurrence") ? Math.round(num("niRecurrence")) : null,
     amount: num("niAmount"),
     info: document.getElementById("niInfo").value.trim()||null,
