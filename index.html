@@ -4494,10 +4494,17 @@ async function renameNiAttachment(itemId, attId, currentName){
 // request) - 1 file loi khong chan cac file con lai; cuoi cung bao tong ket
 // va liet ke file loi kem ly do.
 let niUploading = false;
+// File loi o lan tai gan nhat (giu lai doi tuong File de bam "Tai lai" ma
+// khong phai chon lai tu may).
+let niFailedFiles = [];
 async function onNiAttachFileChosen(evt){
   const input = evt.target;
   const files = Array.from(input.files || []);
   input.value = ""; // cho phep chon lai cung file lan sau (vd sau khi loi)
+  await uploadNiFiles(files);
+}
+function retryNiFailedUploads(){ uploadNiFiles(niFailedFiles.slice()); }
+async function uploadNiFiles(files){
   if(files.length===0 || !editingNiId || niUploading) return;
   const itemId = editingNiId;
   const errBox = document.getElementById("niAttachErr");
@@ -4514,7 +4521,7 @@ async function onNiAttachFileChosen(evt){
         fd.append("file", f);
         await jupload(`/notebook-items/${itemId}/attachments`, fd);
       }catch(e){
-        failed.push({name: f.name, msg: e.message});
+        failed.push({file: f, name: f.name, msg: niUploadErrorText(e)});
       }
     }
   }finally{
@@ -4522,13 +4529,22 @@ async function onNiAttachFileChosen(evt){
     if(addBtn) addBtn.disabled = false;
   }
   const ok = files.length - failed.length;
+  niFailedFiles = failed.map(x=>x.file);
   if(failed.length===0){
     errBox.innerHTML = files.length>1 ? `<div class="sub">Đã tải lên ${ok} file.</div>` : "";
   }else{
     errBox.innerHTML = `<div class="err">${ok>0?`Đã tải lên ${ok}/${files.length} file. `:""}Không tải được ${failed.length} file:<br>`
-      + failed.map(x=>`• ${escapeHtml(x.name)}: ${escapeHtml(x.msg)}`).join("<br>") + `</div>`;
+      + failed.map(x=>`• ${escapeHtml(x.name)}: ${escapeHtml(x.msg)}`).join("<br>") + `</div>`
+      + `<button type="button" class="ghost" style="width:100%;margin-top:6px" onclick="retryNiFailedUploads()">↻ Tải lại ${failed.length} file lỗi</button>`;
   }
   if(editingNiId===itemId) await loadNiAttachments(itemId);
+}
+// Loi tu API tra ve dang chuoi JSON {"detail": "..."} - lay phan detail cho
+// de doc; con lai giu nguyen.
+function niUploadErrorText(e){
+  const raw = (e && e.message) || String(e);
+  try{ const j = JSON.parse(raw); if(j && j.detail) return typeof j.detail==="string" ? j.detail : JSON.stringify(j.detail); }catch(_){}
+  return raw;
 }
 async function deleteNiAttachment(itemId, attId){
   if(!confirm("Xóa file đính kèm này? File trên Google Drive cũng sẽ bị xóa, không khôi phục được.")) return;
