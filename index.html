@@ -70,7 +70,13 @@
     padding-bottom:env(safe-area-inset-bottom);z-index:20;}
   .tabs button{flex:1;border:none;background:none;padding:10px 0;font-size:12px;color:var(--muted);cursor:pointer;}
   .tabs button.active{color:var(--accent);font-weight:600;}
-  .tabs .ico{font-size:20px;display:block;}
+  /* Bo icon net (stroke) dong bo, cung do day; tab dang chon dam hon + gach
+     mau o tren. */
+  .tabs button{position:relative;}
+  .tabs .ico{display:block;height:24px;margin:0 auto 2px;}
+  .tabs .ico svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  .tabs button.active .ico svg{stroke-width:2.2;}
+  .tabs button.active::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--accent);}
   /* Thanh nut hanh dong, ghim ngay tren thanh tab, luon trong tam voi. */
   .actionbar{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:460px;
     bottom:calc(56px + env(safe-area-inset-bottom));display:flex;gap:8px;padding:8px 14px;z-index:19;
@@ -196,6 +202,28 @@
   .copy-wrap{display:flex;gap:6px;align-items:flex-start;margin-bottom:10px;}
   .copy-wrap > input,.copy-wrap > textarea{flex:1;min-width:0;margin:0 !important;}
   .copy-btn{flex-shrink:0;border:1px solid var(--line);background:var(--card);border-radius:8px;min-width:38px;height:38px;cursor:pointer;font-size:15px;padding:0 8px;color:var(--accent);}
+  /* O nhap so tien/so luong: tu dinh dang dau cham, nut nhanh 000/trieu va
+     dong doc so (vd "15,25 triệu") ngay ben duoi. */
+  .money-wrap{margin-bottom:10px;}
+  .money-wrap > input{margin-bottom:4px !important;}
+  .money-row{display:flex;align-items:center;gap:6px;min-height:22px;}
+  .money-row button{border:1px solid var(--line);background:var(--card);color:var(--accent);border-radius:14px;font-size:12px;font-weight:600;padding:3px 12px;cursor:pointer;}
+  .money-hint{font-size:12px;color:var(--label);margin-left:auto;white-space:nowrap;}
+  /* Khung anh ky thuat so (cuoi Tong quan) + luoi quan ly album. */
+  .photo-frame{position:relative;height:min(70vw,330px);border-radius:12px;overflow:hidden;background:#1f2933;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:pointer;}
+  .pf-slide{position:absolute;inset:0;opacity:0;transition:opacity .9s ease;}
+  .pf-slide.on{opacity:1;}
+  .pf-bg{position:absolute;inset:-24px;background-size:cover;background-position:center;filter:blur(18px) brightness(.65);}
+  .pf-slide img{position:relative;width:100%;height:100%;object-fit:contain;display:block;}
+  .pf-caption{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 9px;color:#fff;font-size:13px;line-height:1.35;background:linear-gradient(transparent,rgba(0,0,0,.6));z-index:2;}
+  .pf-count{position:absolute;top:8px;right:10px;font-size:11px;color:#fff;background:rgba(0,0,0,.38);padding:2px 8px;border-radius:10px;z-index:2;}
+  .pf-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#e5e7eb;font-size:13px;text-align:center;padding:16px;}
+  .album-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0;}
+  .album-cell{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:var(--bg);}
+  .album-cell img{width:100%;height:100%;object-fit:cover;display:block;}
+  .album-cell .ac-cap{position:absolute;left:0;top:0;right:0;font-size:10px;color:#fff;background:rgba(0,0,0,.45);padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .album-cell .ac-actions{position:absolute;right:4px;bottom:4px;display:flex;gap:4px;}
+  .album-cell .ac-actions button{border:none;border-radius:6px;background:rgba(255,255,255,.92);font-size:13px;padding:4px 7px;cursor:pointer;}
   /* Dong thao tac nhanh (link/copy) tren danh sach Tien ich. */
   .ni-quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
   .ni-quick a,.ni-quick span{font-size:12px;border:1px solid var(--line);border-radius:12px;padding:2px 8px;color:var(--accent);text-decoration:none;cursor:pointer;background:var(--card);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -247,7 +275,9 @@
       <div class="apptitle">Sổ tay — quản lý thu chi</div>
       <div style="text-align:right"><span class="sub" id="whoami"></span><br><span class="logout" onclick="logout()">Đăng xuất</span></div>
     </div>
-    <div class="server">Máy chủ: <input id="server" value="https://appchitieu.onrender.com" /></div>
+    <!-- Dia chi may chu: an khoi giao dien chinh (thong tin ky thuat), doi
+         trong Cau hinh > Nguoi dung > Nang cao. -->
+    <div class="server" style="display:none">Máy chủ: <input id="server" value="https://appchitieu.onrender.com" /></div>
   </header>
 
   <div class="monthbar" id="monthbar">
@@ -262,12 +292,12 @@
   <div class="actionbar" id="actionbar"></div>
 
   <div class="tabs">
-    <button id="tab-dashboard" class="active" onclick="go('dashboard')"><span class="ico">⌂</span>Tổng quan</button>
-    <button id="tab-thuchi" onclick="go('thuchi')"><span class="ico">☰</span>Thu chi</button>
-    <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico">↗</span>CK</button>
-    <button id="tab-taisan" onclick="go('taisan')"><span class="ico">◆</span>Tài sản</button>
-    <button id="tab-baocao" onclick="go('baocao')"><span class="ico">▤</span>Báo cáo</button>
-    <button id="tab-cauhinh" onclick="go('cauhinh')"><span class="ico">⚙</span>Cấu hình</button>
+    <button id="tab-dashboard" class="active" onclick="go('dashboard')"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9v11h4.5v-6h4v6h4.5V9"/></svg></span>Tổng quan</button>
+    <button id="tab-thuchi" onclick="go('thuchi')"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M6.5 6V4.8A1.8 1.8 0 0 1 8.3 3H17"/><path d="M15.5 13h2.5"/></svg></span>Thu chi</button>
+    <button id="tab-chungkhoan" onclick="go('chungkhoan')"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>CK</button>
+    <button id="tab-taisan" onclick="go('taisan')"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10l4 5.5-9 11.5L3 9z"/><path d="M3 9h18"/><path d="M12 20.5 8.5 9 10.5 3.5M12 20.5 15.5 9l-2-5.5"/></svg></span>Tài sản</button>
+    <button id="tab-baocao" onclick="go('baocao')"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20.5h18"/><path d="M6 20.5V12"/><path d="M11 20.5V5"/><path d="M16 20.5V9"/><path d="M20.5 20.5v-5"/></svg></span>Báo cáo</button>
+    <button id="tab-cauhinh" onclick="go('cauhinh')"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg></span>Cấu hình</button>
   </div>
 </div>
 
@@ -361,7 +391,8 @@
     </div>
     <div id="loginErr"></div>
     <button class="abtn" style="width:100%" onclick="doLogin()">Đăng nhập</button>
-    <div class="server" style="margin-top:14px">Máy chủ: <input id="loginServer" oninput="document.getElementById('server').value=this.value" /></div>
+    <!-- Chi hien khi khong ket noi duoc may chu (de sua dia chi neu can). -->
+    <div class="server" id="loginServerBox" style="margin-top:14px;display:none">Máy chủ: <input id="loginServer" oninput="setServerUrl(this.value)" /></div>
   </div>
 </div>
 
@@ -510,6 +541,19 @@
     <h3 id="tsInfoTitle">Công thức tính</h3>
     <div class="sub" id="tsInfoDesc" style="line-height:1.5;margin-bottom:14px"></div>
     <button class="primary" style="width:100%" onclick="closeTsInfo()">Đã hiểu</button>
+  </div>
+</div>
+
+<!-- Album anh cho khung anh ky thuat so (Tong quan) -->
+<div class="modal" id="albumModal">
+  <div class="sheet">
+    <h3>🖼️ Album ảnh gia đình</h3>
+    <div class="sub" id="albumInfo" style="margin-bottom:10px">Ảnh được tự thu nhỏ khi tải lên, hiển thị luân phiên ngẫu nhiên ở cuối trang Tổng quan.</div>
+    <input type="file" id="albumFile" accept="image/*" multiple style="display:none" onchange="onAlbumFilesChosen(event)" />
+    <button type="button" class="primary" id="albumAddBtn" onclick="document.getElementById('albumFile').click()">+ Thêm ảnh (chọn được nhiều ảnh)</button>
+    <div id="albumMsg" style="margin-top:8px"></div>
+    <div id="albumGrid" class="album-grid"></div>
+    <button class="ghost" style="width:100%" onclick="closeAlbum()">Đóng</button>
   </div>
 </div>
 
@@ -833,6 +877,14 @@ let currentUser = null;
 try { currentUser = JSON.parse(localStorage.getItem("vibeapp_user") || "null"); } catch(e){}
 
 const api = () => document.getElementById("server").value.replace(/\/$/, "");
+// Dia chi may chu da doi tay (Cau hinh > Nguoi dung > Nang cao) duoc nho lai.
+try{ const savedServer = localStorage.getItem("vibeapp_server"); if(savedServer) document.getElementById("server").value = savedServer; }catch(e){}
+function setServerUrl(v){
+  const url = String(v || "").trim();
+  if(!url) return;
+  document.getElementById("server").value = url;
+  try{ localStorage.setItem("vibeapp_server", url); }catch(e){}
+}
 const vnd = n => Math.round(n).toLocaleString("vi-VN");
 const pad = n => String(n).padStart(2, "0");
 // Escape text before putting it into innerHTML / HTML attributes.
@@ -2779,7 +2831,10 @@ async function loadLoginUsers(){
   try{
     const us = await (await fetch(api()+"/users")).json();
     document.getElementById("loginUser").innerHTML = us.map(u=>`<option value="${u.name}">${u.name}</option>`).join("");
-  }catch(e){ document.getElementById("loginErr").innerHTML=`<div class="err">Không kết nối được máy chủ. Kiểm tra địa chỉ.</div>`; }
+  }catch(e){
+    document.getElementById("loginErr").innerHTML=`<div class="err">Không kết nối được máy chủ. Kiểm tra địa chỉ bên dưới.</div>`;
+    document.getElementById("loginServerBox").style.display = "";
+  }
 }
 function toggleLoginPassword(){
   const inp = document.getElementById("loginPass");
@@ -2798,7 +2853,10 @@ async function doLogin(){
     localStorage.setItem("vibeapp_user", JSON.stringify(currentUser));
     document.getElementById("loginPass").value = "";
     hideLogin(); startApp();
-  }catch(e){ document.getElementById("loginErr").innerHTML=`<div class="err">${e.message}</div>`; }
+  }catch(e){
+    document.getElementById("loginErr").innerHTML=`<div class="err">${e.message}</div>`;
+    document.getElementById("loginServerBox").style.display = "";
+  }
 }
 function logout(){
   token=""; currentUser=null;
@@ -2871,7 +2929,7 @@ async function render(){
     else if(tab==="baocao") await renderBaoCao(c);
     else await renderCauHinh(c);
   }catch(e){
-    c.innerHTML = `<div class="err">Không kết nối được máy chủ.<br>Hãy chắc chắn backend đang chạy (uvicorn) tại địa chỉ ở trên.<br><br>${e.message}</div>`;
+    c.innerHTML = `<div class="err">Không kết nối được máy chủ.<br>Máy chủ có thể đang khởi động lại, vui lòng thử lại sau ít phút (địa chỉ máy chủ: Cấu hình › Người dùng › Nâng cao).<br><br>${e.message}</div>`;
   }
 }
 
@@ -2942,21 +3000,30 @@ async function renderDashboard(c){
   }
   html += `</div>`;
 
-  // --- Card tra cuu lich am ---
+  // --- Card lich hom nay (gon): ngay duong + am + nut Lich thang; phan tra
+  // cuu doi ngay chi mo ra khi can (bam "Tra cứu ngày khác"). ---
   html += `<div class="card">
-    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="sub">Tra cứu lịch âm</div>
-      <span class="editbtn" onclick="openLunarCal()" title="Xem lịch theo tháng">📅 Lịch tháng</span>
+    <div class="row" style="align-items:flex-start;gap:10px">
+      <div style="min-width:0">
+        <div class="sub">Hôm nay</div>
+        <div style="font-size:16px;font-weight:600;margin-top:2px">${solarDayLabel(todayISO())}</div>
+        <div id="lunarToday" class="sub" style="margin-top:3px;color:var(--label)">Âm lịch: …</div>
+      </div>
+      <button class="ghost" style="flex-shrink:0" onclick="openLunarCal()" title="Xem lịch theo tháng">📅 Lịch tháng</button>
     </div>
-    <div class="chips" style="margin-bottom:10px">
-      <button class="chip ${lunarMode==='s2l'?'on':''}" onclick="setLunarMode('s2l')">Dương → Âm</button>
-      <button class="chip ${lunarMode==='l2s'?'on':''}" onclick="setLunarMode('l2s')">Âm → Dương</button>
+    <div class="row" style="cursor:pointer;margin-top:10px;padding-top:8px;border-top:1px solid var(--line)" onclick="toggleLunarTool()">
+      <span class="sub">🔍 Tra cứu ngày khác (dương ↔ âm)</span><span class="sub">${lunarToolOpen?"▲":"▼"}</span>
     </div>
-    <div id="lunarBody"></div>
+    <div id="lunarToolBox" style="display:${lunarToolOpen?"block":"none"};margin-top:10px"></div>
   </div>`;
 
+  // --- Khung anh ky thuat so (album gia dinh) - cuoi trang ---
+  html += renderPhotoFrameCard();
+
   c.innerHTML = html;
-  renderLunarTool();
+  loadLunarToday();
+  if(lunarToolOpen) renderLunarToolBox();
+  initPhotoFrame();
 }
 
 // ---- Tra cuu lich am (Tong quan) ----
@@ -2965,7 +3032,278 @@ let lunarMode = "s2l"; // "s2l" = duong sang am, "l2s" = am sang duong
 // render de khong bi mat lua chon khi doi tab.
 let lunarSolarValue = null;
 function todayISO(){ const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-function setLunarMode(v){ lunarMode = v; renderDashboard(document.getElementById("content")); }
+function setLunarMode(v){ lunarMode = v; renderLunarToolBox(); }
+// Phan tra cuu doi ngay mac dinh thu gon - chi ve lai rieng khung nay khi
+// mo/doi che do (khong tai lai ca trang Tong quan).
+let lunarToolOpen = false;
+function toggleLunarTool(){
+  lunarToolOpen = !lunarToolOpen;
+  const box = document.getElementById("lunarToolBox");
+  if(!box) return;
+  box.style.display = lunarToolOpen ? "block" : "none";
+  const arrow = box.previousElementSibling && box.previousElementSibling.lastElementChild;
+  if(arrow) arrow.textContent = lunarToolOpen ? "▲" : "▼";
+  if(lunarToolOpen) renderLunarToolBox();
+}
+function renderLunarToolBox(){
+  const box = document.getElementById("lunarToolBox");
+  if(!box) return;
+  box.innerHTML = `<div class="chips" style="margin-bottom:10px">
+      <button class="chip ${lunarMode==='s2l'?'on':''}" onclick="setLunarMode('s2l')">Dương → Âm</button>
+      <button class="chip ${lunarMode==='l2s'?'on':''}" onclick="setLunarMode('l2s')">Âm → Dương</button>
+    </div>
+    <div id="lunarBody"></div>`;
+  renderLunarTool();
+}
+const WEEKDAY_VI = ["Chủ nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"];
+function solarDayLabel(iso){
+  const [y,m,d] = iso.split("-").map(Number);
+  return `${WEEKDAY_VI[new Date(y, m-1, d).getDay()]}, ${pad(d)}/${pad(m)}/${y}`;
+}
+// Ten nam am lich theo Can Chi (vd 2026 -> Bính Ngọ).
+function canChiYear(y){
+  const can = ["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"][(y + 6) % 10];
+  const chi = ["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"][(y + 8) % 12];
+  return `${can} ${chi}`;
+}
+async function loadLunarToday(){
+  const el = document.getElementById("lunarToday");
+  if(!el) return;
+  try{
+    const r = await jget(`/lunar/to-lunar?date=${todayISO()}`);
+    el.textContent = `Âm lịch: ${r.day}/${r.month}${r.is_leap?" (nhuận)":""} năm ${canChiYear(r.year)}`;
+  }catch(e){ el.textContent = "Âm lịch: không tải được"; }
+}
+
+// ---- Khung anh ky thuat so + album (cuoi trang Tong quan) -----------------
+// Anh luu trong CSDL (da thu nho phia may chu, xem backend album_service).
+// API anh can dang nhap nen <img> khong goi truc tiep duoc -> tai bang fetch
+// (kem token) thanh blob roi tao object URL, nho lai trong phien de khong tai
+// lai. Luan phien NGAU NHIEN: tron thu tu, di het 1 vong moi lap lai.
+const PHOTO_INTERVAL_MS = 8000;
+let albumPhotos = [];                 // metadata, moi nhat truoc
+const photoUrlCache = new Map();      // "id:full|thumb" -> object URL
+let pfOrder = [], pfPos = -1, pfTimer = null, pfActiveSlide = 0, pfBusy = false;
+
+function renderPhotoFrameCard(){
+  return `<div class="card">
+    <div class="row" style="margin-bottom:8px">
+      <div class="sub">🖼️ Khung ảnh gia đình</div>
+      <span class="editbtn" style="font-size:12px" onclick="openAlbum()">Quản lý album ›</span>
+    </div>
+    <div class="photo-frame" id="photoFrame">
+      <div class="pf-slide" id="pfSlide0"><div class="pf-bg"></div><img alt="" /></div>
+      <div class="pf-slide" id="pfSlide1"><div class="pf-bg"></div><img alt="" /></div>
+      <div class="pf-count" id="pfCount" style="display:none"></div>
+      <div class="pf-caption" id="pfCaption" style="display:none"></div>
+      <div class="pf-empty" id="pfEmpty">Đang tải ảnh…</div>
+    </div>
+  </div>`;
+}
+async function photoUrl(id, size){
+  const key = `${id}:${size}`;
+  if(photoUrlCache.has(key)) return photoUrlCache.get(key);
+  const r = await fetch(api() + `/album-photos/${id}/image${size === "thumb" ? "?size=thumb" : ""}`, {headers: authHeaders()});
+  if(r.status === 401){ logout(); throw new Error("Phiên đăng nhập đã hết hạn"); }
+  if(!r.ok) throw new Error("Không tải được ảnh");
+  const url = URL.createObjectURL(await r.blob());
+  photoUrlCache.set(key, url);
+  return url;
+}
+async function loadAlbumList(){
+  albumPhotos = await jget("/album-photos");
+  return albumPhotos;
+}
+function shufflePhotoOrder(){
+  pfOrder = shuffledIndexes(albumPhotos.length);
+  pfPos = -1;
+}
+async function initPhotoFrame(){
+  clearInterval(pfTimer);
+  const empty = document.getElementById("pfEmpty");
+  if(!empty) return;
+  try{ await loadAlbumList(); }catch(e){ empty.textContent = "Không tải được album ảnh."; return; }
+  const frame = document.getElementById("photoFrame");
+  if(!frame) return;   // da roi khoi trang Tong quan trong luc tai
+  if(albumPhotos.length === 0){
+    empty.innerHTML = `<div>Chưa có ảnh nào trong album.</div>
+      <button class="ghost" onclick="event.stopPropagation();openAlbum()">+ Thêm ảnh vào album</button>`;
+    document.getElementById("pfCount").style.display = "none";
+    document.getElementById("pfCaption").style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  shufflePhotoOrder();
+  bindPhotoFrameGestures(frame);
+  await showPhoto(1);
+  restartPhotoTimer();
+}
+// step = 1 (anh tiep) hoac -1 (anh truoc).
+async function showPhoto(step){
+  if(pfBusy || albumPhotos.length === 0) return;
+  pfBusy = true;
+  try{
+    pfPos += step;
+    if(pfPos >= pfOrder.length){ shufflePhotoOrder(); pfPos = 0; }
+    if(pfPos < 0) pfPos = pfOrder.length - 1;
+    const photo = albumPhotos[pfOrder[pfPos]];
+    const url = await photoUrl(photo.id, "full");
+    const frame = document.getElementById("photoFrame");
+    if(!frame) return;
+    const next = 1 - pfActiveSlide;
+    const slide = document.getElementById(`pfSlide${next}`);
+    slide.querySelector("img").src = url;
+    slide.querySelector(".pf-bg").style.backgroundImage = `url("${url}")`;
+    slide.classList.add("on");
+    document.getElementById(`pfSlide${pfActiveSlide}`).classList.remove("on");
+    pfActiveSlide = next;
+    const cap = document.getElementById("pfCaption");
+    cap.textContent = photo.caption || "";
+    cap.style.display = photo.caption ? "" : "none";
+    const cnt = document.getElementById("pfCount");
+    cnt.textContent = `${pfPos + 1}/${albumPhotos.length}`;
+    cnt.style.display = albumPhotos.length > 1 ? "" : "none";
+    // Tai truoc anh ke tiep cho lan doi sau muot hon.
+    const upcoming = albumPhotos[pfOrder[(pfPos + 1) % pfOrder.length]];
+    if(upcoming) photoUrl(upcoming.id, "full").catch(() => {});
+  }catch(e){
+    // Bo qua anh loi, lan doi sau se thu anh khac.
+  }finally{ pfBusy = false; }
+}
+function restartPhotoTimer(){
+  clearInterval(pfTimer);
+  pfTimer = setInterval(() => {
+    if(!document.getElementById("photoFrame")){ clearInterval(pfTimer); return; }  // da chuyen tab
+    if(!document.hidden) showPhoto(1);
+  }, PHOTO_INTERVAL_MS);
+}
+// Cham = anh tiep; vuot trai/phai = anh tiep/truoc.
+function bindPhotoFrameGestures(frame){
+  if(frame.dataset.bound) return;
+  frame.dataset.bound = "1";
+  let x0 = null;
+  frame.addEventListener("pointerdown", e => { x0 = e.clientX; });
+  frame.addEventListener("pointerup", e => {
+    if(x0 === null || albumPhotos.length < 2){ x0 = null; return; }
+    const dx = e.clientX - x0; x0 = null;
+    showPhoto(dx > 40 ? -1 : 1);
+    restartPhotoTimer();
+  });
+}
+
+// ---- Quan ly album (modal) ----
+async function openAlbum(){
+  document.getElementById("albumModal").classList.add("on");
+  document.getElementById("albumMsg").innerHTML = "";
+  await renderAlbumGrid();
+}
+function closeAlbum(){
+  document.getElementById("albumModal").classList.remove("on");
+  if(tab === "dashboard" && document.getElementById("photoFrame")){
+    // Lam moi khung anh voi danh sach moi (vua them/xoa).
+    document.getElementById("pfEmpty").style.display = "";
+    document.getElementById("pfEmpty").textContent = "Đang tải ảnh…";
+    initPhotoFrame();
+  }
+}
+async function renderAlbumGrid(){
+  const grid = document.getElementById("albumGrid");
+  const info = document.getElementById("albumInfo");
+  grid.innerHTML = `<div class="sub">Đang tải…</div>`;
+  try{ await loadAlbumList(); }catch(e){ grid.innerHTML = `<div class="err">${escapeHtml(e.message)}</div>`; return; }
+  const totalMb = albumPhotos.reduce((s, p) => s + (p.size_bytes || 0), 0) / 1048576;
+  info.textContent = albumPhotos.length
+    ? `${albumPhotos.length} ảnh · khoảng ${totalMb.toLocaleString("vi-VN", {maximumFractionDigits:1})} MB. Ảnh được tự thu nhỏ khi tải lên.`
+    : "Chưa có ảnh nào. Ảnh được tự thu nhỏ khi tải lên, hiển thị luân phiên ngẫu nhiên ở cuối trang Tổng quan.";
+  if(albumPhotos.length === 0){ grid.innerHTML = ""; return; }
+  grid.innerHTML = albumPhotos.map(p => `<div class="album-cell" id="albumCell${p.id}">
+      <img alt="" />
+      ${p.caption ? `<div class="ac-cap">${escapeHtml(p.caption)}</div>` : ""}
+      <div class="ac-actions">
+        <button type="button" title="Sửa chú thích" onclick="editAlbumCaption(${p.id})">✎</button>
+        <button type="button" title="Xóa ảnh" onclick="deleteAlbumPhoto(${p.id})">🗑️</button>
+      </div></div>`).join("");
+  for(const p of albumPhotos){
+    photoUrl(p.id, "thumb").then(url => {
+      const img = document.querySelector(`#albumCell${p.id} img`);
+      if(img) img.src = url;
+    }).catch(() => {});
+  }
+}
+async function editAlbumCaption(id){
+  const p = albumPhotos.find(x => x.id === id);
+  const v = prompt("Chú thích cho ảnh (để trống nếu không cần):", (p && p.caption) || "");
+  if(v === null) return;
+  try{ await jpatch(`/album-photos/${id}`, {caption: v.trim() || null}); await renderAlbumGrid(); }
+  catch(e){ document.getElementById("albumMsg").innerHTML = `<div class="err">${escapeHtml(niUploadErrorText(e))}</div>`; }
+}
+async function deleteAlbumPhoto(id){
+  if(!confirm("Xóa ảnh này khỏi album?")) return;
+  try{ await jdelete(`/album-photos/${id}`); await renderAlbumGrid(); }
+  catch(e){ document.getElementById("albumMsg").innerHTML = `<div class="err">${escapeHtml(niUploadErrorText(e))}</div>`; }
+}
+// Thu nho anh ngay tren trinh duyet (canh dai toi da 1600px, JPEG) truoc khi
+// gui - anh chup dien thoai 4-8MB con vai tram KB, tai len nhanh hon nhieu.
+// Trinh duyet khong doc duoc (vd HEIC tren Chrome) thi gui nguyen file de
+// may chu tu xu ly.
+async function shrinkImageForUpload(file){
+  try{
+    const bmp = await createImageBitmap(file, {imageOrientation: "from-image"});
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bmp, 0, 0, w, h);
+    if(bmp.close) bmp.close();
+    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.88));
+    if(!blob) return file;
+    const name = (file.name || "anh").replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], name, {type: "image/jpeg"});
+  }catch(e){
+    return file;
+  }
+}
+let albumUploading = false, albumFailedFiles = [];
+async function onAlbumFilesChosen(evt){
+  const files = Array.from(evt.target.files || []);
+  evt.target.value = "";
+  await uploadAlbumFiles(files);
+}
+async function uploadAlbumFiles(files){
+  if(files.length === 0 || albumUploading) return;
+  albumUploading = true;
+  const btn = document.getElementById("albumAddBtn");
+  const msg = document.getElementById("albumMsg");
+  btn.disabled = true;
+  const failed = [];
+  try{
+    for(let k = 0; k < files.length; k++){
+      const f = files[k];
+      msg.innerHTML = `<div class="sub">Đang tải lên ${files.length > 1 ? `${k + 1}/${files.length}: ` : ""}${escapeHtml(f.name)}...</div>`;
+      try{
+        const small = await shrinkImageForUpload(f);
+        const fd = new FormData();
+        fd.append("file", small, small.name);
+        await jupload("/album-photos", fd);
+      }catch(e){
+        failed.push({file: f, name: f.name, msg: niUploadErrorText(e)});
+      }
+    }
+  }finally{
+    albumUploading = false;
+    btn.disabled = false;
+  }
+  albumFailedFiles = failed.map(x => x.file);
+  const ok = files.length - failed.length;
+  msg.innerHTML = failed.length === 0
+    ? `<div class="sub">Đã thêm ${ok} ảnh vào album.</div>`
+    : `<div class="err">${ok > 0 ? `Đã thêm ${ok}/${files.length} ảnh. ` : ""}Không tải được ${failed.length} ảnh:<br>`
+      + failed.map(x => `• ${escapeHtml(x.name)}: ${escapeHtml(x.msg)}`).join("<br>") + `</div>`
+      + `<button type="button" class="ghost" style="width:100%;margin-top:6px" onclick="uploadAlbumFiles(albumFailedFiles.slice())">↻ Tải lại ${failed.length} ảnh lỗi</button>`;
+  await renderAlbumGrid();
+}
 function renderLunarTool(){
   const body = document.getElementById("lunarBody");
   if(!body) return;
@@ -3809,7 +4147,7 @@ function openHd(hd){
   document.getElementById("hdNote").value = (hd && hd.note) ? hd.note : "";
   document.getElementById("hdErr").innerHTML="";
   document.getElementById("hdModal").classList.add("on"); }
-function show2(id, on){ document.getElementById(id).style.display = on ? "" : "none"; }
+function show2(id, on){ fieldBox(document.getElementById(id)).style.display = on ? "" : "none"; }
 function closeHd(){ document.getElementById("hdModal").classList.remove("on"); }
 async function saveHd(){
   const notev=document.getElementById("hdNote").value.trim()||null;
@@ -4400,6 +4738,118 @@ function initNiCopyButtons(){
   });
 }
 initNiCopyButtons();
+
+// ---- O nhap so tien / so luong ----------------------------------------
+// Doi type="number" sang o chu co ban phim so: hien dau cham hang nghin ngay
+// khi go ("15.000.000"), hieu cach go tat "15tr", "50k", "1,5 tỷ", co nut
+// nhanh "000" (x1.000) va "triệu" (x1.000.000), va dong doc so ben duoi.
+// Thuoc tinh .value cua o duoc ghi de: DOC ra luon la chuoi so tron (khong
+// dau cham, vd "15000000") nen moi doan code cu dang doc .value van dung
+// nguyen; GAN vao (vd khi mo form sua) thi tu dinh dang.
+const MONEY_INPUT_IDS = ["txAmount","cfAmount","trTotal","trFee","hdValue","hdCashBase","dvAmount",
+  "dvFee","svAmount","svExpectedInterest","svActualInterest","asValue","niAmount"];
+const QTY_INPUT_IDS = ["trQty","hdQty","dvQuantity"];
+const MONEY_UNITS = {k:1e3, ng:1e3, "nghìn":1e3, "ngàn":1e3, tr:1e6, "triệu":1e6, trieu:1e6,
+  t:1e6, "tỷ":1e9, "tỉ":1e9, ty:1e9};
+function parseMoneyText(raw){
+  const s = String(raw ?? "").trim().toLowerCase().replace(/\s+/g, "").replace(/(đ|vnđ|vnd)$/, "");
+  if(!s) return null;
+  const m = s.match(/^([\d.,]+)([^\d.,]*)$/);
+  if(!m) return null;
+  let num = m[1]; const unit = m[2];
+  if(unit){
+    const mult = MONEY_UNITS[unit];
+    if(!mult) return null;
+    const seps = (num.match(/[.,]/g) || []).length;
+    num = seps === 1 ? num.replace(",", ".") : num.replace(/[.,]/g, "");
+    const v = parseFloat(num);
+    return isNaN(v) ? null : Math.round(v * mult);
+  }
+  const v = parseInt(num.replace(/[.,]/g, ""), 10);
+  return isNaN(v) ? null : v;
+}
+// "15 triệu", "1,25 tỷ", "650 nghìn" - de doc nhanh so tien vua go.
+function moneyWords(v){
+  if(!v || v < 1000) return "";
+  const f = (x) => (Math.round(x * 100) / 100).toLocaleString("vi-VN");
+  if(v >= 1e9) return `${f(v / 1e9)} tỷ`;
+  if(v >= 1e6) return `${f(v / 1e6)} triệu`;
+  return `${f(v / 1e3)} nghìn`;
+}
+const _nativeValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+function setupNumberInput(el, isMoney){
+  if(!el || el.dataset.numfmt) return;
+  el.dataset.numfmt = "1";
+  el.type = "text"; el.inputMode = "numeric"; el.autocomplete = "off";
+  const wrap = document.createElement("div");
+  wrap.className = "money-wrap";
+  el.parentElement.insertBefore(wrap, el);
+  wrap.appendChild(el);
+  // An/hien ban dau cua o (vd style="display:none") chuyen sang khung bao.
+  if(el.style.display === "none"){ wrap.style.display = "none"; el.style.display = ""; }
+  const row = document.createElement("div");
+  row.className = "money-row";
+  const hint = document.createElement("span");
+  hint.className = "money-hint";
+  if(isMoney){
+    for(const [label, mult] of [["000", 1e3], ["triệu", 1e6]]){
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label;
+      // Giu ban phim/con tro o o nhap khi bam nut (khong lam mat focus).
+      b.addEventListener("pointerdown", e => e.preventDefault());
+      b.addEventListener("click", () => {
+        const v = parseInt(el.value || "0", 10);
+        if(v > 0){ el.value = v * mult; el.dispatchEvent(new Event("input", {bubbles:true})); }
+        el.focus();
+      });
+      row.appendChild(b);
+    }
+  }
+  row.appendChild(hint);
+  wrap.appendChild(row);
+  const refreshHint = () => {
+    const v = parseMoneyText(_nativeValue.get.call(el));
+    hint.textContent = isMoney && v ? (/[a-zà-ỹđ]/i.test(_nativeValue.get.call(el)) ? `= ${vnd(v)} đ` : moneyWords(v)) : "";
+  };
+  Object.defineProperty(el, "value", {
+    configurable: true,
+    get(){ const v = parseMoneyText(_nativeValue.get.call(el)); return v === null ? "" : String(v); },
+    set(v){
+      let n = null;
+      if(typeof v === "number") n = isFinite(v) ? Math.round(v) : null;
+      else if(/^-?\d+(\.\d+)?$/.test(String(v ?? "").trim())) n = Math.round(parseFloat(v));  // so tu code/API
+      else n = parseMoneyText(v);
+      _nativeValue.set.call(el, n === null ? "" : vnd(n));
+      refreshHint();
+    },
+  });
+  el.addEventListener("input", () => {
+    const raw = _nativeValue.get.call(el);
+    // Dang go don vi tat (15tr, 50k...) -> giu nguyen chu dang go, chuan hoa khi roi o.
+    if(/[a-zà-ỹđ]/i.test(raw)){ refreshHint(); return; }
+    const caret = el.selectionStart ?? raw.length;
+    const digitsLeft = raw.slice(0, caret).replace(/\D/g, "").length;
+    const digits = raw.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+    const formatted = digits ? Number(digits).toLocaleString("vi-VN") : "";
+    _nativeValue.set.call(el, formatted);
+    // Dat lai con tro sau dung so chu so da co ben trai.
+    let pos = 0, seen = 0;
+    while(pos < formatted.length && seen < digitsLeft){ if(/\d/.test(formatted[pos])) seen++; pos++; }
+    try{ el.setSelectionRange(pos, pos); }catch(_){}
+    refreshHint();
+  });
+  el.addEventListener("blur", () => {
+    const raw = _nativeValue.get.call(el);
+    if(/[a-zà-ỹđ]/i.test(raw)) el.value = raw;   // "15tr" -> "15.000.000"
+  });
+}
+// Khung bao (wrapper) dung de an/hien 1 o nhap cung nut di kem cua no.
+function fieldBox(el){
+  const p = el && el.parentElement;
+  return p && (p.classList.contains("copy-wrap") || p.classList.contains("money-wrap")) ? p : el;
+}
+MONEY_INPUT_IDS.forEach(id => setupNumberInput(document.getElementById(id), true));
+QTY_INPUT_IDS.forEach(id => setupNumberInput(document.getElementById(id), false));
 // Ngay ISO hom nay (khong gio), dung de so sanh voi date2 (Han bao hanh).
 function todayIso(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 function editNi(id){ const it = niItems.find(x=>x.id===id); if(it) openNi(it); }
@@ -4566,7 +5016,7 @@ function setNiType(v){
   const show = (id, on) => {
     const el=document.getElementById(id);
     // O nhap co nut copy nam trong .copy-wrap -> an/hien ca khoi boc.
-    if(el){ const tgt = el.parentElement.classList.contains("copy-wrap") ? el.parentElement : el; tgt.style.display = on ? "" : "none"; }
+    if(el){ fieldBox(el).style.display = on ? "" : "none"; }
     const lbl=document.getElementById(id+"Label"); if(lbl) lbl.style.display = on ? "" : "none";
   };
   show("niDocType", f.docType);
@@ -4965,7 +5415,12 @@ function renderQuanLyUser(body){
       <a class="boot-btn-mimi" href="${MIMI_ENGLISH_URL}" target="_blank" rel="noopener">🐾 Học cùng Mimi <span class="ext">↗</span></a>
     </div>
     <div class="boot-actions-note">Mimi mở ở tab mới</div>`;
-  html += `<hr style="margin:24px 0"><h3>Khác</h3><button class="ghost" style="width:100%" onclick="doLogout()">Đăng xuất</button></div>`;
+  html += `<hr style="margin:24px 0"><h3>Khác</h3><button class="ghost" style="width:100%" onclick="doLogout()">Đăng xuất</button>
+    <details style="margin-top:18px"><summary class="sub" style="cursor:pointer">⚙️ Nâng cao – địa chỉ máy chủ</summary>
+      <div class="sub" style="margin:8px 0 6px">Chỉ đổi khi chuyển backend sang địa chỉ khác.</div>
+      <div style="display:flex;gap:6px"><input id="cfgServer" value="${escapeHtml(document.getElementById("server").value)}" style="margin:0" />
+        <button class="ghost" onclick="setServerUrl(document.getElementById('cfgServer').value);showToast('Đã lưu địa chỉ máy chủ')">Lưu</button></div>
+    </details></div>`;
   body.innerHTML = html;
   refreshPushSection();
 }
