@@ -179,6 +179,16 @@
   .logout{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;}
   /* Goc phai header: ten nguoi dung + nut dang xuat dang icon, 1 dong. */
   .hdr-user{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  /* Dong bam duoc de xem chi tiet (Bao cao): mui ten › o cuoi dong, xoay
+     xuong khi dang mo; nen nhat khi re chuot/cham. */
+  .tap-row{cursor:pointer;border-radius:8px;margin:0 -6px;padding:4px 6px !important;}
+  .tap-row:hover,.tap-row:active{background:var(--bg);}
+  .tap-row.open{background:var(--accent-bg);}
+  .chev{display:inline-block;width:14px;color:var(--muted);font-size:15px;line-height:1;text-align:center;transition:transform .15s;margin-left:2px;}
+  .tap-row.open .chev,.chev.open{transform:rotate(90deg);color:var(--accent);}
+  .detail-box{margin:2px 0 10px;background:var(--bg);border-radius:8px;padding:6px 8px;}
+  .detail-bar{display:flex;align-items:center;gap:6px;margin:2px 0 6px;flex-wrap:wrap;}
+  .detail-bar .chip{padding:4px 10px;}
   .hdr-name{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--label);font-weight:600;background:var(--bg);border-radius:14px;padding:4px 10px 4px 7px;white-space:nowrap;}
   .hdr-name svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
   .hdr-logout{border:none;background:none;color:var(--muted);width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
@@ -764,6 +774,12 @@ let users = [], categories = [], txType = "expense", chosenCat = null;
 let reportStart = null, reportEnd = null;
 // Danh muc dang mo chi tiet trong bieu do "Chi tieu theo danh muc" (null = dong het).
 let catDetailId = null;
+// Bao cao > Theo tung nguoi: dong dang mo chi tiet {uid, kind} (null = dong
+// het) + cach sap xep danh sach giao dich ("date" mac dinh | "amount").
+let personDetail = null, personDetailSort = "date";
+// Giao dich trong khoang dang xem cua Bao cao - nho lai de mo/dong chi tiet
+// hay doi cach sap xep khong phai tai lai tu may chu.
+let reportTxsCache = {rng: null, txs: []};
 
 // ---- Cau hinh: Danh muc + So tay/Tien ich ----
 let chView = "tienich";   // sub-tab trong Cau hinh: "danhmuc" | "tienich" - mac dinh mo Tien ich
@@ -4224,11 +4240,16 @@ async function renderBaoCao(c){
   html += `</div>`;
 
   const combined = await jget(`/reports/summary?${rng}`);
+  // Giao dich cua khoang dang xem - can khi dang mo chi tiet (theo nguoi
+  // hoac theo danh muc). Nho lai theo khoang de khong tai lai moi lan bam.
+  if((personDetail || catDetailId !== null) && reportTxsCache.rng !== rng){
+    reportTxsCache = {rng, txs: await jget(`/transactions?${rng}`)};
+  }
   html += `<div class="card"><div class="sectitle" style="margin-top:0">Tổng hợp</div>
     ${rowLine("Thu", combined.total_income, "var(--green)")}
     ${rowLine("Chi", combined.total_expense, "var(--red)")}
     ${rowLine("Số dư", combined.balance, "var(--accent)")}</div>`;
-  html += `<div class="card"><div class="sectitle" style="margin-top:0">Theo từng người</div>`;
+  html += `<div class="card"><div class="sectitle" style="margin-top:0">Theo từng người <span style="font-weight:400">· chạm vào từng dòng để xem chi tiết</span></div>`;
   for(const u of users){
     const su = await jget(`/reports/summary?${rng}&user_id=${u.id}`);
     // Nhan "Chuyen cho X"/"X chuyen den" phai theo dung TEN NGUOI CON LAI -
@@ -4236,12 +4257,19 @@ async function renderBaoCao(c){
     // TransactionType.transfer o backend.
     const other = users.find(x=>x.id!==u.id);
     const otherName = other ? other.name : "người kia";
+    // Moi dong bam duoc -> mo danh sach giao dich chi tiet ngay ben duoi.
+    const line = (label, val, color, kind) => {
+      const open = !!personDetail && personDetail.uid === u.id && personDetail.kind === kind;
+      let out = rowLineTap(label, val, color, `togglePersonDetail(${u.id},'${kind}')`, open);
+      if(open) out += `<div class="detail-box" id="personDetailBox">${personDetailHtml(u.id, kind, otherName)}</div>`;
+      return out;
+    };
     let block = `<div style="margin-bottom:10px"><div style="font-weight:600">${u.name}</div>`;
-    block += rowLine("Thu", su.total_income, "var(--green)");
-    block += rowLine("Chi", su.total_expense, "var(--red)");
-    if(su.transferred_out>0) block += rowLine(`Chuyển cho ${otherName}`, su.transferred_out, "var(--muted)");
-    if(su.transferred_in>0) block += rowLine(`${otherName} chuyển đến`, su.transferred_in, "var(--green)");
-    block += rowLine("Còn giữ (sau chuyển)", su.net_held, "var(--accent)");
+    block += line("Thu", su.total_income, "var(--green)", "income");
+    block += line("Chi", su.total_expense, "var(--red)", "expense");
+    if(su.transferred_out>0) block += line(`Chuyển cho ${otherName}`, su.transferred_out, "var(--muted)", "out");
+    if(su.transferred_in>0) block += line(`${otherName} chuyển đến`, su.transferred_in, "var(--green)", "in");
+    block += line("Còn giữ (sau chuyển)", su.net_held, "var(--accent)", "held");
     block += `</div>`;
     html += block;
   }
@@ -4252,11 +4280,11 @@ async function renderBaoCao(c){
   // theo category nen loc lai o client).
   let catDetailTxs = [];
   if(catDetailId !== null){
-    const allTxs = await jget(`/transactions?${rng}`);
+    const allTxs = reportTxsCache.txs;
     catDetailTxs = allTxs.filter(t => t.type==="expense" && t.category_id===catDetailId)
       .sort((a,b)=> a.date < b.date ? 1 : -1);
   }
-  html += `<div class="card"><div class="sectitle" style="margin-top:0">Chi tiêu theo danh mục</div>`;
+  html += `<div class="card"><div class="sectitle" style="margin-top:0">Chi tiêu theo danh mục <span style="font-weight:400">· chạm để xem giao dịch</span></div>`;
   if(cats.length===0){
     html += `<div class="sub">Chưa có chi tiêu</div>`;
   } else {
@@ -4270,8 +4298,8 @@ async function renderBaoCao(c){
       const open = catDetailId === c2.category_id;
       html += `<div style="margin:8px 0;cursor:pointer" onclick="toggleCatDetail(${c2.category_id})">
         <div class="row" style="padding:0 0 3px 0">
-          <span>${catIcon(c2.category_name)} ${c2.category_name} ${open?'▲':''}</span>
-          <span style="font-weight:600">${vnd(c2.total)} đ · ${pct}%</span>
+          <span>${catIcon(c2.category_name)} ${c2.category_name}</span>
+          <span style="font-weight:600;white-space:nowrap">${vnd(c2.total)} đ · ${pct}%<span class="chev${open?' open':''}">›</span></span>
         </div>
         <div style="background:var(--border,#eee);border-radius:6px;height:8px;overflow:hidden">
           <div style="width:${pct}%;height:100%;background:${color};border-radius:6px"></div>
@@ -4304,6 +4332,62 @@ async function renderBaoCao(c){
   c.innerHTML = html;
 }
 function toggleCatDetail(id){ catDetailId = (catDetailId===id ? null : id); renderBaoCao(document.getElementById("content")); }
+// Dong so lieu bam duoc (Bao cao > Theo tung nguoi).
+function rowLineTap(label, val, color, onclick, open){
+  return `<div class="row tap-row${open?' open':''}" style="gap:8px" onclick="${onclick}">
+    <span>${label}</span>
+    <span style="color:${color};font-weight:600;white-space:nowrap;flex-shrink:0">${vnd(val)} đ<span class="chev">›</span></span></div>`;
+}
+function togglePersonDetail(uid, kind){
+  const same = personDetail && personDetail.uid === uid && personDetail.kind === kind;
+  personDetail = same ? null : {uid, kind};
+  renderBaoCao(document.getElementById("content"));
+}
+// Doi cach sap xep chi ve lai khung chi tiet (khong tai lai ca trang).
+function setPersonDetailSort(v){
+  personDetailSort = v;
+  const box = document.getElementById("personDetailBox");
+  if(!box || !personDetail) return;
+  const other = users.find(x => x.id !== personDetail.uid);
+  box.innerHTML = personDetailHtml(personDetail.uid, personDetail.kind, other ? other.name : "người kia");
+}
+// Giao dich tao nen 1 dong so lieu cua 1 nguoi, kem so tien CO DAU theo anh
+// huong toi "Con giu": thu +, chi -, chuyen di -, nhan ve +.
+function personDetailTxs(uid, kind){
+  const rows = [];
+  for(const t of reportTxsCache.txs){
+    const mine = t.user_id === uid;
+    let sign = 0;
+    if(t.type === "income" && mine) sign = 1;
+    else if(t.type === "expense" && mine) sign = -1;
+    else if(t.type === "transfer") sign = mine ? -1 : 1;
+    if(!sign) continue;
+    const k = t.type === "income" ? "income" : t.type === "expense" ? "expense" : (mine ? "out" : "in");
+    if(kind === "held" || kind === k) rows.push({t, k, signed: sign * Number(t.amount)});
+  }
+  if(personDetailSort === "amount") rows.sort((a, b) => Math.abs(b.signed) - Math.abs(a.signed) || (a.t.date < b.t.date ? 1 : -1));
+  else rows.sort((a, b) => (a.t.date < b.t.date ? 1 : a.t.date > b.t.date ? -1 : b.t.id - a.t.id));
+  return rows;
+}
+function personDetailHtml(uid, kind, otherName){
+  const rows = personDetailTxs(uid, kind);
+  const sortChip = (v, label) => `<button class="chip ${personDetailSort===v?'on':''}" onclick="event.stopPropagation();setPersonDetailSort('${v}')">${label}</button>`;
+  const total = rows.reduce((s, r) => s + r.signed, 0);
+  let html = `<div class="detail-bar"><span class="sub">Sắp xếp:</span>${sortChip("date","Ngày mới nhất")}${sortChip("amount","Số tiền lớn nhất")}
+    <span class="sub" style="margin-left:auto">${rows.length} giao dịch</span></div>`;
+  if(rows.length === 0) return html + `<div class="sub" style="padding:4px 2px 6px">Không có giao dịch</div>`;
+  const kindLabel = {income:"Thu", expense:"Chi", out:`Chuyển cho ${otherName}`, in:`${otherName} chuyển đến`};
+  for(const r of rows){
+    const cat = r.t.category_id ? categories.find(x => x.id === r.t.category_id) : null;
+    const meta = [fmtDate(r.t.date), kind === "held" ? kindLabel[r.k] : "", cat ? `${catIcon(cat.name)} ${cat.name}` : ""].filter(Boolean).join(" · ");
+    const pos = r.signed >= 0;
+    const amt = kind === "held" ? `${pos?'+':'-'}${vnd(Math.abs(r.signed))}` : vnd(Math.abs(r.signed));
+    html += `<div class="tx"><div style="min-width:0"><div class="desc">${escapeHtml(r.t.content)}</div><div class="meta">${meta}</div></div>
+      <span style="font-weight:600;white-space:nowrap;color:${kind==='held' ? (pos?'var(--green)':'var(--red)') : 'var(--text)'}">${amt}</span></div>`;
+  }
+  if(kind === "held") html += `<div class="row" style="padding:6px 0 2px;border-top:1px solid var(--line)"><span class="sub">Cộng</span><span style="font-weight:600">${vnd(total)} đ</span></div>`;
+  return html;
+}
 
 async function renderSavingsInfoCard(){
   let s = {total_active_amount:0, total_deposited_this_year:0,
