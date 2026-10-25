@@ -675,6 +675,14 @@
       <option value="Hộ chiếu"></option><option value="Sổ tiết kiệm"></option>
       <option value="Hồ sơ sức khỏe"></option><option value="Khác"></option>
     </datalist>
+    <datalist id="niGoodsTypeList">
+      <option value="Điện tử"></option><option value="Điện lạnh"></option>
+      <option value="Gia dụng"></option><option value="Nội thất"></option>
+      <option value="Điện thoại / Máy tính"></option><option value="Xe cộ"></option>
+      <option value="Thời trang"></option><option value="Trang sức"></option>
+      <option value="Đồ cho bé"></option>
+      <option value="Sức khỏe / Làm đẹp"></option><option value="Khác"></option>
+    </datalist>
     <div class="flabel" id="niDocNoLabel">Số giấy tờ</div>
     <input id="niDocNo" placeholder="Số sổ / số hợp đồng / số văn bằng..." />
     <div class="flabel" id="niSystemLabel">Hệ thống</div>
@@ -746,10 +754,10 @@
     <div class="flabel" id="niProfileNameLabel">Tên hồ sơ</div>
     <input id="niProfileName" placeholder="VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive" />
     <div id="niProfileNameNote" class="sub" style="margin:0 0 10px;font-size:11px;display:none">
-      Tự tạo 1 thư mục riêng trên Drive để chứa file đính kèm của mục này. Không thể đổi sau khi lưu. Lưu xong mở lại mục để thêm file đính kèm.
+      Tự tạo 1 thư mục riêng trên Drive để chứa <span id="niProfileNameNoteWhat">file đính kèm</span> của mục này. Không thể đổi sau khi lưu. Lưu xong mở lại mục để thêm file.
     </div>
     <div id="niAttachSection" style="display:none">
-      <div class="sub" style="margin:14px 0 6px">Hồ sơ đính kèm</div>
+      <div class="sub" id="niAttachTitle" style="margin:14px 0 6px">Hồ sơ đính kèm</div>
       <div id="niAttachList" style="margin-bottom:8px"></div>
       <input type="file" id="niAttachFile" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar" multiple style="display:none" onchange="onNiAttachFileChosen(event)" />
       <button type="button" id="niAttachAddBtn" class="ghost" style="width:100%" onclick="document.getElementById('niAttachFile').click()">+ Thêm file đính kèm (chọn được nhiều file)</button>
@@ -811,6 +819,7 @@ const NI_BUILTIN_FIELDS = {
   website:         {website:1, info:1},
   special_day:     {date1:1, lunar:1},
   document:        {docType:1, docNo:1, info:1, date1:1, profileName:1, attach:1},
+  purchase:        {docType:1, info:1, date1:1, address:1, amount:1, profileName:1, attach:1},
   personal_info:   {fullName:1, date1:1, remindBirthday:1, phone:1, idNumber:1,
                      idIssuedDate:1, idIssuedPlace:1, date2:1, birthCertNo:1,
                      healthInsuranceNo:1, address:1, hometown:1, profileName:1, attach:1},
@@ -4751,6 +4760,7 @@ function niMetaLine(it){
     if(it.document_type) parts.push(it.document_type);
     if(it.document_no) parts.push("Số " + it.document_no);
   }
+  if(it.type === "purchase" && it.document_type) parts.push(it.document_type);
   if(it.full_name) parts.push(it.full_name);
   if(it.relation) parts.push(it.relation);
   if(it.date1) parts.push(fmtDate(it.date1) + (it.date1_is_lunar?" (âm lịch)":""));
@@ -4759,6 +4769,7 @@ function niMetaLine(it){
     if(n >= 1) parts.push(`sắp tròn ${n} năm`);
   }
   if(it.date2) parts.push((NI_DATE2_PREFIX[it.type] || "hết hạn ") + fmtDate(it.date2));
+  if(it.type === "purchase" && it.address) parts.push("tại " + it.address);
   if(it.phone) parts.push(it.phone);
   if(it.amount) parts.push(vnd(it.amount)+" đ");
   return parts.join(" · ");
@@ -5105,6 +5116,35 @@ async function deleteNiAttachment(itemId, attId){
     document.getElementById("niAttachErr").innerHTML = `<div class="err">${e.message}</div>`;
   }
 }
+// Thu tu o nhap trong form theo tung loai: mac dinh giu dung thu tu trong
+// HTML; rieng "Mua hang" xep lai theo dung thu tu nghiep vu (Tieu de, Loai
+// hang hoa, Thong tin hang hoa, Ngay mua, Noi mua, Tag, Ghi chu, Hoa don).
+// Lan dau goi se dat 1 moc (comment) tai vi tri goc cua moi khoi di chuyen
+// de tra ve dung cho cu khi doi sang loai khac.
+const NI_MOVABLE = {
+  info:    () => [document.getElementById("niInfoLabel"), document.getElementById("niInfo")],
+  address: () => [document.getElementById("niAddressLabel"), fieldBox(document.getElementById("niAddress"))],
+};
+const niHomeMarks = {};
+function niArrangeFields(v){
+  for(const k in NI_MOVABLE){
+    if(!niHomeMarks[k]){
+      const first = NI_MOVABLE[k]()[0];
+      niHomeMarks[k] = document.createComment("ni-home-"+k);
+      first.parentNode.insertBefore(niHomeMarks[k], first);
+    }
+  }
+  const placeAfter = (nodes, anchor) => {
+    let ref = anchor;
+    for(const n of nodes){ ref.parentNode.insertBefore(n, ref.nextSibling); ref = n; }
+  };
+  if(v === "purchase"){
+    placeAfter(NI_MOVABLE.info(), fieldBox(document.getElementById("niDocType")));
+    placeAfter(NI_MOVABLE.address(), document.getElementById("niDate1").parentElement);
+  }else{
+    for(const k in NI_MOVABLE) placeAfter(NI_MOVABLE[k](), niHomeMarks[k]);
+  }
+}
 let niType = "address";
 function setNiType(v){
   niType=v;
@@ -5119,6 +5159,7 @@ function setNiType(v){
     if(el){ fieldBox(el).style.display = on ? "" : "none"; }
     const lbl=document.getElementById(id+"Label"); if(lbl) lbl.style.display = on ? "" : "none";
   };
+  niArrangeFields(v);
   show("niDocType", f.docType);
   show("niDocNo", f.docNo);
   show("niSystem", f.system);
@@ -5152,7 +5193,24 @@ function setNiType(v){
   document.getElementById("niProfileNameNote").style.display = f.profileName ? "block" : "none";
   document.getElementById("niProfileName").placeholder = v === "document"
     ? "VD: Sổ đỏ nhà Yên Lạc - dùng đặt tên thư mục trên Google Drive"
-    : "VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive";
+    : v === "purchase"
+      ? "VD: Hóa đơn Tủ lạnh LG - dùng đặt tên thư mục trên Google Drive"
+      : "VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive";
+  // Loai "Mua hang": dung lai cac o chung nhung doi nhan cho dung nghia.
+  const isBuy = v === "purchase";
+  document.getElementById("niProfileNameLabel").textContent = isBuy ? "Hóa đơn mua hàng" : "Tên hồ sơ";
+  document.getElementById("niProfileNameNoteWhat").textContent = isBuy ? "ảnh/file hóa đơn" : "file đính kèm";
+  document.getElementById("niAttachTitle").textContent = isBuy ? "Hóa đơn đính kèm" : "Hồ sơ đính kèm";
+  document.getElementById("niAttachAddBtn").textContent = isBuy
+    ? "+ Thêm ảnh/file hóa đơn (chọn được nhiều file)"
+    : "+ Thêm file đính kèm (chọn được nhiều file)";
+  document.getElementById("niDocTypeLabel").textContent = isBuy ? "Loại hàng hóa" : "Loại hồ sơ";
+  const docTypeInput = document.getElementById("niDocType");
+  docTypeInput.setAttribute("list", isBuy ? "niGoodsTypeList" : "niDocTypeList");
+  docTypeInput.placeholder = isBuy ? "VD: Điện tử, Gia dụng, Nội thất..." : "VD: Sổ đỏ, Hợp đồng, Bằng cấp...";
+  document.getElementById("niAddressLabel").textContent = isBuy ? "Nơi mua hàng" : "Địa chỉ";
+  document.getElementById("niAddress").placeholder = isBuy ? "VD: Điện máy Xanh Cầu Giấy, Shopee..." : "Địa chỉ";
+  document.getElementById("niAmountLabel").textContent = isBuy ? "Số tiền mua" : "Số tiền";
   // "Ten ho so" chi nhap duoc luc TAO MOI - khi sua, khoa lai (readonly) de
   // khong bao gio lech voi ten thu muc da tao that tren Drive (backend cung
   // bo qua truong nay khi PUT, day chi la khoa o UI cho ro rang).
@@ -5165,6 +5223,7 @@ function setNiType(v){
     maintenance:"Lần gần nhất", child_milestone:"Ngày", personal_info:"Ngày sinh",
     warranty:"Ngày mua", periodic:"Ngày thực hiện",
     special_day:"Ngày kỉ niệm (nhắc hằng năm)", document:"Ngày",
+    purchase:"Ngày mua hàng",
   };
   document.getElementById("niDate1Label").textContent = date1Labels[v] || "Ngày";
   const date2Labels = {
@@ -5176,7 +5235,8 @@ function setNiType(v){
   // Truong "Thong tin" doi nghia thanh "Cong viec" cho loai Nhac viec,
   // "Mo ta" cho loai Trang web.
   const infoLabels = { task: ["Công việc", "Công việc cần làm"], website: ["Mô tả", "Trang web này dùng để làm gì"],
-    document: ["Nội dung", "Nội dung chính của hồ sơ"] };
+    document: ["Nội dung", "Nội dung chính của hồ sơ"],
+    purchase: ["Thông tin hàng hóa", "Model, màu sắc, số lượng, thời hạn bảo hành..."] };
   const [infoLbl, infoPh] = infoLabels[v] || ["Thông tin", "Thông tin"];
   document.getElementById("niInfoLabel").textContent = infoLbl;
   document.getElementById("niInfo").placeholder = infoPh;
