@@ -190,7 +190,32 @@
   .detail-bar{display:flex;align-items:center;gap:6px;margin:2px 0 6px;flex-wrap:wrap;}
   .detail-bar .chip{padding:4px 10px;}
   .hdr-name{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--label);font-weight:600;background:var(--bg);border-radius:14px;padding:4px 10px 4px 7px;white-space:nowrap;}
-  .hdr-name svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
+  .hdr-name > svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;}
+  .hdr-name{padding-left:4px;}
+  /* Avatar nguoi dung: chibi goi y / anh tai len / chu cai dau tren nen mau
+     dai dien (Cau hinh > Nguoi dung). */
+  .avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;flex-shrink:0;font-weight:700;width:22px;height:22px;font-size:12px;line-height:1;}
+  .avatar svg,.avatar img{width:100%;height:100%;display:block;object-fit:cover;}
+  .avatar.lg{width:64px;height:64px;font-size:26px;}
+  .av-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:6px 0 8px;}
+  .av-opt{aspect-ratio:1;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;background:var(--card);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .av-opt .avatar{width:100%;height:100%;font-size:16px;}
+  .av-opt.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg);}
+  .color-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 4px;}
+  .color-sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;}
+  .color-sw.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg);}
+  .color-custom{width:34px;height:34px;padding:0;border:none;background:none;cursor:pointer;margin:0;}
+  /* Muc thu gon/mo rong trong Cau hinh > Nguoi dung (Doi mat khau, Huong dan). */
+  details.cfg-sec{border-top:1px solid var(--line);padding:12px 0;}
+  details.cfg-sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:15px;}
+  details.cfg-sec>summary::-webkit-details-marker{display:none;}
+  details.cfg-sec>summary::after{content:"›";font-size:20px;color:var(--muted);transition:transform .15s;}
+  details.cfg-sec[open]>summary::after{transform:rotate(90deg);color:var(--accent);}
+  details.cfg-sec>summary .sub{font-weight:400;font-size:12px;margin-left:6px;flex:1;}
+  .guide h4{margin:12px 0 4px;font-size:14px;}
+  .guide ul{margin:0;padding-left:18px;}
+  .guide li{font-size:13px;line-height:1.5;color:var(--text);margin:2px 0;}
+  .guide .f{background:var(--bg);border-radius:8px;padding:6px 8px;font-size:12.5px;margin:4px 0;line-height:1.5;}
   .hdr-logout{border:none;background:none;color:var(--muted);width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
   .hdr-logout:hover,.hdr-logout:active{background:var(--red-bg);color:var(--red);}
   .hdr-logout svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
@@ -292,7 +317,7 @@
       <div class="apptitle">Sổ tay — quản lý thu chi</div>
       <!-- Nguoi dang nhap + nut dang xuat (icon) tren CUNG 1 dong cho gon. -->
       <div class="hdr-user">
-        <span class="hdr-name"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.9-3.6 3.9-5.6 7.5-5.6s6.6 2 7.5 5.6"/></svg><span id="whoami"></span></span>
+        <span class="hdr-name" id="hdrName"><span id="hdrAvatar"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.9-3.6 3.9-5.6 7.5-5.6s6.6 2 7.5 5.6"/></svg></span><span id="whoami"></span></span>
         <button type="button" class="hdr-logout" onclick="confirmLogout()" title="Đăng xuất" aria-label="Đăng xuất"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h10"/></svg></button>
       </div>
     </div>
@@ -812,8 +837,8 @@ const NI_BUILTIN_FIELDS = {
   birthday:        {relation:1, date1:1},
   anniversary:     {relation:1, date1:1, lunar:1},
   service:         {date1:1, date2:1, recurrence:1, amount:1},
-  maintenance:     {date1:1, date2:1, recurrence:1, completed:1},
-  warranty:        {date1:1, date2:1, amount:1},
+  maintenance:     {date1:1, date2:1, recurrence:1, completed:1, profileName:1, attach:1},
+  warranty:        {date1:1, date2:1, amount:1, profileName:1, attach:1},
   periodic:        {date1:1, date2:1, completed:1},
   account:         {system:1, website:1, relation:1, username:1, password:1},
   website:         {website:1, info:1},
@@ -898,13 +923,78 @@ function suggestIcon(name){
   }
   return null;
 }
+// ---- Mau dai dien + avatar theo nguoi (Cau hinh > Nguoi dung) ----
+// users[i].color null = mau mac dinh theo ten (Chong xanh nhat, Vo hong nhat).
+const USER_DEFAULT_COLORS = {"Chồng": "#EAF2FE", "Vợ": "#FCEAF4"};
+// Bang mau goi y (mau nen nhat de chu toi van doc ro).
+const USER_COLOR_PALETTE = ["#EAF2FE", "#FCEAF4", "#E3F6EA", "#FFF3D6", "#EEE7FB",
+  "#DFF4F6", "#FDE7DC", "#E9F0D6", "#FBE2E2", "#ECEFF3"];
+function userById(id){ return users.find(x => x.id === id); }
+function userColor(u){
+  if(!u) return "#ECEFF3";
+  return u.color || USER_DEFAULT_COLORS[u.name] || "#ECEFF3";
+}
+// Mau dam cung tong voi mau nen (dung cho chu/vien) - giu sac do, ha do sang.
+function strongColor(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if(!m) return "var(--accent)";
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if(d){
+    if(max === r) h = ((g - b) / d) % 6;
+    else if(max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = Math.round(h * 60); if(h < 0) h += 360;
+  }
+  const sat = d ? 60 : 0;
+  return `hsl(${h},${sat}%,32%)`;
+}
 // Mau nen theo nguoi thuc hien giao dich, de phan biet nhanh Chong/Vo trong danh sach.
 function userTint(userId){
-  const u = users.find(x=>x.id===userId);
-  if(!u) return "transparent";
-  if(u.name==="Chồng") return "var(--chong-bg)";
-  if(u.name==="Vợ") return "var(--vo-bg)";
-  return "transparent";
+  const u = userById(userId);
+  return u ? userColor(u) : "transparent";
+}
+// Avatar: "chibi:N" -> CHIBI_SVGS[N]; "upload" -> anh tai len (tai bang
+// fetch co token, xem hydrateAvatars); con lai -> chu cai dau tren nen mau.
+const avatarUrlCache = new Map();
+function avatarHtml(u, cls){
+  cls = cls || "";
+  if(!u) return `<span class="avatar ${cls}"></span>`;
+  const bg = userColor(u);
+  const m = /^chibi:(\d+)$/.exec(u.avatar_preset || "");
+  if(m && CHIBI_SVGS[+m[1]]) return `<span class="avatar ${cls}" style="background:${bg}">${CHIBI_SVGS[+m[1]]}</span>`;
+  if(u.avatar_preset === "upload"){
+    return `<span class="avatar ${cls}" style="background:${bg}"><img alt="" data-avatar-uid="${u.id}" data-avatar-v="${u.avatar_version || 0}"></span>`;
+  }
+  const ch = escapeHtml((u.name || "?").trim().charAt(0).toUpperCase());
+  return `<span class="avatar ${cls}" style="background:${bg};color:${strongColor(bg)}">${ch}</span>`;
+}
+async function hydrateAvatars(root){
+  for(const img of (root || document).querySelectorAll("img[data-avatar-uid]")){
+    if(img.dataset.loaded) continue;
+    const key = img.dataset.avatarUid + ":" + img.dataset.avatarV;
+    try{
+      let url = avatarUrlCache.get(key);
+      if(!url){
+        const r = await fetch(api() + `/users/${img.dataset.avatarUid}/avatar?v=${img.dataset.avatarV}`, {headers: authHeaders()});
+        if(!r.ok) continue;
+        url = URL.createObjectURL(await r.blob());
+        avatarUrlCache.set(key, url);
+      }
+      img.src = url; img.dataset.loaded = "1";
+    }catch(e){ /* giu nen mau, khong chan giao dien */ }
+  }
+}
+// Goc tren phai: avatar + ten, nen pill theo mau dai dien cua nguoi dang nhap.
+function renderHeaderAvatar(){
+  const el = document.getElementById("hdrAvatar");
+  if(!el || !currentUser) return;
+  const u = userById(currentUser.id) || currentUser;
+  el.innerHTML = avatarHtml(u, "");
+  document.getElementById("hdrName").style.background = userColor(u);
+  hydrateAvatars(el);
 }
 
 // ---- Dang nhap ----
@@ -2962,6 +3052,7 @@ async function render(){
   const c = document.getElementById("content");
   c.innerHTML = "Đang tải…";
   await ensureRef();
+  renderHeaderAvatar();
   try{
     if(tab==="dashboard") await renderDashboard(c);
     else if(tab==="thuchi") await renderThuChi(c);
@@ -3829,6 +3920,12 @@ async function deleteSv(){
 
 // ---- Tab Tai san ----
 let monthAssets = [];
+// Muc tai san he thong thuoc ve ai: system_key "vo_..." -> Vo, "chong_..." -> Chong.
+function assetOwner(systemKey){
+  const name = String(systemKey || "").startsWith("vo_") ? "Vợ"
+    : String(systemKey || "").startsWith("chong_") ? "Chồng" : null;
+  return name ? users.find(u => u.name === name) || null : null;
+}
 async function renderTaiSan(c){
   const m = await jget(`/assets/month?year=${year}&month=${month}`);
   monthAssets = m.items;
@@ -3850,11 +3947,16 @@ async function renderTaiSan(c){
   }else{
     for(const a of m.items){
       const sys = !!a.system_key;
-      const tint = sys ? `background:var(--accent-bg);border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none` : '';
-      const badge = sys ? `<span style="color:var(--accent);font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap;cursor:pointer" onclick="showSystemItemInfo('${a.system_key}')" title="Xem công thức tính">🔒 Tự động</span>` : '';
+      // Muc tu dong cua vo/chong to theo mau dai dien cua nguoi do; cac muc
+      // khac giu nguyen.
+      const owner = sys ? assetOwner(a.system_key) : null;
+      const bg = owner ? userColor(owner) : "var(--accent-bg)";
+      const fg = owner ? strongColor(userColor(owner)) : "var(--accent)";
+      const tint = sys ? `background:${bg};border-radius:8px;padding:9px 8px;margin-bottom:4px;border-bottom:none` : '';
+      const badge = sys ? `<span style="color:${fg};font-size:11px;font-weight:600;margin-left:6px;white-space:nowrap;cursor:pointer" onclick="showSystemItemInfo('${a.system_key}')" title="Xem công thức tính">🔒 Tự động</span>` : '';
       const edit = sys ? '' : `<span class="editbtn" onclick="editAs(${a.id})" title="Sửa">✎</span>`;
-      html += `<div class="tx" style="${tint}"><div><div class="desc" style="${sys?'color:var(--accent)':''}">${a.name}${badge}</div>${a.note?`<div class="meta">${a.note}</div>`:''}</div>
-        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600;${sys?'color:var(--accent)':''}">${vnd(a.value)}</span>${edit}</div></div>`;
+      html += `<div class="tx" style="${tint}"><div><div class="desc" style="${sys?`color:${fg}`:''}">${a.name}${badge}</div>${a.note?`<div class="meta">${a.note}</div>`:''}</div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-weight:600;${sys?`color:${fg}`:''}">${vnd(a.value)}</span>${edit}</div></div>`;
     }
   }
   html += `</div>`;
@@ -5146,6 +5248,7 @@ function niArrangeFields(v){
   }
 }
 let niType = "address";
+let niProfileLocked = false;
 function setNiType(v){
   niType=v;
   for(const t of niTypesCache) { const el=document.getElementById("niType-"+t.key); if(el) el.classList.toggle("on", t.key===v); }
@@ -5195,7 +5298,11 @@ function setNiType(v){
     ? "VD: Sổ đỏ nhà Yên Lạc - dùng đặt tên thư mục trên Google Drive"
     : v === "purchase"
       ? "VD: Hóa đơn Tủ lạnh LG - dùng đặt tên thư mục trên Google Drive"
-      : "VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive";
+      : v === "maintenance"
+        ? "VD: Bảo trì Điều hòa phòng ngủ - dùng đặt tên thư mục trên Google Drive"
+        : v === "warranty"
+          ? "VD: Bảo hành Tủ lạnh LG - dùng đặt tên thư mục trên Google Drive"
+          : "VD: Hồ sơ Bông - dùng đặt tên thư mục trên Google Drive";
   // Loai "Mua hang": dung lai cac o chung nhung doi nhan cho dung nghia.
   const isBuy = v === "purchase";
   document.getElementById("niProfileNameLabel").textContent = isBuy ? "Hóa đơn mua hàng" : "Tên hồ sơ";
@@ -5214,7 +5321,11 @@ function setNiType(v){
   // "Ten ho so" chi nhap duoc luc TAO MOI - khi sua, khoa lai (readonly) de
   // khong bao gio lech voi ten thu muc da tao that tren Drive (backend cung
   // bo qua truong nay khi PUT, day chi la khoa o UI cho ro rang).
-  document.getElementById("niProfileName").disabled = !!editingNiId;
+  // Muc tao tu truoc (vd Bao tri/Bao hanh cu) chua co ten ho so -> cho dat
+  // 1 lan khi sua; da co roi thi khoa.
+  const editingItem = editingNiId ? niItems.find(x => x.id === editingNiId) : null;
+  niProfileLocked = !!(editingItem && editingItem.profile_name);
+  document.getElementById("niProfileName").disabled = niProfileLocked;
   // Chi cho dinh kem file khi dang SUA mot muc da co san (can id de goi API) -
   // khi dang THEM MOI thi an di, du loai co f.attach.
   document.getElementById("niAttachSection").style.display = (f.attach && editingNiId) ? "block" : "none";
@@ -5283,8 +5394,9 @@ async function saveNi(){
   };
   // "Ten ho so" chi gui luc TAO MOI - sua thi khong gui (bi khoa o UI, va
   // backend cung bo qua truong nay trong PUT du co gui hay khong).
-  if(!editingNiId){
-    payload.profile_name = document.getElementById("niProfileName").value.trim()||null;
+  if(!editingNiId || !niProfileLocked){
+    const pn = document.getElementById("niProfileName").value.trim();
+    if(!editingNiId || pn) payload.profile_name = pn || null;
   }
   try{
     if(editingNiId){ await jput("/notebook-items/"+editingNiId, payload); }
@@ -5538,8 +5650,127 @@ async function disablePush(){
   }
 }
 
+// ---- Cau hinh > Nguoi dung: ho so (avatar + mau dai dien) ----
+function profileSectionHtml(){
+  const me = (currentUser && userById(currentUser.id)) || currentUser || {};
+  const color = userColor(me).toUpperCase();
+  const preset = me.avatar_preset || "";
+  const opt = (value, inner, title) =>
+    `<button type="button" class="av-opt${preset===value?' on':''}" title="${title}" onclick="saveMyProfile({avatar_preset:${value?`'${value}'`:'null'}})">${inner}</button>`;
+  let grid = opt("", avatarHtml(Object.assign({}, me, {avatar_preset: null}), ""), "Chữ cái đầu tên");
+  CHIBI_SVGS.forEach((svg, i) => {
+    grid += opt(`chibi:${i}`, `<span class="avatar" style="background:${userColor(me)}">${svg}</span>`, "Chibi");
+  });
+  const sw = USER_COLOR_PALETTE.map(c =>
+    `<button type="button" class="color-sw${c===color?' on':''}" style="background:${c}" title="${c}" onclick="saveMyProfile({color:'${c}'})"></button>`).join("");
+  const isDefault = !me.color;
+  return `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      ${avatarHtml(me, "lg")}
+      <div><div style="font-weight:700;font-size:16px">${escapeHtml(me.name || "")}</div>
+        <div class="sub">Ảnh đại diện và màu riêng của bạn</div></div>
+    </div>
+    <div class="flabel">Ảnh đại diện</div>
+    <div class="av-grid">${grid}</div>
+    <input type="file" id="avatarFile" accept="image/*" style="display:none" onchange="onAvatarFileChosen(event)" />
+    <button type="button" class="ghost${preset==='upload'?' on':''}" style="width:100%" onclick="document.getElementById('avatarFile').click()">📷 ${preset==='upload'?'Đổi ảnh từ máy':'Chọn ảnh từ máy'}</button>
+    <div class="flabel" style="margin-top:14px">Màu đại diện</div>
+    <div class="color-row">${sw}
+      <input type="color" class="color-custom" value="${color}" title="Chọn màu khác" onchange="saveMyProfile({color:this.value})" />
+      <button type="button" class="ghost" style="padding:6px 10px;font-size:12px" ${isDefault?'disabled':''} onclick="saveMyProfile({color:null})">↺ Mặc định</button>
+    </div>
+    <div class="sub" style="font-size:11.5px">Tô nền các giao dịch, khoản chứng khoán/tiết kiệm và mục Tài sản tự động của bạn. Nên chọn màu nhạt để chữ vẫn dễ đọc.</div>`;
+}
+let profileSaving = false;
+async function saveMyProfile(changes){
+  if(profileSaving) return;
+  profileSaving = true;
+  try{
+    applyMyUser(await jpatch("/users/me/profile", changes));
+  }catch(e){
+    showToast("Không lưu được: " + niUploadErrorText(e));
+  }finally{ profileSaving = false; }
+}
+// Cap nhat users[] + currentUser roi ve lai nhung cho dang hien mau/avatar.
+function applyMyUser(u){
+  const i = users.findIndex(x => x.id === u.id);
+  if(i >= 0) users[i] = u; else users.push(u);
+  currentUser = Object.assign({}, currentUser, u);
+  try{ localStorage.setItem("vibeapp_user", JSON.stringify(currentUser)); }catch(e){}
+  renderHeaderAvatar();
+  const box = document.getElementById("profileBox");
+  if(box){ box.innerHTML = profileSectionHtml(); hydrateAvatars(box); }
+}
+async function onAvatarFileChosen(evt){
+  const f = evt.target.files && evt.target.files[0];
+  evt.target.value = "";
+  if(!f) return;
+  showToast("Đang tải ảnh lên…");
+  try{
+    const fd = new FormData();
+    fd.append("file", await shrinkImageForUpload(f));
+    const r = await fetch(api() + "/users/me/avatar", {method: "PUT", headers: authHeaders(), body: fd});
+    applyMyUser(await handleResp(r));
+    showToast("Đã đổi ảnh đại diện");
+  }catch(e){
+    showToast("Không tải được ảnh: " + niUploadErrorText(e));
+  }
+}
+// Huong dan su dung (Cau hinh > Nguoi dung) - noi dung dong bo 1:1 voi
+// kUserGuide trong Flutter (core/user_guide.dart).
+const USER_GUIDE = [
+  {title: "🏠 Tổng quan", items: [
+    "Xem nhanh nhắc nhở sắp tới (sinh nhật, ngày giỗ, việc cần làm, bảo trì...), lịch âm dương, tình hình tài chính tháng và khung ảnh gia đình.",
+    "Bấm \"Lịch tháng\" để xem cả tháng; chạm vào ngày có chấm màu để xem sự kiện.",
+  ]},
+  {title: "💰 Thu chi", items: [
+    "Nút \"+ Thêm giao dịch\": chọn Thu / Chi / Chuyển, nhập số tiền (gõ 15tr, 500k hoặc bấm nút 000 / triệu cho nhanh). Giao dịch Chi bắt buộc chọn danh mục.",
+    "Chuyển: tiền chuyển giữa vợ và chồng - không tính vào tổng thu/chi của gia đình, chỉ đổi số tiền mỗi người đang giữ.",
+    "Mỗi dòng giao dịch được tô theo màu đại diện của người nhập. Chạm vào dòng để sửa hoặc xóa.",
+    "Tab \"Gửi tiết kiệm\": ghi các khoản gửi, khi tất toán thì nhập ngày và tiền lãi thực nhận.",
+  ]},
+  {title: "📈 Chứng khoán", items: [
+    "Chọn Chồng / Vợ để ghi Nạp/Rút, Mua/Bán, Cổ tức và cập nhật giá trị Đang giữ cuối tháng; tab Tổng chỉ để xem.",
+    "Dòng \"Tiền mặt\" tự tính - chỉ cần sửa khi muốn đối chiếu lại với số dư thực tế trên app chứng khoán.",
+  ]},
+  {title: "💎 Tài sản", items: [
+    "Ghi giá trị tài sản theo tháng; \"⧉ Chép từ tháng trước\" để không phải nhập lại.",
+    "4 dòng 🔒 Tự động (Tài khoản và Chứng khoán của vợ/chồng) do app tự tính, tô theo màu của từng người. Bấm \"⟳ Tổng hợp lại\" sau khi sửa số liệu tháng cũ.",
+  ]},
+  {title: "📊 Báo cáo", items: [
+    "Chọn tháng hoặc khoảng ngày tùy ý. Chạm vào từng dòng (Thu, Chi, Chuyển, Còn giữ) hoặc từng danh mục để xem danh sách giao dịch, sắp theo ngày hoặc số tiền.",
+  ]},
+  {title: "⚙️ Cấu hình", items: [
+    "Danh mục: thêm/ẩn danh mục thu chi và loại tiện ích (không xóa để giữ đúng dữ liệu cũ).",
+    "Tiện ích: sổ tay gia đình - địa chỉ, sinh nhật, tài khoản, bảo hành, mua hàng... Các loại Thông tin cá nhân, Hồ sơ, Mua hàng, Bảo trì, Bảo hành có \"Tên hồ sơ\" để tạo thư mục riêng trên Google Drive; lưu xong mở lại mục để tải file/ảnh lên.",
+    "Người dùng: đổi ảnh đại diện, màu đại diện, mật khẩu và bật thông báo nhắc nhở trên từng thiết bị.",
+  ]},
+];
+const USER_GUIDE_FORMULAS = [
+  ["Còn giữ (mỗi người)", "Thu − Chi − Chuyển đi + Nhận về"],
+  ["Số dư gia đình", "Tổng thu − Tổng chi (không tính giao dịch Chuyển)"],
+  ["Tài khoản vợ/chồng (tháng)", "Số chốt tháng trước + Còn giữ trong tháng + Lãi tiết kiệm thực nhận trong tháng"],
+  ["Chứng khoán vợ/chồng", "Tổng giá trị Đang giữ hiện tại (gồm Tiền mặt)"],
+  ["Tiền mặt chứng khoán", "Số dư đối chiếu + Nạp − Rút − Tiền mua (gồm phí) + Tiền bán (trừ phí) + Cổ tức tiền, phát sinh sau lần đối chiếu"],
+  ["Lãi/lỗ chứng khoán", "Tổng đang giữ + Tổng đã rút − Tổng đã nạp"],
+  ["Lãi tiết kiệm dự kiến", "Số tiền × Lãi suất % × Số ngày gửi ÷ 365"],
+  ["Tiết kiệm đang gửi", "Số dư đầu năm + Gửi thêm trong năm − Tất toán trong năm"],
+  ["Tỉ suất lợi nhuận TB/năm", "Σ lãi thực nhận ÷ Σ (Tiền gốc × Số ngày gửi ÷ 365) × 100%"],
+  ["Thay đổi tài sản", "(Tổng tháng này − Tổng tháng trước) ÷ Tổng tháng trước × 100%"],
+];
+function userGuideHtml(){
+  let h = `<div class="guide">`;
+  for(const sec of USER_GUIDE){
+    h += `<h4>${sec.title}</h4><ul>${sec.items.map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`;
+  }
+  h += `<h4>🧮 Một số công thức</h4>`;
+  h += USER_GUIDE_FORMULAS.map(([k, v]) => `<div class="f"><b>${escapeHtml(k)}</b> = ${escapeHtml(v)}</div>`).join("");
+  return h + `</div>`;
+}
 function renderQuanLyUser(body){
-  let html = `<div style="padding:16px"><h3>Đổi Mật Khẩu</h3>`;
+  let html = `<div style="padding:16px"><div id="profileBox">${profileSectionHtml()}</div>`;
+  // Doi mat khau mac dinh thu gon - it khi dung, mo ra khi can.
+  html += `<details class="cfg-sec" style="margin-top:16px"><summary>🔒 Đổi mật khẩu</summary><div style="padding-top:12px">`;
   html += `<div style="margin-bottom:12px">
     <label class="sub">Mật khẩu hiện tại</label>
     <div style="position:relative;display:flex;align-items:center;margin-bottom:8px">
@@ -5561,8 +5792,9 @@ function renderQuanLyUser(body){
       <button type="button" onclick="changePassShowConfirm=!changePassShowConfirm; document.getElementById('cpConfirmPass').type=changePassShowConfirm?'text':'password'" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;font-size:18px">👁️</button>
     </div>
   </div>`;
-  html += `<div id="cpErr"></div><button class="primary" style="width:100%;margin-top:8px" onclick="doChangePassword()">Đổi Mật Khẩu</button>`;
-  html += `<hr style="margin:24px 0"><h3>🔔 Thông báo</h3>
+  html += `<div id="cpErr"></div><button class="primary" style="width:100%;margin-top:8px" onclick="doChangePassword()">Đổi Mật Khẩu</button></div></details>`;
+  html += `<details class="cfg-sec"><summary>📖 Hướng dẫn sử dụng</summary>${userGuideHtml()}</details>`;
+  html += `<hr style="margin:12px 0 24px"><h3>🔔 Thông báo</h3>
     <div class="sub" style="margin-bottom:10px">Nhắc sinh nhật, ngày giỗ, việc cần làm... sắp tới trong vài ngày tới, ngay trên điện thoại. Bật riêng cho từng thiết bị.</div>
     <div id="pushSection">Đang kiểm tra…</div>`;
   // Cho vao co dinh cho Danh sach tu vung + Mimi (man cho chi hien lau khi
@@ -5582,6 +5814,7 @@ function renderQuanLyUser(body){
         <button class="ghost" onclick="setServerUrl(document.getElementById('cfgServer').value);showToast('Đã lưu địa chỉ máy chủ')">Lưu</button></div>
     </details></div>`;
   body.innerHTML = html;
+  hydrateAvatars(body);
   refreshPushSection();
 }
 async function doChangePassword(){
