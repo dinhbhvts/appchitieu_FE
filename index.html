@@ -3990,12 +3990,43 @@ const SYSTEM_ITEM_INFO = {
     desc: "= Tổng lãi thực nhận trong năm ÷ Tổng (Số tiền gốc × Số ngày gửi thực tế / 365) của các khoản đã tất toán trong năm, nhân 100. Đây là lãi suất bình quân quy đổi theo năm (money-weighted), có tính đến thời gian gửi thực tế của từng khoản - nên không bị lệch khi các khoản có kỳ hạn (thời gian gửi) khác nhau, khác với cách tính lãi/tổng gốc tất toán đơn thuần trước đây."
   },
 };
-function showSystemItemInfo(key){
+// Bam 🔒: hien cong thuc + SO LIEU THAT cua thang dang xem (tung thanh phan)
+// de tu doi chieu vi sao muc tang/giam (GET /assets/system-breakdown).
+async function showSystemItemInfo(key){
   const info = SYSTEM_ITEM_INFO[key];
   if(!info) return;
-  document.getElementById("tsInfoTitle").textContent = info.title;
-  document.getElementById("tsInfoDesc").textContent = info.desc;
+  const box = document.getElementById("tsInfoDesc");
+  document.getElementById("tsInfoTitle").textContent = `${info.title} · Tháng ${month}/${year}`;
+  box.innerHTML = `<div>Đang tải số liệu…</div><div style="margin-top:8px">${escapeHtml(info.desc)}</div>`;
   document.getElementById("tsInfoModal").classList.add("on");
+  try{
+    const parts = await jget(`/assets/system-breakdown?year=${year}&month=${month}`);
+    const p = parts.find(x => x.system_key === key);
+    box.innerHTML = (p ? systemBreakdownHtml(p) : "") +
+      `<div style="margin-top:10px">${escapeHtml(info.desc)}</div>`;
+  }catch(e){
+    box.innerHTML = `<div>${escapeHtml(info.desc)}</div>`;
+  }
+}
+function systemBreakdownHtml(p){
+  const row = (label, v, sign, strong) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0;${strong?'border-top:1px solid var(--line);margin-top:4px;padding-top:6px;font-weight:700;color:var(--text)':''}">
+    <span>${label}</span><span style="white-space:nowrap">${sign}${vnd(v)} đ</span></div>`;
+  if(p.kind !== "account"){
+    return `<div style="background:var(--bg);border-radius:8px;padding:8px 10px;color:var(--text)">${row("Tổng giá trị Đang giữ (gồm Tiền mặt)", p.holdings_total, "", true)}</div>`;
+  }
+  const isVo = p.system_key.startsWith("vo_");
+  const other = isVo ? "chồng" : "vợ", Other = isVo ? "Chồng" : "Vợ";
+  const pm = month === 1 ? 12 : month - 1, py = month === 1 ? year - 1 : year;
+  let h = `<div style="background:var(--bg);border-radius:8px;padding:8px 10px;color:var(--text)">`;
+  h += row(`Chốt tháng ${pm}/${py}`, p.prev_closing, "", false);
+  h += row("Thu trong tháng", p.income, "+ ", false);
+  h += row("Chi trong tháng", p.expense, "− ", false);
+  h += row(`Chuyển cho ${other}`, p.transferred_out, "− ", false);
+  h += row(`${Other} chuyển đến`, p.transferred_in, "+ ", false);
+  h += row("Lãi tiết kiệm thực nhận", p.interest, "+ ", false);
+  h += row(`= ${p.name}`, p.value, "", true);
+  h += `</div><div style="margin-top:8px;font-size:12px">Xem từng giao dịch tạo nên các số trên: <b>Báo cáo › Theo từng người</b> (chạm dòng Thu / Chi / Chuyển / Còn giữ). Nếu một khoản bị ghi 2 lần (vd vừa ghi <i>Chuyển</i> vừa ghi <i>Thu</i> "chồng chuyển") thì xóa bớt 1 dòng.</div>`;
+  return h;
 }
 function closeTsInfo(){ document.getElementById("tsInfoModal").classList.remove("on"); }
 
