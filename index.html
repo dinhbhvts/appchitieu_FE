@@ -268,6 +268,19 @@
   .album-cell .ac-actions button{border:none;border-radius:6px;background:rgba(255,255,255,.92);font-size:13px;padding:4px 7px;cursor:pointer;}
   /* Dong thao tac nhanh (link/copy) tren danh sach Tien ich. */
   .ni-quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  /* Nhat ky cua muc so tay (Moc cua con, Bao tri, Dinh ky, Dich vu). */
+  .log-add{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+  .log-add input{margin:0;}
+  .log-add input[type=date]{width:142px;flex:none;}
+  .log-add input.log-text{flex:1;min-width:0;width:auto;}
+  .log-add button{flex:none;padding:8px 13px;font-size:16px;line-height:1;}
+  .log-row{display:flex;gap:8px;align-items:flex-start;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .log-row .d{color:var(--label);font-weight:600;white-space:nowrap;flex:none;}
+  .log-row .c{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;}
+  .log-row .act{flex:none;display:flex;gap:10px;}
+  .log-row.editing{flex-wrap:wrap;background:var(--bg);border-radius:8px;padding:6px;}
+  .log-suggest{background:var(--accent-bg);border-radius:10px;padding:9px 10px;font-size:13px;margin:4px 0 8px;line-height:1.45;}
+  .log-suggest input[type=date]{width:150px;margin:4px 0;}
   .ni-quick a,.ni-quick span{font-size:12px;border:1px solid var(--line);border-radius:12px;padding:2px 8px;color:var(--accent);text-decoration:none;cursor:pointer;background:var(--card);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:rgba(40,40,40,.92);color:#fff;font-size:13px;padding:8px 14px;border-radius:18px;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none;}
   .toast.on{opacity:1;}
@@ -772,6 +785,16 @@
     <input id="niAmount" type="number" placeholder="Không bắt buộc" />
     <div class="flabel" id="niInfoLabel">Thông tin</div>
     <textarea id="niInfo" placeholder="Thông tin" rows="2" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;box-sizing:border-box"></textarea>
+    <div id="niLogSection" style="display:none">
+      <div class="flabel" style="display:flex;justify-content:space-between"><span>Nhật ký</span><span id="niLogCount" style="font-weight:400;color:var(--muted)"></span></div>
+      <div class="log-add">
+        <input id="niLogDate" type="date" title="Thời gian thực hiện" />
+        <input id="niLogText" class="log-text" placeholder="Nội dung thực hiện…" onkeydown="if(event.key==='Enter'){event.preventDefault();addNiLog();}" />
+        <button type="button" class="primary" onclick="addNiLog()" title="Thêm vào nhật ký">＋</button>
+      </div>
+      <div id="niLogSuggest"></div>
+      <div id="niLogList" style="margin-bottom:10px"></div>
+    </div>
     <div class="flabel">Tag</div>
     <input id="niTags" placeholder="VD: #xe #gia_dinh" />
     <div class="flabel">Ghi chú</div>
@@ -836,10 +859,10 @@ const NI_BUILTIN_FIELDS = {
   address:         {relation:1, phone:1, address:1},
   birthday:        {relation:1, date1:1},
   anniversary:     {relation:1, date1:1, lunar:1},
-  service:         {date1:1, date2:1, recurrence:1, amount:1},
-  maintenance:     {date1:1, date2:1, recurrence:1, completed:1, profileName:1, attach:1},
+  service:         {date1:1, date2:1, recurrence:1, amount:1, log:1},
+  maintenance:     {date1:1, date2:1, recurrence:1, completed:1, profileName:1, attach:1, log:1},
   warranty:        {date1:1, date2:1, amount:1, profileName:1, attach:1},
-  periodic:        {date1:1, date2:1, completed:1},
+  periodic:        {date1:1, date2:1, completed:1, log:1},
   account:         {system:1, website:1, relation:1, username:1, password:1},
   website:         {website:1, info:1},
   special_day:     {date1:1, lunar:1},
@@ -850,7 +873,7 @@ const NI_BUILTIN_FIELDS = {
                      healthInsuranceNo:1, address:1, hometown:1, profileName:1, attach:1},
   task:            {info:1, date2:1, completed:1},
   note:            {},
-  child_milestone: {date1:1},
+  child_milestone: {date1:1, log:1},
 };
 function niFieldsFor(typeKey){
   return NI_BUILTIN_FIELDS[typeKey] || {info:1};
@@ -4905,6 +4928,10 @@ function niMetaLine(it){
   if(it.type === "purchase" && it.address) parts.push("tại " + it.address);
   if(it.phone) parts.push(it.phone);
   if(it.amount) parts.push(vnd(it.amount)+" đ");
+  if(it.log_count){
+    const c = String(it.last_log_content || "");
+    parts.push(`📝 ${fmtDate(it.last_log_date)} – ${escapeHtml(c.length > 40 ? c.slice(0, 40) + "…" : c)}${it.log_count > 1 ? ` (${it.log_count})` : ""}`);
+  }
   return parts.join(" · ");
 }
 // Dong thao tac nhanh tren danh sach Tien ich: mo link Trang web + copy cac
@@ -5141,13 +5168,20 @@ async function openNi(item){
   setNiType(item ? item.type : (niTypeFilter || (niTypesCache[0]&&niTypesCache[0].key) || "address"));
   if(editingNiId) loadNiAttachments(editingNiId);
   else { document.getElementById("niAttachList").innerHTML = ""; }
+  resetNiLogs();
+  if(editingNiId) loadNiLogs(editingNiId);
   document.getElementById("niModal").classList.add("on");
 }
 function toggleNiPassword(){
   const inp = document.getElementById("niPassword");
   inp.type = inp.type === "password" ? "text" : "password";
 }
-function closeNi(){ document.getElementById("niModal").classList.remove("on"); }
+function closeNi(){
+  document.getElementById("niModal").classList.remove("on");
+  // Nhat ky luu ngay tung dong (khong qua nut Luu) -> dong form thi tai lai
+  // danh sach de dong "📝 Gan nhat" cap nhat.
+  if(niLogsDirty){ niLogsDirty = false; refreshNiResults(); }
+}
 
 // ---- Ho so dinh kem (chi ap dung khi da co editingNiId - xem setNiType) ----
 async function loadNiAttachments(itemId){
@@ -5322,6 +5356,8 @@ function setNiType(v){
   show("niRecurrence", f.recurrence);
   show("niAmount", f.amount);
   show("niInfo", f.info);
+  document.getElementById("niLogSection").style.display = f.log ? "" : "none";
+  if(!f.log) document.getElementById("niLogSuggest").innerHTML = "";
   show("niProfileName", f.profileName);
   show("niProfileNameLabel", f.profileName);
   document.getElementById("niProfileNameNote").style.display = f.profileName ? "block" : "none";
@@ -5390,6 +5426,153 @@ function setNiType(v){
   document.getElementById("niTitleLabel").textContent =
     v === "personal_info" ? "Tên thường gọi" : "Tiêu đề";
 }
+// ---- Nhat ky (Moc cua con, Bao tri, Dinh ky, Dich vu) ----
+// Moi dong luu NGAY khi them/sua/xoa (muc da co). Luc dang TAO MOI muc thi
+// giu tam (_tmp) va luu sau khi bam Luu. Sap xep: ngay giam dan, cung ngay
+// thi dong nhap sau dung tren.
+let niLogs = [], niLogsDirty = false, niLogEditId = null, niLogShowAll = false, niLogSeq = 0;
+const NI_LOG_PREVIEW = 5;
+function resetNiLogs(){
+  niLogs = []; niLogEditId = null; niLogShowAll = false;
+  document.getElementById("niLogDate").value = todayIso();
+  document.getElementById("niLogText").value = "";
+  document.getElementById("niLogSuggest").innerHTML = "";
+  renderNiLogs();
+}
+async function loadNiLogs(itemId){
+  try{
+    const rows = await jget(`/notebook-items/${itemId}/logs`);
+    if(editingNiId !== itemId) return;
+    niLogs = rows.map(l => ({...l, _ord: l.id}));
+  }catch(e){ niLogs = []; }
+  renderNiLogs();
+}
+function sortNiLogs(){
+  niLogs.sort((a, b) => a.log_date < b.log_date ? 1 : a.log_date > b.log_date ? -1 : b._ord - a._ord);
+}
+function renderNiLogs(){
+  sortNiLogs();
+  const box = document.getElementById("niLogList");
+  document.getElementById("niLogCount").textContent = niLogs.length ? `${niLogs.length} dòng` : "";
+  if(niLogs.length === 0){ box.innerHTML = `<div class="sub" style="font-size:12px">Chưa có dòng nào – nhập ở trên, Enter để thêm.</div>`; return; }
+  const shown = niLogShowAll ? niLogs : niLogs.slice(0, NI_LOG_PREVIEW);
+  box.innerHTML = shown.map(l => {
+    const key = escapeHtml(String(l.id));
+    if(niLogEditId === l.id){
+      return `<div class="log-row editing">
+        <input type="date" id="niLogEditDate" value="${l.log_date}" style="width:142px;margin:0" />
+        <input id="niLogEditText" value="${escapeHtml(l.content)}" style="flex:1;min-width:140px;margin:0" onkeydown="if(event.key==='Enter'){event.preventDefault();saveNiLogEdit('${key}');}" />
+        <span class="act"><span class="editbtn" title="Lưu" onclick="saveNiLogEdit('${key}')">✓</span><span class="editbtn" title="Hủy" onclick="niLogEditId=null;renderNiLogs()">✕</span></span>
+      </div>`;
+    }
+    return `<div class="log-row"><span class="d">${fmtDate(l.log_date)}</span><span class="c">– ${escapeHtml(l.content)}</span>
+      <span class="act"><span class="editbtn" title="Sửa" onclick="editNiLog('${key}')">✎</span><span class="editbtn" title="Xóa" onclick="deleteNiLog('${key}')">🗑️</span></span></div>`;
+  }).join("") + (niLogs.length > NI_LOG_PREVIEW
+    ? `<div class="sub" style="cursor:pointer;color:var(--accent);margin-top:6px" onclick="niLogShowAll=!niLogShowAll;renderNiLogs()">${niLogShowAll ? "Thu gọn ▴" : `Xem thêm ${niLogs.length - NI_LOG_PREVIEW} dòng cũ hơn ▾`}</div>` : "");
+}
+function findNiLog(key){ return niLogs.find(l => String(l.id) === String(key)); }
+async function addNiLog(){
+  const textEl = document.getElementById("niLogText");
+  const content = textEl.value.trim();
+  if(!content){ textEl.focus(); return; }
+  const logDate = document.getElementById("niLogDate").value || todayIso();
+  try{
+    if(editingNiId){
+      const row = await jpost(`/notebook-items/${editingNiId}/logs`, {log_date: logDate, content});
+      niLogs.push({...row, _ord: row.id});
+      niLogsDirty = true;
+    }else{
+      niLogSeq++;
+      niLogs.push({id: "tmp" + niLogSeq, _tmp: true, _ord: 1e12 + niLogSeq, log_date: logDate, content});
+    }
+  }catch(e){ showToast("Không thêm được: " + niUploadErrorText(e)); return; }
+  textEl.value = "";
+  document.getElementById("niLogDate").value = todayIso();
+  renderNiLogs();
+  suggestNiReminder(logDate);
+  textEl.focus();
+}
+function editNiLog(key){ niLogEditId = findNiLog(key).id; renderNiLogs(); const el = document.getElementById("niLogEditText"); if(el) el.focus(); }
+async function saveNiLogEdit(key){
+  const l = findNiLog(key); if(!l) return;
+  const content = document.getElementById("niLogEditText").value.trim();
+  const logDate = document.getElementById("niLogEditDate").value || l.log_date;
+  if(!content){ showToast("Nhập nội dung"); return; }
+  try{
+    if(!l._tmp){ await jput(`/notebook-logs/${l.id}`, {log_date: logDate, content}); niLogsDirty = true; }
+    l.log_date = logDate; l.content = content;
+  }catch(e){ showToast("Không lưu được: " + niUploadErrorText(e)); return; }
+  niLogEditId = null;
+  renderNiLogs();
+}
+async function deleteNiLog(key){
+  const l = findNiLog(key); if(!l) return;
+  if(!confirm(`Xóa dòng nhật ký "${fmtDate(l.log_date)} – ${l.content}"?`)) return;
+  try{
+    if(!l._tmp){ await jdelete(`/notebook-logs/${l.id}`); niLogsDirty = true; }
+    niLogs = niLogs.filter(x => x !== l);
+  }catch(e){ showToast("Không xóa được: " + niUploadErrorText(e)); return; }
+  renderNiLogs();
+}
+// ---- Goi y cap nhat nhac nho sau khi them nhat ky ----
+// Bao tri / Dinh ky: lan thuc hien moi hon "Lan gan nhat" -> de nghi dat Lan
+// gan nhat = ngay do, Han toi = ngay do + chu ky (so ngay lap lai, hoac
+// khoang cach cu giua 2 ngay), bo tick Da hoan thanh. Dich vu: de nghi gia
+// han "Het han" = ngay do + chu ky. Nguoi dung sua duoc ngay han truoc khi
+// bam Cap nhat. Moc cua con: khong co nhac nho.
+function addDaysIso(iso, n){
+  const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function daysBetweenIso(a, b){ return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000); }
+let niSuggestData = null;
+function suggestNiReminder(logDate){
+  const box = document.getElementById("niLogSuggest");
+  box.innerHTML = ""; niSuggestData = null;
+  const type = niType;
+  if(!["maintenance", "periodic", "service"].includes(type)) return;
+  const d1 = document.getElementById("niDate1").value;
+  const d2 = document.getElementById("niDate2").value;
+  const rec = parseInt(String(document.getElementById("niRecurrence").value || "").replace(/\./g, "")) || 0;
+  const gap = (d1 && d2) ? daysBetweenIso(d1, d2) : 0;
+  const interval = rec > 0 ? rec : (gap > 0 ? gap : 0);
+  const isService = type === "service";
+  if(!isService && d1 && logDate <= d1) return;              // lan cu hon, khong goi y
+  const newD2 = interval ? addDaysIso(logDate, interval) : "";
+  if(isService && (!newD2 || (d2 && newD2 <= d2))) return;   // dich vu: chi khi gia han them
+  niSuggestData = {type, logDate};
+  const d2Label = type === "maintenance" ? "Hạn tới" : type === "periodic" ? "Ngày đến hạn kế tiếp" : "Hết hạn (gia hạn tới)";
+  const why = interval ? (rec > 0 ? `theo chu kỳ ${rec} ngày` : `giữ khoảng cách ${interval} ngày như lần trước`) : "chọn ngày hạn tiếp theo";
+  box.innerHTML = `<div class="log-suggest">🔔 <b>Cập nhật nhắc nhở theo lần này?</b><br>
+    ${isService ? "" : `Lần gần nhất → <b>${fmtDate(logDate)}</b><br>`}
+    ${d2Label} → <input type="date" id="niSugD2" value="${newD2}" /> <span class="sub" style="font-size:11.5px">(${why})</span><br>
+    ${isService ? "" : `<span class="sub" style="font-size:11.5px">Bỏ tick "Đã hoàn thành" để Tổng quan nhắc lại lần kế tiếp.</span><br>`}
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button type="button" class="primary" style="padding:6px 14px" onclick="applyNiSuggest()">Cập nhật</button>
+      <button type="button" class="ghost" onclick="document.getElementById('niLogSuggest').innerHTML=''">Bỏ qua</button>
+    </div></div>`;
+}
+async function applyNiSuggest(){
+  if(!niSuggestData) return;
+  const {type, logDate} = niSuggestData;
+  const newD2 = document.getElementById("niSugD2").value || null;
+  const changes = {};
+  if(type !== "service"){ changes.date1 = logDate; changes.is_completed = false; }
+  if(newD2) changes.date2 = newD2;
+  if(changes.date1) document.getElementById("niDate1").value = changes.date1;
+  if(changes.date2) document.getElementById("niDate2").value = changes.date2;
+  if("is_completed" in changes) document.getElementById("niCompleted").checked = false;
+  document.getElementById("niLogSuggest").innerHTML = "";
+  if(editingNiId){
+    try{
+      await jput(`/notebook-items/${editingNiId}`, changes);
+      niLogsDirty = true;
+      showToast("Đã cập nhật nhắc nhở");
+    }catch(e){ showToast("Không cập nhật được: " + niUploadErrorText(e)); }
+  }else{
+    showToast("Đã điền ngày vào form – bấm Lưu để lưu");
+  }
+}
 async function saveNi(){
   const title = document.getElementById("niTitle").value.trim();
   if(!title){ document.getElementById("niErr").innerHTML = `<div class="err">Nhập tiêu đề</div>`; return; }
@@ -5431,7 +5614,15 @@ async function saveNi(){
   }
   try{
     if(editingNiId){ await jput("/notebook-items/"+editingNiId, payload); }
-    else{ await jpost("/notebook-items", payload); }
+    else{
+      const created = await jpost("/notebook-items", payload);
+      // Cac dong nhat ky nhap luc dang tao moi (giu tam) -> luu sau khi co id.
+      if(niFieldsFor(niType).log){
+        for(const l of niLogs.filter(x => x._tmp).reverse()){
+          await jpost(`/notebook-items/${created.id}/logs`, {log_date: l.log_date, content: l.content});
+        }
+      }
+    }
     closeNi();
     renderCauHinh(document.getElementById("content"));
   }catch(e){ document.getElementById("niErr").innerHTML = `<div class="err">${e.message}</div>`; }
